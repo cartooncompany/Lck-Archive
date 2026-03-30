@@ -27,6 +27,34 @@ class TeamSummary {
   final List<LckMatchResult> recentMatches;
   final Color color;
 
+  TeamSummary copyWith({
+    String? id,
+    String? name,
+    String? initials,
+    int? rank,
+    String? seasonRecord,
+    String? setRecord,
+    String? summary,
+    List<String>? recentForm,
+    List<LckMatchResult>? recentMatches,
+    Color? color,
+  }) {
+    return TeamSummary(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      initials: initials ?? this.initials,
+      rank: rank ?? this.rank,
+      seasonRecord: seasonRecord ?? this.seasonRecord,
+      setRecord: setRecord ?? this.setRecord,
+      summary: summary ?? this.summary,
+      recentForm: recentForm ?? this.recentForm,
+      recentMatches: recentMatches ?? this.recentMatches,
+      color: color ?? this.color,
+    );
+  }
+
+  String get rankLabel => rank > 0 ? '$rank위' : '순위 미정';
+
   String get latestResult {
     if (recentMatches.isEmpty) {
       return '최근 경기 데이터 없음';
