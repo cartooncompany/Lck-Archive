@@ -642,15 +642,66 @@ final class MockLckData {
 
   static TeamSummary get defaultFavoriteTeam => teams.first;
 
+  static TeamSummary? findTeam({
+    String? id,
+    String? name,
+    String? shortName,
+  }) {
+    for (final team in teams) {
+      final sameId = id != null && team.id == id;
+      final sameName =
+          name != null && team.name.toLowerCase() == name.toLowerCase();
+      final sameShortName =
+          shortName != null &&
+          team.initials.toLowerCase() == shortName.toLowerCase();
+      if (sameId || sameName || sameShortName) {
+        return team;
+      }
+    }
+    return null;
+  }
+
+  static PlayerProfile? findPlayer({String? id, String? name}) {
+    for (final player in players) {
+      final sameId = id != null && player.id == id;
+      final sameName =
+          name != null && player.name.toLowerCase() == name.toLowerCase();
+      if (sameId || sameName) {
+        return player;
+      }
+    }
+    return null;
+  }
+
   static List<PlayerProfile> playersForTeam(String teamId) {
     return players.where((player) => player.teamId == teamId).toList();
   }
 
   static List<NewsArticle> newsForTeam(String teamId) {
-    final team = teamById(teamId);
+    final team = findTeam(id: teamId) ?? defaultFavoriteTeam;
+    return newsForTeamName(team.name, shortName: team.initials);
+  }
+
+  static List<NewsArticle> newsForTeamName(String teamName, {String? shortName}) {
+    final normalizedTeamName = teamName.toLowerCase();
+    final normalizedShortName = shortName?.toLowerCase();
     return news
-        .where((article) => article.tags.contains(team.name))
-        .followedBy(news.where((article) => !article.tags.contains(team.name)))
+        .where(
+          (article) => article.tags.any((tag) {
+            final normalizedTag = tag.toLowerCase();
+            return normalizedTag == normalizedTeamName ||
+                normalizedTag == normalizedShortName;
+          }),
+        )
+        .followedBy(
+          news.where(
+            (article) => !article.tags.any((tag) {
+              final normalizedTag = tag.toLowerCase();
+              return normalizedTag == normalizedTeamName ||
+                  normalizedTag == normalizedShortName;
+            }),
+          ),
+        )
         .toList();
   }
 

@@ -12,6 +12,9 @@ class PlayerProfile {
     required this.keyStats,
     required this.recentAppearances,
     required this.teamColor,
+    this.realName,
+    this.nationality,
+    this.birthDate,
   });
 
   final String id;
@@ -24,6 +27,41 @@ class PlayerProfile {
   final Map<String, String> keyStats;
   final List<PlayerMatchAppearance> recentAppearances;
   final Color teamColor;
+  final String? realName;
+  final String? nationality;
+  final DateTime? birthDate;
+
+  PlayerProfile copyWith({
+    String? id,
+    String? name,
+    String? teamId,
+    String? teamName,
+    String? position,
+    int? seasonMatches,
+    String? headline,
+    Map<String, String>? keyStats,
+    List<PlayerMatchAppearance>? recentAppearances,
+    Color? teamColor,
+    String? realName,
+    String? nationality,
+    DateTime? birthDate,
+  }) {
+    return PlayerProfile(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      teamId: teamId ?? this.teamId,
+      teamName: teamName ?? this.teamName,
+      position: position ?? this.position,
+      seasonMatches: seasonMatches ?? this.seasonMatches,
+      headline: headline ?? this.headline,
+      keyStats: keyStats ?? this.keyStats,
+      recentAppearances: recentAppearances ?? this.recentAppearances,
+      teamColor: teamColor ?? this.teamColor,
+      realName: realName ?? this.realName,
+      nationality: nationality ?? this.nationality,
+      birthDate: birthDate ?? this.birthDate,
+    );
+  }
 }
 
 class PlayerMatchAppearance {
