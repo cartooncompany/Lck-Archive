@@ -11,34 +11,58 @@ class FavoriteTeamPickerSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = FavoriteTeamScope.of(context);
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.8;
 
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('응원팀 선택', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(
-              '홈 화면과 뉴스 우선순위가 즉시 변경됩니다.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 20),
-            ...MockLckData.teams.map(
-              (team) => _FavoriteTeamTile(
-                team: team,
-                isSelected: team.id == controller.favoriteTeam.id,
-                onTap: () {
-                  controller.selectTeam(team);
-                  Navigator.of(context).pop();
-                },
+      top: false,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: maxHeight),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.divider,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text('응원팀 선택', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Text(
+                '홈 화면과 뉴스 우선순위가 즉시 변경됩니다.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: MockLckData.teams.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) {
+                    final team = MockLckData.teams[index];
+                    return _FavoriteTeamTile(
+                      team: team,
+                      isSelected: team.id == controller.favoriteTeam.id,
+                      onTap: () {
+                        controller.selectTeam(team);
+                        Navigator.of(context).pop();
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -58,23 +82,21 @@ class _FavoriteTeamTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        tileColor: AppColors.surface,
-        onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: team.color.withValues(alpha: 0.18),
-          foregroundColor: team.color,
-          child: Text(team.initials),
-        ),
-        title: Text(team.name),
-        subtitle: Text('${team.rank}위  |  ${team.seasonRecord}'),
-        trailing: isSelected
-            ? const Icon(Icons.check_circle_rounded, color: AppColors.accent)
-            : null,
+    return ListTile(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      tileColor: AppColors.surface,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      onTap: onTap,
+      leading: CircleAvatar(
+        backgroundColor: team.color.withValues(alpha: 0.18),
+        foregroundColor: team.color,
+        child: Text(team.initials),
       ),
+      title: Text(team.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text('${team.rank}위  |  ${team.seasonRecord}'),
+      trailing: isSelected
+          ? const Icon(Icons.check_circle_rounded, color: AppColors.accent)
+          : null,
     );
   }
 }
