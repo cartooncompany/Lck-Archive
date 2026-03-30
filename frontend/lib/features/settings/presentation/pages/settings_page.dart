@@ -95,6 +95,8 @@ class SettingsPage extends StatelessWidget {
     return showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.background,
+      isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => const FavoriteTeamPickerSheet(),
     );
   }
