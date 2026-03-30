@@ -61,7 +61,7 @@ class FavoriteTeamCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '${team.rank}위',
+                      team.rankLabel,
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(fontWeight: FontWeight.w800),
                     ),

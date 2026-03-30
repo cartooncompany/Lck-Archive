@@ -11,9 +11,6 @@ class FavoriteTeamController extends ChangeNotifier {
   TeamSummary get favoriteTeam => _favoriteTeam;
 
   void selectTeam(TeamSummary team) {
-    if (_favoriteTeam.id == team.id) {
-      return;
-    }
     _favoriteTeam = team;
     notifyListeners();
   }
