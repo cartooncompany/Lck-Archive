@@ -12,6 +12,7 @@ describe('LckApiClient', () => {
     const client = new LckApiClient(
       new ConfigService({
         LCK_SCHEDULE_PAGE_LIMIT: 3,
+        LOLESPORTS_API_KEY: 'test-api-key',
       }),
     );
 
