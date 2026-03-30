@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
@@ -43,15 +44,22 @@ class NewsPage extends StatelessWidget {
     );
   }
 
-  void _handleTagTap(BuildContext context, String tag) {
-    final team = MockLckData.findTeamByTag(tag);
+  Future<void> _handleTagTap(BuildContext context, String tag) async {
+    final dependencies = AppDependenciesScope.of(context);
+    final team = await dependencies.teamsRepository.findTeamByTag(tag);
     if (team != null) {
+      if (!context.mounted) {
+        return;
+      }
       Navigator.of(context).pushNamed(AppRouter.teamDetail, arguments: team);
       return;
     }
 
-    final player = MockLckData.findPlayerByTag(tag);
+    final player = await dependencies.playersRepository.findPlayerByTag(tag);
     if (player != null) {
+      if (!context.mounted) {
+        return;
+      }
       Navigator.of(
         context,
       ).pushNamed(AppRouter.playerDetail, arguments: player);

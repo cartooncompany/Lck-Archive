@@ -131,7 +131,7 @@ class _WebAppShell extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${favoriteTeam.rank}위  |  ${favoriteTeam.seasonRecord}',
+                          '${favoriteTeam.rankLabel}  |  ${favoriteTeam.seasonRecord}',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppColors.textSecondary,
                           ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/theme/app_colors.dart';
-import '../../../../core/utils/mock_lck_data.dart';
 import '../../../../shared/models/team_summary.dart';
 import '../bloc/favorite_team_controller.dart';
 
@@ -12,6 +12,7 @@ class FavoriteTeamPickerSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = FavoriteTeamScope.of(context);
     final maxHeight = MediaQuery.sizeOf(context).height * 0.8;
+    final teamsFuture = AppDependenciesScope.of(context).teamsRepository.getTeams();
 
     return SafeArea(
       top: false,
@@ -44,18 +45,34 @@ class FavoriteTeamPickerSheet extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Flexible(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: MockLckData.teams.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 10),
-                  itemBuilder: (context, index) {
-                    final team = MockLckData.teams[index];
-                    return _FavoriteTeamTile(
-                      team: team,
-                      isSelected: team.id == controller.favoriteTeam.id,
-                      onTap: () {
-                        controller.selectTeam(team);
-                        Navigator.of(context).pop();
+                child: FutureBuilder<List<TeamSummary>>(
+                  future: teamsFuture,
+                  builder: (context, snapshot) {
+                    final teams = snapshot.data ?? const <TeamSummary>[];
+
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        teams.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (teams.isEmpty) {
+                      return const Center(child: Text('응원팀 목록이 없습니다.'));
+                    }
+
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: teams.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final team = teams[index];
+                        return _FavoriteTeamTile(
+                          team: team,
+                          isSelected: team.id == controller.favoriteTeam.id,
+                          onTap: () {
+                            controller.selectTeam(team);
+                            Navigator.of(context).pop();
+                          },
+                        );
                       },
                     );
                   },
@@ -93,7 +110,7 @@ class _FavoriteTeamTile extends StatelessWidget {
         child: Text(team.initials),
       ),
       title: Text(team.name, maxLines: 1, overflow: TextOverflow.ellipsis),
-      subtitle: Text('${team.rank}위  |  ${team.seasonRecord}'),
+      subtitle: Text('${team.rankLabel}  |  ${team.seasonRecord}'),
       trailing: isSelected
           ? const Icon(Icons.check_circle_rounded, color: AppColors.accent)
           : null,

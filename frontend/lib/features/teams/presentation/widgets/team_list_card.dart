@@ -55,7 +55,7 @@ class TeamListCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${team.rank}위',
+                        team.rankLabel,
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(color: AppColors.accent),
                       ),
