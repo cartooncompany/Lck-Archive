@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PlayerPosition {
+  TOP
+  JUNGLE
+  MID
+  ADC
+  SUPPORT
+  COACH
+  SUBSTITUTE
+  FLEX
+}
+
+enum MatchStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+}
+
+model Team {
+  id              String   @id @default(cuid())
+  name            String
+  shortName       String   @unique
+  slug            String   @unique
+  logoUrl         String?
+  rank            Int?
+  wins            Int      @default(0)
+  losses          Int      @default(0)
+  setWins         Int      @default(0)
+  setLosses       Int      @default(0)
+  setDifferential Int      @default(0)
+  externalSource  String   @default("LCK")
+  externalId      String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  players        Player[]
+  homeMatches    Match[]                  @relation("HomeTeam")
+  awayMatches    Match[]                  @relation("AwayTeam")
+  wonMatches     Match[]                  @relation("WinnerTeam")
+  participations MatchPlayerParticipation[]
+
+  @@index([rank])
+  @@unique([externalSource, externalId])
+}
+
+model Player {
+  id               String         @id @default(cuid())
+  teamId           String?
+  name             String
+  slug             String         @unique
+  position         PlayerPosition
+  profileImageUrl  String?
+  realName         String?
+  nationality      String?
+  birthDate        DateTime?
+  recentMatchCount Int            @default(0)
+  externalSource   String         @default("LCK")
+  externalId       String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  team           Team?                     @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  participations MatchPlayerParticipation[]
+
+  @@index([teamId])
+  @@index([position])
+  @@unique([externalSource, externalId])
+}
+
+model Match {
+  id             String      @id @default(cuid())
+  externalSource String      @default("LCK")
+  externalId     String
+  scheduledAt    DateTime
+  seasonYear     Int
+  split          String
+  stage          String
+  matchNumber    String?
+  homeTeamId     String
+  awayTeamId     String
+  homeScore      Int         @default(0)
+  awayScore      Int         @default(0)
+  winnerTeamId   String?
+  status         MatchStatus @default(SCHEDULED)
+  vodUrl         String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  homeTeam       Team                       @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam       Team                       @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  winnerTeam     Team?                      @relation("WinnerTeam", fields: [winnerTeamId], references: [id])
+  participations MatchPlayerParticipation[]
+
+  @@index([scheduledAt])
+  @@index([seasonYear, split, stage])
+  @@index([homeTeamId, scheduledAt])
+  @@index([awayTeamId, scheduledAt])
+  @@unique([externalSource, externalId])
+}
+
+model MatchPlayerParticipation {
+  id        String         @id @default(cuid())
+  matchId   String
+  playerId  String
+  teamId    String
+  role      PlayerPosition?
+  isStarter Boolean        @default(true)
+  createdAt DateTime       @default(now())
+
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, playerId])
+  @@index([playerId, matchId])
+  @@index([teamId, matchId])
+}
+
+model SyncJobLog {
+  id           String   @id @default(cuid())
+  jobName      String
+  status       String
+  message      String?
+  startedAt    DateTime @default(now())
+  finishedAt   DateTime?
+  recordsCount Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@index([jobName, startedAt])
+}
