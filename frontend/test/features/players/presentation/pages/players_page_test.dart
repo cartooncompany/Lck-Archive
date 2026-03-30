@@ -1,12 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/app/app_dependencies.dart';
+import 'package:frontend/app/app_dependencies_scope.dart';
+import 'package:frontend/core/utils/mock_lck_data.dart';
+import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import 'package:frontend/features/players/presentation/pages/players_page.dart';
 
 void main() {
   group('PlayersPage search', () {
     Future<void> pumpPlayersPage(WidgetTester tester) async {
+      final controller = FavoriteTeamController(
+        initialTeam: MockLckData.defaultFavoriteTeam,
+      );
+      addTearDown(controller.dispose);
+
       await tester.pumpWidget(
-        const MaterialApp(home: Scaffold(body: PlayersPage())),
+        AppDependenciesScope(
+          dependencies: AppDependencies.create(),
+          child: FavoriteTeamScope(
+            controller: controller,
+            child: const MaterialApp(home: Scaffold(body: PlayersPage())),
+          ),
+        ),
       );
       await tester.pumpAndSettle();
     }
