@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { MatchStatus, Prisma } from '@prisma/client';
 import { TeamReferenceResponseDto } from '../../common/responses/team-reference.response';
 import { PrismaService } from '../../database/prisma.service';
-import { GetMatchesQueryDto } from './dto/get-matches.query.dto';
+import {
+  GetMatchesQueryDto,
+  MatchSortOrder,
+} from './dto/get-matches.query.dto';
 import {
   MatchDetailResponseDto,
   MatchParticipantResponseDto,
@@ -65,7 +68,7 @@ export class MatchesRepository {
     return this.prisma.match.findMany({
       where: this.buildWhere(query),
       include: matchSummaryInclude,
-      orderBy: { scheduledAt: 'desc' },
+      orderBy: { scheduledAt: this.resolveSortOrder(query) },
       skip: query.skip,
       take: query.limit,
     });
@@ -179,6 +182,18 @@ export class MatchesRepository {
       ...(query.split ? { split: query.split } : {}),
       ...(query.stage ? { stage: query.stage } : {}),
       ...(query.status ? { status: query.status } : {}),
+      ...(query.from || query.to
+        ? {
+            scheduledAt: {
+              ...(query.from ? { gte: query.from } : {}),
+              ...(query.to ? { lte: query.to } : {}),
+            },
+          }
+        : {}),
     };
+  }
+
+  private resolveSortOrder(query: GetMatchesQueryDto): Prisma.SortOrder {
+    return query.sortOrder === MatchSortOrder.ASC ? 'asc' : 'desc';
   }
 }

@@ -30,13 +30,15 @@ export interface LolesportsScheduleEvent {
 }
 
 export interface LolesportsScheduleData {
-  schedule: {
-    pages: {
-      older?: string;
-      newer?: string;
-    };
-    events: LolesportsScheduleEvent[];
+  schedule: LolesportsSchedule;
+}
+
+export interface LolesportsSchedule {
+  pages: {
+    older?: string | null;
+    newer?: string | null;
   };
+  events: LolesportsScheduleEvent[];
 }
 
 export interface LolesportsStandingsTeam {

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
 import {
   LolesportsApiResponse,
+  LolesportsSchedule,
   LolesportsScheduleData,
   LolesportsSnapshotPayload,
   LolesportsStandingsData,
@@ -16,6 +17,7 @@ const DEFAULT_API_KEY = 'your-lolesports-api-key';
 const DEFAULT_LOCALE = 'ko-KR';
 const DEFAULT_LEAGUE_ID = '98767991310872058';
 const DEFAULT_TOURNAMENT_ID = '113503260417890076';
+const DEFAULT_SCHEDULE_PAGE_LIMIT = 12;
 
 @Injectable()
 export class LckApiClient {
@@ -24,6 +26,7 @@ export class LckApiClient {
   private readonly locale: string;
   private readonly leagueId: string;
   private readonly tournamentId: string;
+  private readonly schedulePageLimit: number;
 
   constructor(private readonly configService: ConfigService) {
     const baseUrl =
@@ -40,6 +43,10 @@ export class LckApiClient {
     this.tournamentId =
       this.configService.get<string>('LCK_TOURNAMENT_ID') ??
       DEFAULT_TOURNAMENT_ID;
+    this.schedulePageLimit = Number(
+      this.configService.get<string>('LCK_SCHEDULE_PAGE_LIMIT') ??
+        DEFAULT_SCHEDULE_PAGE_LIMIT,
+    );
 
     this.axiosClient = axios.create({
       baseURL: baseUrl,
@@ -87,16 +94,30 @@ export class LckApiClient {
   private async fetchSchedule(): Promise<
     LolesportsScheduleData['schedule']['events']
   > {
-    const response = await this.axiosClient.get<
-      LolesportsApiResponse<LolesportsScheduleData>
-    >('/getSchedule', {
-      params: {
-        hl: this.locale,
-        leagueId: this.leagueId,
-      },
-    });
+    const initialPage = await this.fetchSchedulePage();
+    const events = [...initialPage.events];
+    const seenEventKeys = new Set(
+      events.map((event) => this.toEventKey(event)),
+    );
 
-    return response.data.data.schedule.events;
+    await this.collectSchedulePages(
+      initialPage.pages.older,
+      'older',
+      events,
+      seenEventKeys,
+    );
+    await this.collectSchedulePages(
+      initialPage.pages.newer,
+      'newer',
+      events,
+      seenEventKeys,
+    );
+
+    return events.sort(
+      (left, right) =>
+        new Date(left.startTime).getTime() -
+        new Date(right.startTime).getTime(),
+    );
   }
 
   private async fetchTeam(teamId: string): Promise<LolesportsTeamData> {
@@ -110,6 +131,71 @@ export class LckApiClient {
     });
 
     return response.data.data;
+  }
+
+  private async fetchSchedulePage(
+    pageToken?: string,
+  ): Promise<LolesportsSchedule> {
+    const response = await this.axiosClient.get<
+      LolesportsApiResponse<LolesportsScheduleData>
+    >('/getSchedule', {
+      params: {
+        hl: this.locale,
+        leagueId: this.leagueId,
+        ...(pageToken ? { pageToken } : {}),
+      },
+    });
+
+    return response.data.data.schedule;
+  }
+
+  private async collectSchedulePages(
+    initialToken: string | null | undefined,
+    direction: 'older' | 'newer',
+    events: LolesportsScheduleData['schedule']['events'],
+    seenEventKeys: Set<string>,
+  ): Promise<void> {
+    let currentToken = initialToken;
+    let pageCount = 0;
+    const seenTokens = new Set<string>();
+
+    while (
+      currentToken &&
+      pageCount < this.schedulePageLimit &&
+      !seenTokens.has(currentToken)
+    ) {
+      seenTokens.add(currentToken);
+      const page = await this.fetchSchedulePage(currentToken);
+
+      for (const event of page.events) {
+        const eventKey = this.toEventKey(event);
+
+        if (seenEventKeys.has(eventKey)) {
+          continue;
+        }
+
+        seenEventKeys.add(eventKey);
+        events.push(event);
+      }
+
+      currentToken = page.pages[direction];
+      pageCount += 1;
+    }
+
+    if (currentToken) {
+      this.logger.warn(
+        `Schedule pagination stopped before exhaustion. direction=${direction}, pageLimit=${this.schedulePageLimit}`,
+      );
+    }
+  }
+
+  private toEventKey(
+    event: LolesportsScheduleData['schedule']['events'][number],
+  ) {
+    return (
+      event.match?.id ??
+      `${event.type}:${event.startTime}:${event.blockName ?? ''}:${event.league.slug}`
+    );
   }
 
   private extractTeamIds(standings: LolesportsStandingsEntry[]): string[] {

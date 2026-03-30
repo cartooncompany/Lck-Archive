@@ -1,8 +1,20 @@
 import { MatchStatus } from '@prisma/client';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsDate,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 import { PageQueryDto } from '../../../common/dto/page-query.dto';
+
+export enum MatchSortOrder {
+  ASC = 'asc',
+  DESC = 'desc',
+}
 
 export class GetMatchesQueryDto extends PageQueryDto {
   @ApiPropertyOptional({ description: '팀 id' })
@@ -34,4 +46,33 @@ export class GetMatchesQueryDto extends PageQueryDto {
   @IsOptional()
   @IsEnum(MatchStatus)
   status?: MatchStatus;
+
+  @ApiPropertyOptional({
+    description: '이 시각 이후 경기만 조회',
+    format: 'date-time',
+    example: '2026-04-01T00:00:00.000Z',
+  })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  from?: Date;
+
+  @ApiPropertyOptional({
+    description: '이 시각 이전 경기만 조회',
+    format: 'date-time',
+    example: '2026-04-30T23:59:59.999Z',
+  })
+  @IsOptional()
+  @Type(() => Date)
+  @IsDate()
+  to?: Date;
+
+  @ApiPropertyOptional({
+    enum: MatchSortOrder,
+    description: '경기 시간 정렬 순서',
+    example: MatchSortOrder.ASC,
+  })
+  @IsOptional()
+  @IsEnum(MatchSortOrder)
+  sortOrder?: MatchSortOrder;
 }
