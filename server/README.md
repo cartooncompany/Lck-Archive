@@ -25,6 +25,10 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Docs
+
+- [Flutter API Integration Guide](./docs/flutter-api-integration-guide.md)
+
 ## Project setup
 
 ```bash
