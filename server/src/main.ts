@@ -25,10 +25,23 @@ async function bootstrap() {
         'LCK 팀, 선수, 경기 기록 조회를 위한 NestJS + Prisma 기반 API',
       )
       .setVersion('0.1.0')
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'Authorization',
+          in: 'header',
+        },
+        'access-token',
+      )
       .addTag('Health')
+      .addTag('Auth')
+      .addTag('Users')
       .addTag('Teams')
       .addTag('Players')
       .addTag('Matches')
+      .addTag('News')
       .addTag('Crawler')
       .build(),
   );

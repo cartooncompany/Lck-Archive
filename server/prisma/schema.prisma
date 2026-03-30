@@ -24,6 +24,11 @@ enum MatchStatus {
   CANCELED
 }
 
+enum NewsSource {
+  LOLESPORTS
+  NAVER_ESPORTS
+}
+
 model Team {
   id              String   @id @default(cuid())
   name            String
@@ -46,9 +51,25 @@ model Team {
   awayMatches    Match[]                  @relation("AwayTeam")
   wonMatches     Match[]                  @relation("WinnerTeam")
   participations MatchPlayerParticipation[]
+  supporters     User[]                   @relation("FavoriteTeam")
 
   @@index([rank])
   @@unique([externalSource, externalId])
+}
+
+model User {
+  id               String   @id @default(cuid())
+  nickname         String
+  email            String   @unique
+  passwordHash     String
+  favoriteTeamId   String
+  refreshTokenHash String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  favoriteTeam Team @relation("FavoriteTeam", fields: [favoriteTeamId], references: [id])
+
+  @@index([favoriteTeamId])
 }
 
 model Player {
@@ -122,6 +143,25 @@ model MatchPlayerParticipation {
   @@unique([matchId, playerId])
   @@index([playerId, matchId])
   @@index([teamId, matchId])
+}
+
+model NewsArticle {
+  id              String     @id @default(cuid())
+  title           String
+  summary         String?
+  thumbnailUrl    String?
+  articleUrl      String
+  publisher       String?
+  externalSource  NewsSource
+  externalId      String
+  publishedAt     DateTime?
+  publishedAtText String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([publishedAt])
+  @@index([externalSource, publishedAt])
+  @@unique([externalSource, externalId])
 }
 
 model SyncJobLog {
