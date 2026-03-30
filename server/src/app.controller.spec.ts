@@ -14,9 +14,13 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+  describe('health', () => {
+    it('should return service metadata', () => {
+      const health = appController.getHealth();
+
+      expect(health.service).toBe('LCK Archive API');
+      expect(health.version).toBe('0.1.0');
+      expect(health.timestamp).toBeDefined();
     });
   });
 });
