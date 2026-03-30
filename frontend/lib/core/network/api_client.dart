@@ -4,4 +4,10 @@ abstract interface class ApiClient {
     Map<String, dynamic>? queryParameters,
     required T Function(dynamic data) decoder,
   });
+
+  Future<void> post(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+  });
 }

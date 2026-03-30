@@ -35,6 +35,25 @@ class DioApiClient implements ApiClient {
     }
   }
 
+  @override
+  Future<void> post(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    try {
+      await _dio.post<dynamic>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+      );
+    } on DioException catch (error) {
+      throw AppFailure(_messageFromDio(error));
+    } catch (_) {
+      throw const AppFailure('API 요청 처리 중 오류가 발생했습니다.');
+    }
+  }
+
   String _messageFromDio(DioException error) {
     final data = error.response?.data;
     if (data is Map<String, dynamic>) {
