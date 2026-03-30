@@ -12,6 +12,7 @@ class PlayerProfile {
     required this.keyStats,
     required this.recentAppearances,
     required this.teamColor,
+    this.profileImageUrl,
     this.realName,
     this.nationality,
     this.birthDate,
@@ -27,6 +28,7 @@ class PlayerProfile {
   final Map<String, String> keyStats;
   final List<PlayerMatchAppearance> recentAppearances;
   final Color teamColor;
+  final String? profileImageUrl;
   final String? realName;
   final String? nationality;
   final DateTime? birthDate;
@@ -42,6 +44,7 @@ class PlayerProfile {
     Map<String, String>? keyStats,
     List<PlayerMatchAppearance>? recentAppearances,
     Color? teamColor,
+    String? profileImageUrl,
     String? realName,
     String? nationality,
     DateTime? birthDate,
@@ -57,6 +60,7 @@ class PlayerProfile {
       keyStats: keyStats ?? this.keyStats,
       recentAppearances: recentAppearances ?? this.recentAppearances,
       teamColor: teamColor ?? this.teamColor,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       realName: realName ?? this.realName,
       nationality: nationality ?? this.nationality,
       birthDate: birthDate ?? this.birthDate,

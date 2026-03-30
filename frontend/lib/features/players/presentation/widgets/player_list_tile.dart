@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/models/player_profile.dart';
+import '../../../../shared/widgets/player_avatar.dart';
 
 class PlayerListTile extends StatelessWidget {
   const PlayerListTile({required this.player, required this.onTap, super.key});
@@ -23,10 +24,11 @@ class PlayerListTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CircleAvatar(
-              backgroundColor: player.teamColor.withValues(alpha: 0.16),
-              foregroundColor: player.teamColor,
-              child: Text(player.name.substring(0, 1)),
+            PlayerAvatar(
+              name: player.name,
+              profileImageUrl: player.profileImageUrl,
+              size: 40,
+              accentColor: player.teamColor,
             ),
             const SizedBox(width: 14),
             Expanded(

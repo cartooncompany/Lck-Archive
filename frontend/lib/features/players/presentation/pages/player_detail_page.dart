@@ -7,6 +7,7 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/extensions/date_extensions.dart';
 import '../../../../shared/models/player_profile.dart';
 import '../../../../shared/models/team_summary.dart';
+import '../../../../shared/widgets/player_avatar.dart';
 
 class PlayerDetailPage extends StatefulWidget {
   const PlayerDetailPage({required this.player, super.key});
@@ -23,9 +24,12 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _playerFuture ??= AppDependenciesScope.of(
-      context,
-    ).playersRepository.getPlayer(widget.player.id);
+    _playerFuture ??=
+        _shouldFetchPlayerDetail(widget.player)
+            ? AppDependenciesScope.of(
+                context,
+              ).playersRepository.getPlayer(widget.player.id)
+            : Future<PlayerProfile>.value(widget.player);
   }
 
   @override
@@ -59,21 +63,16 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          width: 72,
-                          height: 72,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: player.teamColor.withValues(alpha: 0.16),
-                            borderRadius: BorderRadius.circular(22),
-                          ),
-                          child: Text(
-                            player.name.substring(0, 1),
-                            style: TextStyle(
-                              color: player.teamColor,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 28,
-                            ),
+                        PlayerAvatar(
+                          name: player.name,
+                          profileImageUrl: player.profileImageUrl,
+                          size: 72,
+                          accentColor: player.teamColor,
+                          borderRadius: 22,
+                          textStyle: TextStyle(
+                            color: player.teamColor,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 28,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -123,7 +122,7 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 1.5,
+                  childAspectRatio: 1.35,
                 ),
                 itemBuilder: (context, index) {
                   final metric = metrics[index];
@@ -241,6 +240,12 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
     return metrics;
   }
 
+  bool _shouldFetchPlayerDetail(PlayerProfile player) {
+    return player.realName == null &&
+        player.nationality == null &&
+        player.birthDate == null;
+  }
+
   Future<void> _openTeam(BuildContext context, PlayerProfile player) async {
     final dependencies = AppDependenciesScope.of(context);
 
@@ -280,19 +285,29 @@ class _StatCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
-          Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+          const SizedBox(height: 10),
+          Expanded(
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Text(
+                value,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  height: 1.05,
+                ),
+              ),
+            ),
           ),
         ],
       ),

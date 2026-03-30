@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/models/team_summary.dart';
+import '../../../../shared/widgets/team_logo.dart';
 import '../bloc/favorite_team_controller.dart';
 
 class FavoriteTeamPickerSheet extends StatelessWidget {
@@ -104,10 +105,12 @@ class _FavoriteTeamTile extends StatelessWidget {
       tileColor: AppColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
       onTap: onTap,
-      leading: CircleAvatar(
-        backgroundColor: team.color.withValues(alpha: 0.18),
+      leading: TeamLogo(
+        initials: team.initials,
+        logoUrl: team.logoUrl,
+        size: 40,
         foregroundColor: team.color,
-        child: Text(team.initials),
+        borderRadius: 999,
       ),
       title: Text(team.name, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text('${team.rankLabel}  |  ${team.seasonRecord}'),

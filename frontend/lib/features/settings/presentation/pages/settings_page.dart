@@ -4,6 +4,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import '../../../../features/favorite_team/presentation/widgets/favorite_team_picker_sheet.dart';
+import '../../../../shared/widgets/team_logo.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -42,10 +43,12 @@ class SettingsPage extends StatelessWidget {
                   horizontal: 18,
                   vertical: 8,
                 ),
-                leading: CircleAvatar(
-                  backgroundColor: favoriteTeam.color.withValues(alpha: 0.18),
+                leading: TeamLogo(
+                  initials: favoriteTeam.initials,
+                  logoUrl: favoriteTeam.logoUrl,
+                  size: 40,
                   foregroundColor: favoriteTeam.color,
-                  child: Text(favoriteTeam.initials),
+                  borderRadius: 999,
                 ),
                 title: const Text('응원팀 변경'),
                 subtitle: Text('현재 ${favoriteTeam.name} 선택됨'),

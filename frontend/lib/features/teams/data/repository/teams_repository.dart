@@ -137,6 +137,7 @@ class TeamsRepository {
       recentForm: recentForm ?? fallback?.recentForm ?? const [],
       recentMatches: resolvedRecentMatches,
       color: fallback?.color ?? _fallbackColor(dto.shortName),
+      logoUrl: dto.logoUrl ?? fallback?.logoUrl,
     );
   }
 

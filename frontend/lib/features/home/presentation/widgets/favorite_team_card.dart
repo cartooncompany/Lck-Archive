@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/models/team_summary.dart';
+import '../../../../shared/widgets/team_logo.dart';
 import '../../../matches/presentation/widgets/form_strip.dart';
 
 class FavoriteTeamCard extends StatelessWidget {
@@ -33,20 +34,16 @@ class FavoriteTeamCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.white24),
-                  ),
-                  child: Text(
-                    team.initials,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                TeamLogo(
+                  initials: team.initials,
+                  logoUrl: team.logoUrl,
+                  size: 54,
+                  foregroundColor: Colors.white,
+                  borderColor: Colors.white24,
+                  borderRadius: 18,
+                  textStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
                   ),
                 ),
                 const Spacer(),
