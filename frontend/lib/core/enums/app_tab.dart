@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum AppTab { home, teams, players, news, settings }
+enum AppTab { home, teams, players, news, myPage }
 
 extension AppTabX on AppTab {
   String get label {
@@ -13,8 +13,8 @@ extension AppTabX on AppTab {
         return '선수';
       case AppTab.news:
         return '뉴스';
-      case AppTab.settings:
-        return '설정';
+      case AppTab.myPage:
+        return '마이페이지';
     }
   }
 
@@ -28,8 +28,8 @@ extension AppTabX on AppTab {
         return Icons.person_search_rounded;
       case AppTab.news:
         return Icons.feed_rounded;
-      case AppTab.settings:
-        return Icons.settings_rounded;
+      case AppTab.myPage:
+        return Icons.person_rounded;
     }
   }
 }

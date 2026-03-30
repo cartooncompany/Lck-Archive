@@ -6,9 +6,9 @@ import '../../core/enums/app_tab.dart';
 import '../../core/constants/app_strings.dart';
 import '../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/my_page/presentation/pages/my_page_page.dart';
 import '../../features/news/presentation/pages/news_page.dart';
 import '../../features/players/presentation/pages/players_page.dart';
-import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/teams/presentation/pages/teams_page.dart';
 import 'app_bottom_nav_bar.dart';
 import 'team_logo.dart';
@@ -30,7 +30,7 @@ class _AppShellState extends State<AppShell> {
     TeamsPage(),
     PlayersPage(),
     NewsPage(),
-    SettingsPage(),
+    MyPagePage(),
   ];
 
   @override
@@ -59,7 +59,8 @@ class _AppShellState extends State<AppShell> {
   }
 
   bool _useWebNavigation(BuildContext context) {
-    return kIsWeb && MediaQuery.sizeOf(context).width >= _webNavigationBreakpoint;
+    return kIsWeb &&
+        MediaQuery.sizeOf(context).width >= _webNavigationBreakpoint;
   }
 }
 
@@ -121,9 +122,8 @@ class _WebAppShell extends StatelessWidget {
                       children: [
                         Text(
                           '응원팀',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 10),
                         Row(
@@ -142,12 +142,16 @@ class _WebAppShell extends StatelessWidget {
                                 children: [
                                   Text(
                                     favoriteTeam.name,
-                                    style: Theme.of(context).textTheme.titleMedium,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
                                     '${favoriteTeam.rankLabel}  |  ${favoriteTeam.seasonRecord}',
-                                    style: Theme.of(context).textTheme.bodyMedium
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
                                         ?.copyWith(
                                           color: AppColors.textSecondary,
                                         ),
@@ -240,9 +244,9 @@ class _WebNavItem extends StatelessWidget {
               Expanded(
                 child: Text(
                   tab.label,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: foregroundColor,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: foregroundColor),
                 ),
               ),
               if (isSelected)

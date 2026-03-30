@@ -11,18 +11,28 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('설정')),
+      body: const _SettingsContent(),
+    );
+  }
+}
+
+class _SettingsContent extends StatelessWidget {
+  const _SettingsContent();
+
+  @override
+  Widget build(BuildContext context) {
     final favoriteTeam = FavoriteTeamScope.of(context).favoriteTeam;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.screen,
-        12,
+        8,
         AppSpacing.screen,
         120,
       ),
       children: [
-        Text('설정', style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 6),
         Text(
           '응원팀과 앱 정보를 간단하게 관리합니다.',
           style: Theme.of(
