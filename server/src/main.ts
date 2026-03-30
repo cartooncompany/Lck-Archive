@@ -29,6 +29,7 @@ async function bootstrap() {
       .addTag('Teams')
       .addTag('Players')
       .addTag('Matches')
+      .addTag('Crawler')
       .build(),
   );
 
