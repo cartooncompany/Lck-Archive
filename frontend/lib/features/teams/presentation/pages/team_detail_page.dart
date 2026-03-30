@@ -7,6 +7,8 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import '../../../../shared/models/player_profile.dart';
 import '../../../../shared/models/team_summary.dart';
+import '../../../../shared/widgets/player_avatar.dart';
+import '../../../../shared/widgets/team_logo.dart';
 import '../../../matches/presentation/widgets/form_strip.dart';
 import '../../../matches/presentation/widgets/match_result_tile.dart';
 
@@ -65,19 +67,15 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          width: 64,
-                          height: 64,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: Text(
-                            team.initials,
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
+                        TeamLogo(
+                          initials: team.initials,
+                          logoUrl: team.logoUrl,
+                          size: 64,
+                          foregroundColor: Colors.white,
+                          borderColor: Colors.white24,
+                          borderRadius: 20,
+                          textStyle: Theme.of(context).textTheme.headlineSmall
+                              ?.copyWith(color: Colors.white),
                         ),
                         const Spacer(),
                         FilledButton.icon(
@@ -260,10 +258,11 @@ class _PlayerRow extends StatelessWidget {
       onTap: onTap,
       tileColor: AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      leading: CircleAvatar(
-        backgroundColor: player.teamColor.withValues(alpha: 0.16),
-        foregroundColor: player.teamColor,
-        child: Text(player.name.substring(0, 1)),
+      leading: PlayerAvatar(
+        name: player.name,
+        profileImageUrl: player.profileImageUrl,
+        size: 40,
+        accentColor: player.teamColor,
       ),
       title: Text(player.name),
       subtitle: Text('${player.position}  |  시즌 ${player.seasonMatches}경기'),

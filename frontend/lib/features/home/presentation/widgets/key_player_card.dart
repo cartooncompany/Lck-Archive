@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/models/player_profile.dart';
+import '../../../../shared/widgets/player_avatar.dart';
 
 class KeyPlayerCard extends StatelessWidget {
   const KeyPlayerCard({required this.player, required this.onTap, super.key});
@@ -28,21 +29,12 @@ class KeyPlayerCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: player.teamColor.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Text(
-                      player.name.substring(0, 1),
-                      style: TextStyle(
-                        color: player.teamColor,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
+                  PlayerAvatar(
+                    name: player.name,
+                    profileImageUrl: player.profileImageUrl,
+                    size: 42,
+                    accentColor: player.teamColor,
+                    borderRadius: 14,
                   ),
                   const Spacer(),
                   Text(

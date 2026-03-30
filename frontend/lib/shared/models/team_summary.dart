@@ -14,6 +14,7 @@ class TeamSummary {
     required this.recentForm,
     required this.recentMatches,
     required this.color,
+    this.logoUrl,
   });
 
   final String id;
@@ -26,6 +27,7 @@ class TeamSummary {
   final List<String> recentForm;
   final List<LckMatchResult> recentMatches;
   final Color color;
+  final String? logoUrl;
 
   TeamSummary copyWith({
     String? id,
@@ -38,6 +40,7 @@ class TeamSummary {
     List<String>? recentForm,
     List<LckMatchResult>? recentMatches,
     Color? color,
+    String? logoUrl,
   }) {
     return TeamSummary(
       id: id ?? this.id,
@@ -50,6 +53,7 @@ class TeamSummary {
       recentForm: recentForm ?? this.recentForm,
       recentMatches: recentMatches ?? this.recentMatches,
       color: color ?? this.color,
+      logoUrl: logoUrl ?? this.logoUrl,
     );
   }
 

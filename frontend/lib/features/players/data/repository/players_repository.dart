@@ -156,6 +156,7 @@ class PlayersRepository {
           fallbackTeam?.color ??
           fallbackPlayer?.teamColor ??
           _fallbackColor(dto.team?.shortName ?? dto.name),
+      profileImageUrl: dto.profileImageUrl ?? fallbackPlayer?.profileImageUrl,
     );
   }
 

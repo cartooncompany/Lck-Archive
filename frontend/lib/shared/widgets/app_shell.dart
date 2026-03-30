@@ -11,6 +11,7 @@ import '../../features/players/presentation/pages/players_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/teams/presentation/pages/teams_page.dart';
 import 'app_bottom_nav_bar.dart';
+import 'team_logo.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -124,17 +125,37 @@ class _WebAppShell extends StatelessWidget {
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          favoriteTeam.name,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${favoriteTeam.rankLabel}  |  ${favoriteTeam.seasonRecord}',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            TeamLogo(
+                              initials: favoriteTeam.initials,
+                              logoUrl: favoriteTeam.logoUrl,
+                              size: 40,
+                              foregroundColor: favoriteTeam.color,
+                              borderRadius: 14,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    favoriteTeam.name,
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${favoriteTeam.rankLabel}  |  ${favoriteTeam.seasonRecord}',
+                                    style: Theme.of(context).textTheme.bodyMedium
+                                        ?.copyWith(
+                                          color: AppColors.textSecondary,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
