@@ -1,11 +1,11 @@
 {
-    "name": "frontend",
-    "short_name": "frontend",
+    "name": "LCK-Archive",
+    "short_name": "LCK-Archive",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#2E2540",
+    "theme_color": "#2E2540",
+    "description": "LCK-Archive",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
