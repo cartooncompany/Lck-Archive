@@ -31,11 +31,7 @@ class _PlayersPageState extends State<PlayersPage> {
   @override
   Widget build(BuildContext context) {
     final filteredPlayers = MockLckData.players.where((player) {
-      final keyword = _query.toLowerCase();
-      final matchesQuery =
-          keyword.isEmpty ||
-          player.name.toLowerCase().contains(keyword) ||
-          player.teamName.toLowerCase().contains(keyword);
+      final matchesQuery = _matchesPlayerQuery(player, _query);
       final matchesPosition =
           _selectedPosition == 'ALL' || player.position == _selectedPosition;
       return matchesQuery && matchesPosition;
@@ -95,5 +91,34 @@ class _PlayersPageState extends State<PlayersPage> {
 
   void _openPlayer(BuildContext context, PlayerProfile player) {
     Navigator.of(context).pushNamed(AppRouter.playerDetail, arguments: player);
+  }
+
+  bool _matchesPlayerQuery(PlayerProfile player, String rawQuery) {
+    final keyword = rawQuery.trim().toLowerCase();
+    if (keyword.isEmpty) {
+      return true;
+    }
+
+    final matchesName = player.name.toLowerCase().contains(keyword);
+    return matchesName || _matchesTeamKeyword(player.teamName, keyword);
+  }
+
+  bool _matchesTeamKeyword(String teamName, String keyword) {
+    final normalizedTeamName = teamName.toLowerCase();
+    if (normalizedTeamName.startsWith(keyword)) {
+      return true;
+    }
+
+    final words = normalizedTeamName
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((word) => word.isNotEmpty)
+        .toList();
+
+    if (words.any((word) => word.startsWith(keyword))) {
+      return true;
+    }
+
+    final initials = words.map((word) => word[0]).join();
+    return initials.startsWith(keyword);
   }
 }
