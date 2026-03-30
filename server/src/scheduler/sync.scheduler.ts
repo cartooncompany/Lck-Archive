@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { LckSyncJob } from '../crawler/lck/jobs/lck-sync.job';
+import { NewsSyncJob } from '../crawler/news/jobs/news-sync.job';
 
 @Injectable()
 export class SyncScheduler {
@@ -10,6 +11,7 @@ export class SyncScheduler {
   constructor(
     private readonly configService: ConfigService,
     private readonly lckSyncJob: LckSyncJob,
+    private readonly newsSyncJob: NewsSyncJob,
   ) {}
 
   @Cron(CronExpression.EVERY_6_HOURS, {
@@ -29,5 +31,22 @@ export class SyncScheduler {
     this.logger.log(
       `LCK sync finished. teams=${result.teams}, players=${result.players}, matches=${result.matches}`,
     );
+  }
+
+  @Cron(CronExpression.EVERY_HOUR, {
+    name: 'news-sync',
+    timeZone: 'Asia/Seoul',
+  })
+  async handleNewsSync(): Promise<void> {
+    const enabled =
+      this.configService.get<string>('NEWS_SYNC_ENABLED') === 'true';
+
+    if (!enabled) {
+      return;
+    }
+
+    const result = await this.newsSyncJob.sync();
+
+    this.logger.log(`News sync finished. articles=${result.newsArticles}`);
   }
 }

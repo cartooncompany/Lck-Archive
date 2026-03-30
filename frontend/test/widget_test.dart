@@ -11,12 +11,20 @@ void main() {
     expect(find.text('LCK Archive'), findsOneWidget);
     expect(find.text('홈'), findsOneWidget);
     expect(find.text('T1'), findsWidgets);
+    expect(find.text('예정 경기 일정'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('예정 경기 일정'),
+      find.text('팀 순위'),
       200,
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
-    expect(find.text('예정 경기 일정'), findsOneWidget);
+    expect(find.text('팀 순위'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('더 보기'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('더 보기'), findsOneWidget);
   });
 }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/network/media_url_resolver.dart';
+
 class TeamLogo extends StatelessWidget {
   static const Color defaultBackgroundColor = Colors.black;
 
@@ -28,6 +30,8 @@ class TeamLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedLogoUrl = resolveMediaUrl(logoUrl);
+
     return Container(
       width: size,
       height: size,
@@ -38,11 +42,11 @@ class TeamLogo extends StatelessWidget {
         border: borderColor == null ? null : Border.all(color: borderColor!),
       ),
       clipBehavior: Clip.antiAlias,
-      child: _hasLogo
+      child: resolvedLogoUrl != null
           ? Padding(
               padding: EdgeInsets.all(padding),
               child: Image.network(
-                logoUrl!,
+                resolvedLogoUrl,
                 fit: BoxFit.contain,
                 filterQuality: FilterQuality.medium,
                 errorBuilder: (context, error, stackTrace) => _FallbackLabel(
@@ -59,8 +63,6 @@ class TeamLogo extends StatelessWidget {
             ),
     );
   }
-
-  bool get _hasLogo => logoUrl != null && logoUrl!.trim().isNotEmpty;
 }
 
 class _FallbackLabel extends StatelessWidget {

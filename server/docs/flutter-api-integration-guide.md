@@ -580,12 +580,13 @@ final scheduledAt = DateTime.parse(json['scheduledAt'] as String);
 | 선수 상세 기본 정보    | `GET /players/:id`                        | 실명, 국적, 생년월일까지 가능        |
 | 경기 목록 화면 추가 시 | `GET /matches`                            | 팀/시즌/상태/기간/정렬 필터 가능     |
 | 경기 상세 화면 추가 시 | `GET /matches/:id`                        | 출전 선수 목록 포함                  |
+| 홈 뉴스                | `GET /news`                               | `source`, `keyword` 필터 지원        |
 
 ### 5.2 현재 API만으로는 부족한 화면 데이터
 
 | 화면/영역                  | 현재 API 상태   | 대응 방법                                           |
 | -------------------------- | --------------- | --------------------------------------------------- |
-| 홈 뉴스                    | API 없음        | mock 유지 또는 뉴스 API 추가 필요                   |
+| 홈 뉴스                    | `GET /news` 지원 | 정렬/필터 조건만 화면 요구사항에 맞게 조정하면 됨 |
 | 홈 주요 선수의 상세 지표   | API 없음        | `recentMatchCount` 정도만 활용하거나 API 추가 필요  |
 | 선수 목록의 팀명 검색      | 직접 지원 안 함 | `teamId` 선택 UI로 대체하거나 백엔드 검색 확장 필요 |
 | 선수 상세의 `keyStats`     | API 없음        | UI 축소 또는 통계 API 추가 필요                     |
@@ -610,7 +611,7 @@ final scheduledAt = DateTime.parse(json['scheduledAt'] as String);
 
 - `GET /players/:id/matches`
 - `GET /teams/:id/players`
-- `GET /news` 또는 `GET /teams/:id/news`
+- `GET /teams/:id/news`
 - 선수 통계 전용 API
 - 팀 소개/브랜딩 정보 API
 
