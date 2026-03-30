@@ -1,0 +1,200 @@
+import 'package:flutter/material.dart';
+
+import '../../../../app/router/app_router.dart';
+import '../../../../app/theme/app_colors.dart';
+import '../../../../core/constants/app_spacing.dart';
+import '../../../../core/utils/mock_lck_data.dart';
+import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
+import '../../../../shared/models/player_profile.dart';
+import '../../../../shared/models/team_summary.dart';
+import '../../../matches/presentation/widgets/form_strip.dart';
+import '../../../matches/presentation/widgets/match_result_tile.dart';
+
+class TeamDetailPage extends StatelessWidget {
+  const TeamDetailPage({required this.team, super.key});
+
+  final TeamSummary team;
+
+  @override
+  Widget build(BuildContext context) {
+    final favoriteController = FavoriteTeamScope.of(context);
+    final players = MockLckData.playersForTeam(team.id);
+    final isFavorite = favoriteController.favoriteTeam.id == team.id;
+
+    return Scaffold(
+      appBar: AppBar(title: Text(team.name)),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screen,
+          8,
+          AppSpacing.screen,
+          32,
+        ),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  team.color.withValues(alpha: 0.92),
+                  Color.lerp(team.color, AppColors.background, 0.72)!,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: Text(
+                        team.initials,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                    ),
+                    const Spacer(),
+                    FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.14),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => favoriteController.selectTeam(team),
+                      icon: Icon(
+                        isFavorite
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                      ),
+                      label: Text(isFavorite ? '응원팀' : '응원팀 설정'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  '${team.rank}위',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(color: Colors.white70),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  team.name,
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  team.summary,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.88),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    _InfoMetric(label: '시즌 전적', value: team.seasonRecord),
+                    const SizedBox(width: 24),
+                    _InfoMetric(label: '세트 득실', value: team.setRecord),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  '최근 5경기 흐름',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                FormStrip(form: team.recentForm),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.section),
+          Text('최근 경기 결과', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 14),
+          ...team.recentMatches.map(
+            (match) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: MatchResultTile(match: match, accentColor: team.color),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.section - 4),
+          Text('소속 선수', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 14),
+          ...players.map(
+            (player) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _PlayerRow(
+                player: player,
+                onTap: () => Navigator.of(
+                  context,
+                ).pushNamed(AppRouter.playerDetail, arguments: player),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoMetric extends StatelessWidget {
+  const _InfoMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: Colors.white70),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+        ),
+      ],
+    );
+  }
+}
+
+class _PlayerRow extends StatelessWidget {
+  const _PlayerRow({required this.player, required this.onTap});
+
+  final PlayerProfile player;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      tileColor: AppColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      leading: CircleAvatar(
+        backgroundColor: player.teamColor.withValues(alpha: 0.16),
+        foregroundColor: player.teamColor,
+        child: Text(player.name.substring(0, 1)),
+      ),
+      title: Text(player.name),
+      subtitle: Text('${player.position}  |  시즌 ${player.seasonMatches}경기'),
+      trailing: const Icon(Icons.chevron_right_rounded),
+    );
+  }
+}
