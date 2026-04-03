@@ -103,14 +103,17 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
                 const SizedBox(height: 8),
                 Text(
                   '오늘부터 1주 동안 열리는 경기를 날짜별로 모아서 볼 수 있습니다.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 ...dayEntries.expand((entry) {
                   final sectionChildren = <Widget>[
-                    _ScheduleDayHeader(date: entry.key, count: entry.value.length),
+                    _ScheduleDayHeader(
+                      date: entry.key,
+                      count: entry.value.length,
+                    ),
                     const SizedBox(height: 12),
                   ];
 
@@ -207,7 +210,9 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
     }
 
     for (final entry in grouped.values) {
-      entry.sort((left, right) => left.scheduledAt.compareTo(right.scheduledAt));
+      entry.sort(
+        (left, right) => left.scheduledAt.compareTo(right.scheduledAt),
+      );
     }
 
     return grouped;
@@ -215,10 +220,7 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
 }
 
 class _ScheduleDayHeader extends StatelessWidget {
-  const _ScheduleDayHeader({
-    required this.date,
-    required this.count,
-  });
+  const _ScheduleDayHeader({required this.date, required this.count});
 
   final DateTime date;
   final int count;
@@ -274,10 +276,7 @@ class _ScheduleDayHeader extends StatelessWidget {
 }
 
 class _ScheduleMessageCard extends StatelessWidget {
-  const _ScheduleMessageCard({
-    required this.title,
-    required this.body,
-  });
+  const _ScheduleMessageCard({required this.title, required this.body});
 
   final String title;
   final String body;

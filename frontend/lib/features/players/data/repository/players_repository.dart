@@ -51,7 +51,9 @@ class PlayersRepository {
         for (final dto in response.items) dto.id: _mapSummary(dto),
       };
 
-      if (teamId == null && normalizedKeyword != null && normalizedKeyword.isNotEmpty) {
+      if (teamId == null &&
+          normalizedKeyword != null &&
+          normalizedKeyword.isNotEmpty) {
         final matchingTeams = await _teamsRepository.getTeams(
           keyword: normalizedKeyword,
           limit: limit,
@@ -77,7 +79,7 @@ class PlayersRepository {
             return teamComparison;
           }
           return left.name.compareTo(right.name);
-      });
+        });
       _rememberPlayers(players);
       await _persistCache();
       return players;
@@ -162,7 +164,10 @@ class PlayersRepository {
       shortName: dto.team?.shortName,
     );
     final teamName =
-        dto.team?.name ?? fallbackPlayer?.teamName ?? dto.team?.shortName ?? '소속 팀 미상';
+        dto.team?.name ??
+        fallbackPlayer?.teamName ??
+        dto.team?.shortName ??
+        '소속 팀 미상';
 
     return PlayerProfile(
       id: dto.id,
@@ -338,14 +343,13 @@ class PlayersRepository {
           player.name.toLowerCase().contains(normalizedKeyword) ||
           _matchesTeamNameText(player.teamName, normalizedKeyword);
       return matchesTeam && matchesPosition && matchesKeyword;
-    }).toList()
-      ..sort((left, right) {
-        final teamComparison = left.teamName.compareTo(right.teamName);
-        if (teamComparison != 0) {
-          return teamComparison;
-        }
-        return left.name.compareTo(right.name);
-      });
+    }).toList()..sort((left, right) {
+      final teamComparison = left.teamName.compareTo(right.teamName);
+      if (teamComparison != 0) {
+        return teamComparison;
+      }
+      return left.name.compareTo(right.name);
+    });
   }
 
   Map<String, dynamic> _playerToJson(PlayerProfile player) {

@@ -81,9 +81,9 @@ class _TeamsPageState extends State<TeamsPage> {
   }
 
   Future<List<TeamSummary>> _loadTeams() {
-    return AppDependenciesScope.of(context).teamsRepository.getTeams(
-      keyword: _query,
-    );
+    return AppDependenciesScope.of(
+      context,
+    ).teamsRepository.getTeams(keyword: _query);
   }
 
   void _openTeam(BuildContext context, TeamSummary team) {

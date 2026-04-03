@@ -26,8 +26,5 @@ Future<void> saveMatchPredictions(
   LocalStorage storage,
   Map<String, String> predictions,
 ) async {
-  await storage.writeString(
-    matchPredictionStorageKey,
-    jsonEncode(predictions),
-  );
+  await storage.writeString(matchPredictionStorageKey, jsonEncode(predictions));
 }

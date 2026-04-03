@@ -121,7 +121,9 @@ class FavoriteTeamCard extends StatelessWidget {
                               children: [
                                 Text(
                                   team.name,
-                                  style: Theme.of(context).textTheme.headlineLarge
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineLarge
                                       ?.copyWith(
                                         fontSize: 48,
                                         height: 0.92,
@@ -134,12 +136,13 @@ class FavoriteTeamCard extends StatelessWidget {
                                   team.summary,
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodyLarge?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.88),
-                                    height: 1.55,
-                                  ),
+                                  style: Theme.of(context).textTheme.bodyLarge
+                                      ?.copyWith(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.88,
+                                        ),
+                                        height: 1.55,
+                                      ),
                                 ),
                               ],
                             ),
@@ -270,11 +273,7 @@ class FavoriteTeamCard extends StatelessWidget {
 }
 
 class _HeroStatChip extends StatelessWidget {
-  const _HeroStatChip({
-    required this.label,
-    required this.value,
-    this.caption,
-  });
+  const _HeroStatChip({required this.label, required this.value, this.caption});
 
   final String label;
   final String value;

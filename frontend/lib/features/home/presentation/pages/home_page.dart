@@ -128,8 +128,10 @@ class _HomePageState extends State<HomePage> {
                       child: ScheduledMatchTile(
                         match: match,
                         predictedWinnerTeamId: _matchPredictions[match.id],
-                        onPredictWinner: (teamId) =>
-                            _handleMatchPrediction(matchId: match.id, teamId: teamId),
+                        onPredictWinner: (teamId) => _handleMatchPrediction(
+                          matchId: match.id,
+                          teamId: teamId,
+                        ),
                       ),
                     ),
                   ),
