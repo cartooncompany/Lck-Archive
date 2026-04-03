@@ -16,7 +16,6 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _savePreference = true;
 
   @override
   void dispose() {
@@ -63,6 +62,7 @@ class _LoginPageState extends State<LoginPage> {
                                     child: _LoginIntro(
                                       onBack: session.showLanding,
                                       onGuest: session.continueAsGuest,
+                                      onSignUp: session.showSignUp,
                                     ),
                                   ),
                                   const SizedBox(width: 32),
@@ -72,18 +72,15 @@ class _LoginPageState extends State<LoginPage> {
                                       emailController: _emailController,
                                       passwordController: _passwordController,
                                       obscurePassword: _obscurePassword,
-                                      savePreference: _savePreference,
+                                      isBusy: session.isBusy,
+                                      errorMessage: session.errorMessage,
                                       onTogglePassword: () {
                                         setState(() {
                                           _obscurePassword = !_obscurePassword;
                                         });
                                       },
-                                      onSavePreferenceChanged: (value) {
-                                        setState(() {
-                                          _savePreference = value;
-                                        });
-                                      },
                                       onSubmit: _submit,
+                                      onShowSignUp: session.showSignUp,
                                     ),
                                   ),
                                 ],
@@ -94,6 +91,7 @@ class _LoginPageState extends State<LoginPage> {
                                   _LoginIntro(
                                     onBack: session.showLanding,
                                     onGuest: session.continueAsGuest,
+                                    onSignUp: session.showSignUp,
                                   ),
                                   const SizedBox(height: 24),
                                   _LoginFormPanel(
@@ -101,18 +99,15 @@ class _LoginPageState extends State<LoginPage> {
                                     emailController: _emailController,
                                     passwordController: _passwordController,
                                     obscurePassword: _obscurePassword,
-                                    savePreference: _savePreference,
+                                    isBusy: session.isBusy,
+                                    errorMessage: session.errorMessage,
                                     onTogglePassword: () {
                                       setState(() {
                                         _obscurePassword = !_obscurePassword;
                                       });
                                     },
-                                    onSavePreferenceChanged: (value) {
-                                      setState(() {
-                                        _savePreference = value;
-                                      });
-                                    },
                                     onSubmit: _submit,
+                                    onShowSignUp: session.showSignUp,
                                   ),
                                 ],
                               ),
@@ -128,20 +123,40 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    SessionScope.of(context).signIn(email: _emailController.text);
+    final session = SessionScope.of(context);
+    final success = await session.signIn(
+      email: _emailController.text,
+      password: _passwordController.text,
+    );
+
+    if (success || !mounted) {
+      return;
+    }
+
+    final errorMessage = session.errorMessage;
+    if (errorMessage != null && errorMessage.isNotEmpty) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(errorMessage)));
+    }
   }
 }
 
 class _LoginIntro extends StatelessWidget {
-  const _LoginIntro({required this.onBack, required this.onGuest});
+  const _LoginIntro({
+    required this.onBack,
+    required this.onGuest,
+    required this.onSignUp,
+  });
 
   final VoidCallback onBack;
   final VoidCallback onGuest;
+  final VoidCallback onSignUp;
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +214,7 @@ class _LoginIntro extends StatelessWidget {
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: Text(
-              '응원팀 기준 개인화를 유지하려면 이메일로 진입하세요. 아직 계정이 없다면 데모처럼 게스트로 바로 들어가도 됩니다.',
+              '서버에 저장된 계정으로 로그인하면 마이페이지에서 닉네임과 이메일을 바로 확인할 수 있습니다. 리프레시 토큰으로 세션도 자동 복구됩니다.',
               style: textTheme.bodyLarge?.copyWith(
                 color: AppColors.textSecondary,
                 height: 1.6,
@@ -207,82 +222,38 @@ class _LoginIntro extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 28),
-          const _IntroPoint(
-            label: 'PERSONAL HOME',
-            body: '응원팀을 바꾸면 홈과 뉴스 구성이 같이 바뀝니다.',
-          ),
-          const SizedBox(height: 16),
-          const _IntroPoint(
-            label: 'MATCH MEMORY',
-            body: '최근 경기와 키플레이어 흐름을 같은 화면에서 연결합니다.',
-          ),
-          const SizedBox(height: 16),
-          const _IntroPoint(
-            label: 'FAST ENTRY',
-            body: '랜딩, 로그인, 메인 전환을 한 세션 컨트롤러로 정리했습니다.',
-          ),
-          const SizedBox(height: 28),
-          OutlinedButton(
-            onPressed: onGuest,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-            ),
-            child: const Text('게스트로 바로 입장'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _IntroPoint extends StatelessWidget {
-  const _IntroPoint({required this.label, required this.body});
-
-  final String label;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          margin: const EdgeInsets.only(top: 6),
-          width: 10,
-          height: 10,
-          decoration: const BoxDecoration(
-            color: AppColors.accent,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
             children: [
-              Text(
-                label,
-                style: textTheme.labelLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                  letterSpacing: 1,
+              OutlinedButton(
+                onPressed: onSignUp,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 18,
+                  ),
                 ),
+                child: const Text('회원가입'),
               ),
-              const SizedBox(height: 6),
-              Text(
-                body,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textPrimary,
-                  height: 1.55,
+              OutlinedButton(
+                onPressed: onGuest,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textPrimary,
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 18,
+                  ),
                 ),
+                child: const Text('게스트로 바로 입장'),
               ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -293,20 +264,22 @@ class _LoginFormPanel extends StatelessWidget {
     required this.emailController,
     required this.passwordController,
     required this.obscurePassword,
-    required this.savePreference,
+    required this.isBusy,
+    required this.errorMessage,
     required this.onTogglePassword,
-    required this.onSavePreferenceChanged,
     required this.onSubmit,
+    required this.onShowSignUp,
   });
 
   final GlobalKey<FormState> formKey;
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final bool obscurePassword;
-  final bool savePreference;
+  final bool isBusy;
+  final String? errorMessage;
   final VoidCallback onTogglePassword;
-  final ValueChanged<bool> onSavePreferenceChanged;
   final VoidCallback onSubmit;
+  final VoidCallback onShowSignUp;
 
   @override
   Widget build(BuildContext context) {
@@ -340,12 +313,16 @@ class _LoginFormPanel extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '간단한 데모 로그인 폼입니다. 유효성 검사를 통과하면 메인 화면으로 이동합니다.',
+                '이메일과 비밀번호를 입력하면 서버의 `/auth/login`으로 요청하고, 성공 시 토큰과 프로필을 로컬에 저장합니다.',
                 style: textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondary,
                   height: 1.55,
                 ),
               ),
+              if (errorMessage != null && errorMessage!.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                _ErrorBanner(message: errorMessage!),
+              ],
               const SizedBox(height: 22),
               TextFormField(
                 controller: emailController,
@@ -374,10 +351,10 @@ class _LoginFormPanel extends StatelessWidget {
                 autofillHints: const [AutofillHints.password],
                 decoration: InputDecoration(
                   labelText: '비밀번호',
-                  hintText: '6자 이상 입력',
+                  hintText: '8자 이상 입력',
                   prefixIcon: const Icon(Icons.lock_outline_rounded),
                   suffixIcon: IconButton(
-                    onPressed: onTogglePassword,
+                    onPressed: isBusy ? null : onTogglePassword,
                     icon: Icon(
                       obscurePassword
                           ? Icons.visibility_outlined
@@ -386,38 +363,18 @@ class _LoginFormPanel extends StatelessWidget {
                   ),
                 ),
                 validator: (value) {
-                  if ((value ?? '').length < 6) {
-                    return '비밀번호는 6자 이상이어야 합니다.';
+                  if ((value ?? '').length < 8) {
+                    return '비밀번호는 8자 이상이어야 합니다.';
                   }
                   return null;
                 },
                 onFieldSubmitted: (_) => onSubmit(),
               ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Checkbox(
-                    value: savePreference,
-                    onChanged: (value) =>
-                        onSavePreferenceChanged(value ?? false),
-                    activeColor: AppColors.accent,
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      '다음 실행에서도 응원팀 개인화 유지',
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 18),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
-                  onPressed: onSubmit,
+                  onPressed: isBusy ? null : onSubmit,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.accent,
                     foregroundColor: AppColors.background,
@@ -427,43 +384,49 @@ class _LoginFormPanel extends StatelessWidget {
                       fontSize: 15,
                     ),
                   ),
-                  child: const Text('아카이브 입장'),
+                  child: Text(isBusy ? '로그인 중...' : '아카이브 입장'),
                 ),
               ),
-              const SizedBox(height: 18),
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                  color: Colors.black.withValues(alpha: 0.12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.08),
+              const SizedBox(height: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '계정이 없나요?',
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.lightbulb_outline_rounded,
-                      color: AppColors.warning,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        '데모 흐름 점검용이라 서버 호출은 연결하지 않았습니다. 이메일과 비밀번호 형식만 확인한 뒤 바로 메인 쉘로 전환됩니다.',
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                          height: 1.55,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  TextButton(
+                    onPressed: isBusy ? null : onShowSignUp,
+                    child: const Text('회원가입'),
+                  ),
+                ],
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ErrorBanner extends StatelessWidget {
+  const _ErrorBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.danger.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.danger.withValues(alpha: 0.32)),
+      ),
+      child: Text(message),
     );
   }
 }

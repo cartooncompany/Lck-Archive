@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../core/constants/app_strings.dart';
-import '../core/utils/mock_lck_data.dart';
+import '../features/auth/presentation/bloc/session_controller.dart';
+import '../features/auth/presentation/pages/session_gate.dart';
+import '../features/auth/presentation/pages/splash_page.dart';
 import '../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
-import '../shared/models/team_summary.dart';
 import 'app_dependencies.dart';
 import 'app_dependencies_scope.dart';
 import 'router/app_router.dart';
@@ -19,6 +20,7 @@ class LckArchiveApp extends StatefulWidget {
 class _LckArchiveAppState extends State<LckArchiveApp> {
   late final Future<_AppBootstrapData> _bootstrapFuture;
   FavoriteTeamController? _favoriteTeamController;
+  SessionController? _sessionController;
 
   @override
   void initState() {
@@ -29,6 +31,7 @@ class _LckArchiveAppState extends State<LckArchiveApp> {
   @override
   void dispose() {
     _favoriteTeamController?.dispose();
+    _sessionController?.dispose();
     super.dispose();
   }
 
@@ -44,21 +47,22 @@ class _LckArchiveAppState extends State<LckArchiveApp> {
         }
 
         if (snapshot.connectionState != ConnectionState.done) {
-          return _buildApp(const _AppLoadingScreen());
+          return _buildApp(const SplashPage());
         }
 
-        final bootstrapData = snapshot.data;
-        final dependencies = bootstrapData?.dependencies;
-        _favoriteTeamController ??= FavoriteTeamController(
-          initialTeam:
-              bootstrapData?.initialFavoriteTeam ?? MockLckData.defaultFavoriteTeam,
-        );
+        final bootstrapData = snapshot.data!;
+        final dependencies = bootstrapData.dependencies;
+        _favoriteTeamController ??= bootstrapData.favoriteTeamController;
+        _sessionController ??= bootstrapData.sessionController;
 
         return AppDependenciesScope(
-          dependencies: dependencies!,
+          dependencies: dependencies,
           child: FavoriteTeamScope(
             controller: _favoriteTeamController!,
-            child: _buildApp(),
+            child: SessionScope(
+              controller: _sessionController!,
+              child: _buildApp(),
+            ),
           ),
         );
       },
@@ -70,8 +74,7 @@ class _LckArchiveAppState extends State<LckArchiveApp> {
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.dark(),
-      home: home,
-      initialRoute: home == null ? AppRouter.shell : null,
+      home: home ?? const SessionGate(),
       onGenerateRoute: home == null ? AppRouter.onGenerateRoute : null,
     );
   }
@@ -80,20 +83,18 @@ class _LckArchiveAppState extends State<LckArchiveApp> {
     final dependencies = await AppDependencies.create();
     final initialFavoriteTeam = await dependencies.teamsRepository
         .getInitialFavoriteTeam();
+    final favoriteTeamController = FavoriteTeamController(
+      initialTeam: initialFavoriteTeam,
+      onChanged: (team) =>
+          dependencies.teamsRepository.saveFavoriteTeamId(team.id),
+    );
+    final sessionController = SessionController(
+      authRepository: dependencies.authRepository,
+    );
     return _AppBootstrapData(
       dependencies: dependencies,
-      initialFavoriteTeam: initialFavoriteTeam,
-    );
-  }
-}
-
-class _AppLoadingScreen extends StatelessWidget {
-  const _AppLoadingScreen();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+      favoriteTeamController: favoriteTeamController,
+      sessionController: sessionController,
     );
   }
 }
@@ -105,16 +106,20 @@ class _AppErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text(message, textAlign: TextAlign.center)));
+    return Scaffold(
+      body: Center(child: Text(message, textAlign: TextAlign.center)),
+    );
   }
 }
 
 class _AppBootstrapData {
   const _AppBootstrapData({
     required this.dependencies,
-    required this.initialFavoriteTeam,
+    required this.favoriteTeamController,
+    required this.sessionController,
   });
 
   final AppDependencies dependencies;
-  final TeamSummary initialFavoriteTeam;
+  final FavoriteTeamController favoriteTeamController;
+  final SessionController sessionController;
 }
