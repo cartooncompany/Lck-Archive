@@ -13,6 +13,11 @@ class SharedPreferencesLocalStorage implements LocalStorage {
   }
 
   @override
+  Future<void> delete(String key) async {
+    await _preferences.remove(key);
+  }
+
+  @override
   Future<String?> readString(String key) async {
     return _preferences.getString(key);
   }

@@ -1,8 +1,13 @@
 class AppFailure implements Exception {
-  const AppFailure(this.message);
+  const AppFailure(this.message, {this.statusCode});
 
   final String message;
+  final int? statusCode;
+
+  bool get isUnauthorized => statusCode == 401;
 
   @override
-  String toString() => 'AppFailure(message: $message)';
+  String toString() {
+    return 'AppFailure(message: $message, statusCode: $statusCode)';
+  }
 }

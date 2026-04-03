@@ -27,6 +27,6 @@ class MatchesRemoteDataSource {
   }
 
   Future<void> requestLckSync() {
-    return _apiClient.post('/crawler/lck/sync');
+    return _apiClient.postVoid('/crawler/lck/sync');
   }
 }

@@ -146,16 +146,29 @@ class _FakeApiClient implements ApiClient {
   Future<T> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
     required T Function(dynamic data) decoder,
   }) {
     throw UnimplementedError();
   }
 
   @override
-  Future<void> post(
+  Future<T> post<T>(
     String path, {
     Object? data,
     Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    required T Function(dynamic data) decoder,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> postVoid(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
   }) {
     throw UnimplementedError();
   }
