@@ -136,7 +136,8 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                                     ),
                                     foregroundColor: Colors.white,
                                   ),
-                                  onPressed: () => favoriteController.selectTeam(team),
+                                  onPressed: () =>
+                                      favoriteController.selectTeam(team),
                                   icon: Icon(
                                     isFavorite
                                         ? Icons.favorite_rounded
@@ -154,7 +155,9 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                                 children: [
                                   Text(
                                     team.name,
-                                    style: Theme.of(context).textTheme.headlineLarge
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineLarge
                                         ?.copyWith(
                                           fontSize: 40,
                                           height: 0.96,
@@ -165,7 +168,9 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                                   const SizedBox(height: 10),
                                   Text(
                                     team.summary,
-                                    style: Theme.of(context).textTheme.bodyMedium
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
                                         ?.copyWith(
                                           color: Colors.white.withValues(
                                             alpha: 0.88,
@@ -226,7 +231,10 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                 ...team.recentMatches.map(
                   (match) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
-                    child: MatchResultTile(match: match, accentColor: team.color),
+                    child: MatchResultTile(
+                      match: match,
+                      accentColor: team.color,
+                    ),
                   ),
                 ),
               const SizedBox(height: AppSpacing.section - 4),
@@ -307,22 +315,22 @@ class _HeroInfoMetric extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
       ),
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: Colors.white70),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-        ),
-      ],
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Colors.white70),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ],
       ),
     );
   }

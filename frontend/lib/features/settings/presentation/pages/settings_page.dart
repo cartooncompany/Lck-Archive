@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../features/auth/presentation/bloc/session_controller.dart';
 import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import '../../../../features/favorite_team/presentation/widgets/favorite_team_picker_sheet.dart';
 import '../../../../shared/widgets/team_logo.dart';
@@ -24,6 +25,7 @@ class _SettingsContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final favoriteTeam = FavoriteTeamScope.of(context).favoriteTeam;
+    final session = SessionScope.of(context);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -34,7 +36,7 @@ class _SettingsContent extends StatelessWidget {
       ),
       children: [
         Text(
-          '응원팀과 앱 정보를 간단하게 관리합니다.',
+          '응원팀과 세션 상태를 함께 관리합니다.',
           style: Theme.of(
             context,
           ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
@@ -61,9 +63,34 @@ class _SettingsContent extends StatelessWidget {
                   borderRadius: 999,
                 ),
                 title: const Text('응원팀 변경'),
-                subtitle: Text('현재 ${favoriteTeam.name} 선택됨'),
+                subtitle: Text(
+                  session.isSignedIn
+                      ? '현재 ${favoriteTeam.name} 선택됨 · 앱 로컬 개인화 기준'
+                      : '현재 ${favoriteTeam.name} 선택됨',
+                ),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () => _showPicker(context),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 8,
+                ),
+                leading: Icon(
+                  session.isSignedIn
+                      ? Icons.logout_rounded
+                      : Icons.login_rounded,
+                ),
+                title: Text(session.isSignedIn ? '로그아웃' : '로그인 / 회원가입'),
+                subtitle: Text(
+                  session.isSignedIn
+                      ? '저장된 토큰을 삭제하고 랜딩으로 돌아갑니다.'
+                      : '서버 계정으로 내 프로필과 세션을 유지합니다.',
+                ),
+                onTap: () => session.isSignedIn
+                    ? _signOut(context, session)
+                    : _moveToLogin(context, session),
               ),
               const Divider(height: 1),
               const ListTile(
@@ -92,7 +119,9 @@ class _SettingsContent extends StatelessWidget {
               Text('개인화 안내', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 10),
               Text(
-                '응원팀을 변경하면 홈의 팀 카드, 최근 경기, 주요 선수, 관련 뉴스 노출 순서가 함께 바뀝니다.',
+                session.isSignedIn
+                    ? '응원팀을 바꾸면 홈의 팀 카드, 최근 경기, 주요 선수, 관련 뉴스 노출 순서가 로컬 기준으로 함께 바뀝니다. 현재 서버에는 응원팀 수정 API가 없어 앱 로컬 상태로 유지합니다.'
+                    : '응원팀을 변경하면 홈의 팀 카드, 최근 경기, 주요 선수, 관련 뉴스 노출 순서가 함께 바뀝니다.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -112,5 +141,17 @@ class _SettingsContent extends StatelessWidget {
       useSafeArea: true,
       builder: (_) => const FavoriteTeamPickerSheet(),
     );
+  }
+
+  Future<void> _signOut(BuildContext context, SessionController session) async {
+    final navigator = Navigator.of(context);
+    await session.signOut();
+    navigator.popUntil((route) => route.isFirst);
+  }
+
+  void _moveToLogin(BuildContext context, SessionController session) {
+    final navigator = Navigator.of(context);
+    navigator.popUntil((route) => route.isFirst);
+    session.showLogin();
   }
 }

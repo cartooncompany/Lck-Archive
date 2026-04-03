@@ -24,6 +24,8 @@ class TeamsRepository {
   Future<void>? _hydrateFuture;
 
   static const String _storageKey = 'teams_repository.cache.v1';
+  static const String _favoriteTeamStorageKey =
+      'teams_repository.favorite_team_id.v1';
 
   Future<List<TeamSummary>> getTeams({String? keyword, int limit = 100}) async {
     await _ensureHydrated();
@@ -57,18 +59,44 @@ class TeamsRepository {
 
   Future<TeamSummary> getInitialFavoriteTeam() async {
     await _ensureHydrated();
+    final savedFavoriteTeamId = await _localStorage.readString(
+      _favoriteTeamStorageKey,
+    );
+
+    if (savedFavoriteTeamId != null && savedFavoriteTeamId.trim().isNotEmpty) {
+      final cachedTeam = _teamCache[savedFavoriteTeamId];
+      if (cachedTeam != null) {
+        return cachedTeam;
+      }
+
+      try {
+        final savedTeam = await getTeam(savedFavoriteTeamId);
+        await saveFavoriteTeamId(savedTeam.id);
+        return savedTeam;
+      } catch (_) {
+        // Fall through to default selection.
+      }
+    }
+
     final teams = await getTeams();
     if (teams.isEmpty) {
       return MockLckData.defaultFavoriteTeam;
     }
 
     for (final team in teams) {
-      if (team.initials.toUpperCase() == 'T1' || team.name.toUpperCase() == 'T1') {
+      if (team.initials.toUpperCase() == 'T1' ||
+          team.name.toUpperCase() == 'T1') {
+        await saveFavoriteTeamId(team.id);
         return team;
       }
     }
 
+    await saveFavoriteTeamId(teams.first.id);
     return teams.first;
+  }
+
+  Future<void> saveFavoriteTeamId(String teamId) async {
+    await _localStorage.writeString(_favoriteTeamStorageKey, teamId);
   }
 
   Future<TeamSummary> getTeam(String id) async {
@@ -146,7 +174,8 @@ class TeamsRepository {
       name: dto.name,
       shortName: dto.shortName,
     );
-    final resolvedRecentMatches = recentMatches ?? fallback?.recentMatches ?? const [];
+    final resolvedRecentMatches =
+        recentMatches ?? fallback?.recentMatches ?? const [];
 
     return TeamSummary(
       id: dto.id,
@@ -155,8 +184,7 @@ class TeamsRepository {
       rank: dto.rank ?? fallback?.rank ?? 0,
       seasonRecord: '${dto.wins}-${dto.losses}',
       setRecord: _formatDifferential(dto.setDifferential),
-      summary:
-          fallback?.summary ?? '${dto.name}의 최근 경기 흐름과 시즌 기록을 확인할 수 있습니다.',
+      summary: fallback?.summary ?? '${dto.name}의 최근 경기 흐름과 시즌 기록을 확인할 수 있습니다.',
       recentForm: recentForm ?? fallback?.recentForm ?? const [],
       recentMatches: resolvedRecentMatches,
       color: fallback?.color ?? _fallbackColor(dto.shortName),
@@ -273,14 +301,13 @@ class TeamsRepository {
       }
       return team.name.toLowerCase().contains(normalizedKeyword) ||
           team.initials.toLowerCase().contains(normalizedKeyword);
-    }).toList()
-      ..sort((left, right) {
-        final rankComparison = left.rank.compareTo(right.rank);
-        if (rankComparison != 0) {
-          return rankComparison;
-        }
-        return left.name.compareTo(right.name);
-      });
+    }).toList()..sort((left, right) {
+      final rankComparison = left.rank.compareTo(right.rank);
+      if (rankComparison != 0) {
+        return rankComparison;
+      }
+      return left.name.compareTo(right.name);
+    });
   }
 
   Map<String, dynamic> _teamToJson(TeamSummary team) {
@@ -310,16 +337,18 @@ class TeamsRepository {
   }
 
   TeamSummary _teamFromJson(Map<String, dynamic> json) {
-    final recentForm = (json['recentForm'] as List<dynamic>? ?? const <dynamic>[])
-        .map((item) => item.toString())
-        .toList(growable: false);
+    final recentForm =
+        (json['recentForm'] as List<dynamic>? ?? const <dynamic>[])
+            .map((item) => item.toString())
+            .toList(growable: false);
     final recentMatches =
         (json['recentMatches'] as List<dynamic>? ?? const <dynamic>[])
             .whereType<Map<String, dynamic>>()
             .map(
               (item) => LckMatchResult(
                 opponent: item['opponent']?.toString() ?? '',
-                playedAt: DateTime.tryParse(item['playedAt']?.toString() ?? '') ??
+                playedAt:
+                    DateTime.tryParse(item['playedAt']?.toString() ?? '') ??
                     DateTime.fromMillisecondsSinceEpoch(0),
                 outcome: item['outcome']?.toString() ?? '',
                 score: item['score']?.toString() ?? '',
