@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/error/app_failure.dart';
+import '../../../../core/storage/local_storage.dart';
 import '../../../../core/utils/mock_lck_data.dart';
 import '../../../../shared/models/lck_match_result.dart';
 import '../../../../shared/models/team_summary.dart';
@@ -9,13 +12,24 @@ import '../dto/team_match_dto.dart';
 import '../dto/team_summary_dto.dart';
 
 class TeamsRepository {
-  TeamsRepository({required TeamsRemoteDataSource remoteDataSource})
-    : _remoteDataSource = remoteDataSource;
+  TeamsRepository({
+    required TeamsRemoteDataSource remoteDataSource,
+    required LocalStorage localStorage,
+  }) : _remoteDataSource = remoteDataSource,
+       _localStorage = localStorage;
 
   final TeamsRemoteDataSource _remoteDataSource;
+  final LocalStorage _localStorage;
   final Map<String, TeamSummary> _teamCache = <String, TeamSummary>{};
+  Future<void>? _hydrateFuture;
+
+  static const String _storageKey = 'teams_repository.cache.v1';
+  static const String _favoriteTeamStorageKey =
+      'teams_repository.favorite_team_id.v1';
 
   Future<List<TeamSummary>> getTeams({String? keyword, int limit = 100}) async {
+    await _ensureHydrated();
+
     try {
       final response = await _remoteDataSource.getTeams(
         keyword: keyword,
@@ -23,8 +37,13 @@ class TeamsRepository {
       );
       final teams = response.items.map(_mapSummary).toList();
       _rememberTeams(teams);
+      await _persistCache();
       return teams;
     } catch (_) {
+      final cachedTeams = _cachedTeams(keyword: keyword);
+      if (cachedTeams.isNotEmpty) {
+        return cachedTeams;
+      }
       final fallback = MockLckData.teams.where((team) {
         final normalizedKeyword = keyword?.trim().toLowerCase() ?? '';
         if (normalizedKeyword.isEmpty) {
@@ -39,21 +58,50 @@ class TeamsRepository {
   }
 
   Future<TeamSummary> getInitialFavoriteTeam() async {
+    await _ensureHydrated();
+    final savedFavoriteTeamId = await _localStorage.readString(
+      _favoriteTeamStorageKey,
+    );
+
+    if (savedFavoriteTeamId != null && savedFavoriteTeamId.trim().isNotEmpty) {
+      final cachedTeam = _teamCache[savedFavoriteTeamId];
+      if (cachedTeam != null) {
+        return cachedTeam;
+      }
+
+      try {
+        final savedTeam = await getTeam(savedFavoriteTeamId);
+        await saveFavoriteTeamId(savedTeam.id);
+        return savedTeam;
+      } catch (_) {
+        // Fall through to default selection.
+      }
+    }
+
     final teams = await getTeams();
     if (teams.isEmpty) {
       return MockLckData.defaultFavoriteTeam;
     }
 
     for (final team in teams) {
-      if (team.initials.toUpperCase() == 'T1' || team.name.toUpperCase() == 'T1') {
+      if (team.initials.toUpperCase() == 'T1' ||
+          team.name.toUpperCase() == 'T1') {
+        await saveFavoriteTeamId(team.id);
         return team;
       }
     }
 
+    await saveFavoriteTeamId(teams.first.id);
     return teams.first;
   }
 
+  Future<void> saveFavoriteTeamId(String teamId) async {
+    await _localStorage.writeString(_favoriteTeamStorageKey, teamId);
+  }
+
   Future<TeamSummary> getTeam(String id) async {
+    await _ensureHydrated();
+
     try {
       final detail = await _remoteDataSource.getTeamDetail(id);
       final matches = await _remoteDataSource.getTeamMatches(
@@ -69,6 +117,7 @@ class TeamsRepository {
             .toList(),
       );
       _teamCache[team.id] = team;
+      await _persistCache();
       return team;
     } catch (_) {
       final cachedTeam = _teamCache[id];
@@ -86,6 +135,8 @@ class TeamsRepository {
   }
 
   Future<TeamSummary?> findTeamByTag(String tag) async {
+    await _ensureHydrated();
+
     final normalizedTag = tag.trim().toLowerCase();
     if (normalizedTag.isEmpty) {
       return null;
@@ -123,7 +174,8 @@ class TeamsRepository {
       name: dto.name,
       shortName: dto.shortName,
     );
-    final resolvedRecentMatches = recentMatches ?? fallback?.recentMatches ?? const [];
+    final resolvedRecentMatches =
+        recentMatches ?? fallback?.recentMatches ?? const [];
 
     return TeamSummary(
       id: dto.id,
@@ -132,8 +184,7 @@ class TeamsRepository {
       rank: dto.rank ?? fallback?.rank ?? 0,
       seasonRecord: '${dto.wins}-${dto.losses}',
       setRecord: _formatDifferential(dto.setDifferential),
-      summary:
-          fallback?.summary ?? '${dto.name}의 최근 경기 흐름과 시즌 기록을 확인할 수 있습니다.',
+      summary: fallback?.summary ?? '${dto.name}의 최근 경기 흐름과 시즌 기록을 확인할 수 있습니다.',
       recentForm: recentForm ?? fallback?.recentForm ?? const [],
       recentMatches: resolvedRecentMatches,
       color: fallback?.color ?? _fallbackColor(dto.shortName),
@@ -201,5 +252,123 @@ class TeamsRepository {
     ];
     final index = seed.codeUnits.fold<int>(0, (sum, value) => sum + value);
     return palette[index % palette.length];
+  }
+
+  Future<void> _ensureHydrated() {
+    return _hydrateFuture ??= _hydrateCache();
+  }
+
+  Future<void> _hydrateCache() async {
+    try {
+      final rawValue = await _localStorage.readString(_storageKey);
+      if (rawValue == null || rawValue.isEmpty) {
+        return;
+      }
+
+      final decoded = jsonDecode(rawValue);
+      if (decoded is! List) {
+        return;
+      }
+
+      for (final item in decoded) {
+        if (item is! Map<String, dynamic>) {
+          continue;
+        }
+        final team = _teamFromJson(item);
+        _teamCache[team.id] = team;
+      }
+    } catch (_) {
+      return;
+    }
+  }
+
+  Future<void> _persistCache() async {
+    try {
+      final serialized = jsonEncode(
+        _teamCache.values.map(_teamToJson).toList(growable: false),
+      );
+      await _localStorage.writeString(_storageKey, serialized);
+    } catch (_) {
+      return;
+    }
+  }
+
+  List<TeamSummary> _cachedTeams({String? keyword}) {
+    final normalizedKeyword = keyword?.trim().toLowerCase() ?? '';
+    return _teamCache.values.where((team) {
+      if (normalizedKeyword.isEmpty) {
+        return true;
+      }
+      return team.name.toLowerCase().contains(normalizedKeyword) ||
+          team.initials.toLowerCase().contains(normalizedKeyword);
+    }).toList()..sort((left, right) {
+      final rankComparison = left.rank.compareTo(right.rank);
+      if (rankComparison != 0) {
+        return rankComparison;
+      }
+      return left.name.compareTo(right.name);
+    });
+  }
+
+  Map<String, dynamic> _teamToJson(TeamSummary team) {
+    return <String, dynamic>{
+      'id': team.id,
+      'name': team.name,
+      'initials': team.initials,
+      'rank': team.rank,
+      'seasonRecord': team.seasonRecord,
+      'setRecord': team.setRecord,
+      'summary': team.summary,
+      'recentForm': team.recentForm,
+      'recentMatches': team.recentMatches
+          .map(
+            (match) => <String, dynamic>{
+              'opponent': match.opponent,
+              'playedAt': match.playedAt.toIso8601String(),
+              'outcome': match.outcome,
+              'score': match.score,
+              'note': match.note,
+            },
+          )
+          .toList(growable: false),
+      'color': team.color.toARGB32(),
+      'logoUrl': team.logoUrl,
+    };
+  }
+
+  TeamSummary _teamFromJson(Map<String, dynamic> json) {
+    final recentForm =
+        (json['recentForm'] as List<dynamic>? ?? const <dynamic>[])
+            .map((item) => item.toString())
+            .toList(growable: false);
+    final recentMatches =
+        (json['recentMatches'] as List<dynamic>? ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(
+              (item) => LckMatchResult(
+                opponent: item['opponent']?.toString() ?? '',
+                playedAt:
+                    DateTime.tryParse(item['playedAt']?.toString() ?? '') ??
+                    DateTime.fromMillisecondsSinceEpoch(0),
+                outcome: item['outcome']?.toString() ?? '',
+                score: item['score']?.toString() ?? '',
+                note: item['note']?.toString() ?? '',
+              ),
+            )
+            .toList(growable: false);
+
+    return TeamSummary(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      initials: json['initials']?.toString() ?? '',
+      rank: (json['rank'] as num?)?.toInt() ?? 0,
+      seasonRecord: json['seasonRecord']?.toString() ?? '0-0',
+      setRecord: json['setRecord']?.toString() ?? '0',
+      summary: json['summary']?.toString() ?? '',
+      recentForm: recentForm,
+      recentMatches: recentMatches,
+      color: Color((json['color'] as num?)?.toInt() ?? 0xFFFFFFFF),
+      logoUrl: json['logoUrl']?.toString(),
+    );
   }
 }

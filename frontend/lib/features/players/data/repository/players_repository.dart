@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/error/app_failure.dart';
+import '../../../../core/storage/local_storage.dart';
 import '../../../../core/utils/mock_lck_data.dart';
 import '../../../../shared/models/player_profile.dart';
 import '../../../../shared/models/team_summary.dart';
@@ -13,12 +16,18 @@ class PlayersRepository {
   PlayersRepository({
     required PlayersRemoteDataSource remoteDataSource,
     required TeamsRepository teamsRepository,
+    required LocalStorage localStorage,
   }) : _remoteDataSource = remoteDataSource,
-       _teamsRepository = teamsRepository;
+       _teamsRepository = teamsRepository,
+       _localStorage = localStorage;
 
   final PlayersRemoteDataSource _remoteDataSource;
   final TeamsRepository _teamsRepository;
+  final LocalStorage _localStorage;
   final Map<String, PlayerProfile> _playerCache = <String, PlayerProfile>{};
+  Future<void>? _hydrateFuture;
+
+  static const String _storageKey = 'players_repository.cache.v1';
 
   Future<List<PlayerProfile>> getPlayers({
     String? keyword,
@@ -26,6 +35,8 @@ class PlayersRepository {
     String? teamId,
     int limit = 100,
   }) async {
+    await _ensureHydrated();
+
     final normalizedKeyword = keyword?.trim();
     final apiPosition = _toApiPosition(position);
 
@@ -40,7 +51,9 @@ class PlayersRepository {
         for (final dto in response.items) dto.id: _mapSummary(dto),
       };
 
-      if (teamId == null && normalizedKeyword != null && normalizedKeyword.isNotEmpty) {
+      if (teamId == null &&
+          normalizedKeyword != null &&
+          normalizedKeyword.isNotEmpty) {
         final matchingTeams = await _teamsRepository.getTeams(
           keyword: normalizedKeyword,
           limit: limit,
@@ -68,8 +81,17 @@ class PlayersRepository {
           return left.name.compareTo(right.name);
         });
       _rememberPlayers(players);
+      await _persistCache();
       return players;
     } catch (_) {
+      final cachedPlayers = _cachedPlayers(
+        keyword: normalizedKeyword,
+        position: position,
+        teamId: teamId,
+      );
+      if (cachedPlayers.isNotEmpty) {
+        return cachedPlayers;
+      }
       final fallback = _fallbackPlayers(
         keyword: normalizedKeyword,
         position: position,
@@ -81,10 +103,13 @@ class PlayersRepository {
   }
 
   Future<PlayerProfile> getPlayer(String id) async {
+    await _ensureHydrated();
+
     try {
       final detail = await _remoteDataSource.getPlayerDetail(id);
       final player = _mapDetail(detail);
       _playerCache[player.id] = player;
+      await _persistCache();
       return player;
     } catch (_) {
       final cachedPlayer = _playerCache[id];
@@ -102,6 +127,8 @@ class PlayersRepository {
   }
 
   Future<PlayerProfile?> findPlayerByTag(String tag) async {
+    await _ensureHydrated();
+
     final normalizedTag = tag.trim().toLowerCase();
     if (normalizedTag.isEmpty) {
       return null;
@@ -137,7 +164,10 @@ class PlayersRepository {
       shortName: dto.team?.shortName,
     );
     final teamName =
-        dto.team?.name ?? fallbackPlayer?.teamName ?? dto.team?.shortName ?? '소속 팀 미상';
+        dto.team?.name ??
+        fallbackPlayer?.teamName ??
+        dto.team?.shortName ??
+        '소속 팀 미상';
 
     return PlayerProfile(
       id: dto.id,
@@ -253,5 +283,144 @@ class PlayersRepository {
     ];
     final index = seed.codeUnits.fold<int>(0, (sum, value) => sum + value);
     return palette[index % palette.length];
+  }
+
+  Future<void> _ensureHydrated() {
+    return _hydrateFuture ??= _hydrateCache();
+  }
+
+  Future<void> _hydrateCache() async {
+    try {
+      final rawValue = await _localStorage.readString(_storageKey);
+      if (rawValue == null || rawValue.isEmpty) {
+        return;
+      }
+
+      final decoded = jsonDecode(rawValue);
+      if (decoded is! List) {
+        return;
+      }
+
+      for (final item in decoded) {
+        if (item is! Map<String, dynamic>) {
+          continue;
+        }
+        final player = _playerFromJson(item);
+        _playerCache[player.id] = player;
+      }
+    } catch (_) {
+      return;
+    }
+  }
+
+  Future<void> _persistCache() async {
+    try {
+      final serialized = jsonEncode(
+        _playerCache.values.map(_playerToJson).toList(growable: false),
+      );
+      await _localStorage.writeString(_storageKey, serialized);
+    } catch (_) {
+      return;
+    }
+  }
+
+  List<PlayerProfile> _cachedPlayers({
+    String? keyword,
+    String? position,
+    String? teamId,
+  }) {
+    final normalizedKeyword = keyword?.trim().toLowerCase() ?? '';
+    final normalizedPosition = position?.trim().toUpperCase() ?? 'ALL';
+
+    return _playerCache.values.where((player) {
+      final matchesTeam = teamId == null || player.teamId == teamId;
+      final matchesPosition =
+          normalizedPosition == 'ALL' ||
+          normalizedPosition.isEmpty ||
+          player.position == normalizedPosition;
+      final matchesKeyword =
+          normalizedKeyword.isEmpty ||
+          player.name.toLowerCase().contains(normalizedKeyword) ||
+          _matchesTeamNameText(player.teamName, normalizedKeyword);
+      return matchesTeam && matchesPosition && matchesKeyword;
+    }).toList()..sort((left, right) {
+      final teamComparison = left.teamName.compareTo(right.teamName);
+      if (teamComparison != 0) {
+        return teamComparison;
+      }
+      return left.name.compareTo(right.name);
+    });
+  }
+
+  Map<String, dynamic> _playerToJson(PlayerProfile player) {
+    return <String, dynamic>{
+      'id': player.id,
+      'name': player.name,
+      'teamId': player.teamId,
+      'teamName': player.teamName,
+      'position': player.position,
+      'seasonMatches': player.seasonMatches,
+      'headline': player.headline,
+      'keyStats': player.keyStats,
+      'recentAppearances': player.recentAppearances
+          .map(
+            (appearance) => <String, dynamic>{
+              'playedAt': appearance.playedAt.toIso8601String(),
+              'opponent': appearance.opponent,
+              'result': appearance.result,
+              'performance': appearance.performance,
+            },
+          )
+          .toList(growable: false),
+      'teamColor': player.teamColor.toARGB32(),
+      'profileImageUrl': player.profileImageUrl,
+      'realName': player.realName,
+      'nationality': player.nationality,
+      'birthDate': player.birthDate?.toIso8601String(),
+    };
+  }
+
+  PlayerProfile _playerFromJson(Map<String, dynamic> json) {
+    final keyStatsRaw = json['keyStats'];
+    final keyStats = <String, String>{};
+    if (keyStatsRaw is Map) {
+      for (final entry in keyStatsRaw.entries) {
+        keyStats[entry.key.toString()] = entry.value.toString();
+      }
+    }
+
+    final recentAppearances =
+        (json['recentAppearances'] as List<dynamic>? ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(
+              (item) => PlayerMatchAppearance(
+                playedAt:
+                    DateTime.tryParse(item['playedAt']?.toString() ?? '') ??
+                    DateTime.fromMillisecondsSinceEpoch(0),
+                opponent: item['opponent']?.toString() ?? '',
+                result: item['result']?.toString() ?? '',
+                performance: item['performance']?.toString() ?? '',
+              ),
+            )
+            .toList(growable: false);
+
+    return PlayerProfile(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      teamId: json['teamId']?.toString() ?? '',
+      teamName: json['teamName']?.toString() ?? '',
+      position: json['position']?.toString() ?? '',
+      seasonMatches: (json['seasonMatches'] as num?)?.toInt() ?? 0,
+      headline: json['headline']?.toString() ?? '',
+      keyStats: keyStats,
+      recentAppearances: recentAppearances,
+      teamColor: Color((json['teamColor'] as num?)?.toInt() ?? 0xFFFFFFFF),
+      profileImageUrl: json['profileImageUrl']?.toString(),
+      realName: json['realName']?.toString(),
+      nationality: json['nationality']?.toString(),
+      birthDate: json['birthDate'] == null
+          ? null
+          : DateTime.tryParse(json['birthDate'].toString()),
+    );
   }
 }

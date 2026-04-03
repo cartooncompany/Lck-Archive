@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/network/media_url_resolver.dart';
+
 class PlayerAvatar extends StatelessWidget {
   const PlayerAvatar({
     required this.name,
@@ -22,6 +24,8 @@ class PlayerAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resolvedImageUrl = resolveMediaUrl(profileImageUrl);
+
     return Container(
       width: size,
       height: size,
@@ -31,9 +35,9 @@ class PlayerAvatar extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       clipBehavior: Clip.antiAlias,
-      child: _hasImage
+      child: resolvedImageUrl != null
           ? Image.network(
-              profileImageUrl!,
+              resolvedImageUrl,
               width: size,
               height: size,
               fit: BoxFit.cover,
@@ -51,8 +55,6 @@ class PlayerAvatar extends StatelessWidget {
             ),
     );
   }
-
-  bool get _hasImage => profileImageUrl != null && profileImageUrl!.trim().isNotEmpty;
 }
 
 class _FallbackInitial extends StatelessWidget {

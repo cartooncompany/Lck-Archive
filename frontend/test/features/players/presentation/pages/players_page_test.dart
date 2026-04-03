@@ -5,10 +5,13 @@ import 'package:frontend/app/app_dependencies_scope.dart';
 import 'package:frontend/core/utils/mock_lck_data.dart';
 import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import 'package:frontend/features/players/presentation/pages/players_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   group('PlayersPage search', () {
     Future<void> pumpPlayersPage(WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final dependencies = await AppDependencies.create();
       final controller = FavoriteTeamController(
         initialTeam: MockLckData.defaultFavoriteTeam,
       );
@@ -16,7 +19,7 @@ void main() {
 
       await tester.pumpWidget(
         AppDependenciesScope(
-          dependencies: AppDependencies.create(),
+          dependencies: dependencies,
           child: FavoriteTeamScope(
             controller: controller,
             child: const MaterialApp(home: Scaffold(body: PlayersPage())),

@@ -596,57 +596,54 @@ final class MockLckData {
     NewsArticle(
       id: 'news-1',
       title: 'T1, 주말 빅매치에서 Gen.G 제압하며 선두 수성',
+      articleUrl: 'https://example.com/news/t1-geng',
+      source: 'LOLESPORTS',
       publishedAt: DateTime(2026, 3, 30),
       summary: '3세트 후반 바론 교전에서 승부를 뒤집으며 응원팀 관심도가 가장 높은 경기로 집계됐습니다.',
-      tags: const ['T1', 'Gen.G', 'Faker'],
-      sourceLabel: 'LCK Weekly',
-      link: 'https://example.com/news/t1-geng',
+      publisher: 'LCK Weekly',
     ),
     NewsArticle(
       id: 'news-2',
-      title: 'Hanwha Life Esports, 연승 구간 진입하며 상위권 압박',
+      title: 'LCK Hanwha Life Esports, 연승 구간 진입하며 상위권 압박',
+      articleUrl: 'https://example.com/news/hle-streak',
+      source: 'NAVER_ESPORTS',
       publishedAt: DateTime(2026, 3, 29),
-      summary: 'Zeka와 Viper 중심의 캐리력이 살아나며 플레이오프 경쟁 구도가 더 치열해졌습니다.',
-      tags: const ['Hanwha Life Esports', 'Zeka', 'Viper'],
-      sourceLabel: 'eSports Desk',
-      link: 'https://example.com/news/hle-streak',
+      summary: 'LCK 플레이오프 경쟁 구도에서 Zeka와 Viper 중심의 캐리력이 다시 살아났습니다.',
+      publisher: 'eSports Desk',
     ),
     NewsArticle(
       id: 'news-3',
       title: 'Dplus KIA, 정글-미드 템포 회복으로 중위권 싸움 우위',
+      articleUrl: 'https://example.com/news/dk-tempo',
+      source: 'LOLESPORTS',
       publishedAt: DateTime(2026, 3, 28),
       summary: 'ShowMaker 중심 운영이 다시 정리되면서 세트 득실 관리에도 긍정적인 흐름이 이어지고 있습니다.',
-      tags: const ['Dplus KIA', 'ShowMaker'],
-      sourceLabel: 'Match Review',
-      link: 'https://example.com/news/dk-tempo',
+      publisher: 'Match Review',
     ),
     NewsArticle(
       id: 'news-4',
-      title: 'KT Rolster, 상위권 상대전 보완이 남은 과제',
+      title: 'LCK KT Rolster, 상위권 상대전 보완이 남은 과제',
+      articleUrl: 'https://example.com/news/kt-focus',
+      source: 'NAVER_ESPORTS',
       publishedAt: DateTime(2026, 3, 27),
-      summary: 'Bdd와 Deft의 안정감은 유지되지만, 중후반 판단 개선이 필요하다는 분석이 나왔습니다.',
-      tags: const ['KT Rolster', 'Bdd', 'Deft'],
-      sourceLabel: 'Power Ranking',
-      link: 'https://example.com/news/kt-focus',
+      summary:
+          'LCK 상위권 상대전에서 Bdd와 Deft의 안정감은 유지됐지만 중후반 판단 보완이 필요하다는 분석이 나왔습니다.',
+      publisher: 'Power Ranking',
     ),
     NewsArticle(
       id: 'news-5',
       title: 'DRX, 신예 성장세로 후반 라운드 변수 팀 부상',
+      articleUrl: 'https://example.com/news/drx-rise',
+      source: 'LOLESPORTS',
       publishedAt: DateTime(2026, 3, 26),
       summary: '신규 조합 적응도가 높아지며 중하위권 경쟁에서 반등 가능성을 보이고 있습니다.',
-      tags: const ['DRX', 'Teddy', 'Rascal'],
-      sourceLabel: 'Analyst Note',
-      link: 'https://example.com/news/drx-rise',
+      publisher: 'Analyst Note',
     ),
   ];
 
   static TeamSummary get defaultFavoriteTeam => teams.first;
 
-  static TeamSummary? findTeam({
-    String? id,
-    String? name,
-    String? shortName,
-  }) {
+  static TeamSummary? findTeam({String? id, String? name, String? shortName}) {
     for (final team in teams) {
       final sameId = id != null && team.id == id;
       final sameName =
@@ -682,24 +679,27 @@ final class MockLckData {
     return newsForTeamName(team.name, shortName: team.initials);
   }
 
-  static List<NewsArticle> newsForTeamName(String teamName, {String? shortName}) {
+  static List<NewsArticle> newsForTeamName(
+    String teamName, {
+    String? shortName,
+  }) {
     final normalizedTeamName = teamName.toLowerCase();
     final normalizedShortName = shortName?.toLowerCase();
     return news
         .where(
-          (article) => article.tags.any((tag) {
-            final normalizedTag = tag.toLowerCase();
-            return normalizedTag == normalizedTeamName ||
-                normalizedTag == normalizedShortName;
-          }),
+          (article) =>
+              article.matchesKeyword(normalizedTeamName) ||
+              (normalizedShortName != null &&
+                  normalizedShortName.isNotEmpty &&
+                  article.matchesKeyword(normalizedShortName)),
         )
         .followedBy(
           news.where(
-            (article) => !article.tags.any((tag) {
-              final normalizedTag = tag.toLowerCase();
-              return normalizedTag == normalizedTeamName ||
-                  normalizedTag == normalizedShortName;
-            }),
+            (article) =>
+                !article.matchesKeyword(normalizedTeamName) &&
+                (normalizedShortName == null ||
+                    normalizedShortName.isEmpty ||
+                    !article.matchesKeyword(normalizedShortName)),
           ),
         )
         .toList();

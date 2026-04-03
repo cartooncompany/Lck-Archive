@@ -24,12 +24,11 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _playerFuture ??=
-        _shouldFetchPlayerDetail(widget.player)
-            ? AppDependenciesScope.of(
-                context,
-              ).playersRepository.getPlayer(widget.player.id)
-            : Future<PlayerProfile>.value(widget.player);
+    _playerFuture ??= _shouldFetchPlayerDetail(widget.player)
+        ? AppDependenciesScope.of(
+            context,
+          ).playersRepository.getPlayer(widget.player.id)
+        : Future<PlayerProfile>.value(widget.player);
   }
 
   @override
@@ -82,7 +81,9 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                             children: [
                               Text(
                                 player.name,
-                                style: Theme.of(context).textTheme.headlineSmall,
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.headlineSmall,
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -191,9 +192,8 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                           const SizedBox(height: 6),
                           Text(
                             appearance.performance,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: AppColors.textSecondary),
                           ),
                         ],
                       ),

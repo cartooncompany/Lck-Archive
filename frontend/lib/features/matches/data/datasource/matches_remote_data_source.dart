@@ -9,12 +9,14 @@ class MatchesRemoteDataSource {
 
   Future<PagedResponse<TeamMatchDto>> getScheduledMatches({
     required DateTime from,
+    DateTime? to,
   }) {
     return _apiClient.get(
       '/matches',
       queryParameters: {
         'status': 'SCHEDULED',
         'from': from.toUtc().toIso8601String(),
+        if (to != null) 'to': to.toUtc().toIso8601String(),
         'sortOrder': 'asc',
       },
       decoder: (data) => PagedResponse<TeamMatchDto>.fromJson(
@@ -25,6 +27,6 @@ class MatchesRemoteDataSource {
   }
 
   Future<void> requestLckSync() {
-    return _apiClient.post('/crawler/lck/sync');
+    return _apiClient.postVoid('/crawler/lck/sync');
   }
 }

@@ -10,8 +10,12 @@ class MatchesRepository {
 
   Future<List<LckScheduledMatch>> getScheduledMatches({
     required DateTime from,
+    DateTime? to,
   }) async {
-    final response = await _remoteDataSource.getScheduledMatches(from: from);
+    final response = await _remoteDataSource.getScheduledMatches(
+      from: from,
+      to: to,
+    );
     return response.items.map(_mapScheduledMatch).toList();
   }
 

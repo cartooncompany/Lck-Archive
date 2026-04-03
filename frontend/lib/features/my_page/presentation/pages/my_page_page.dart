@@ -3,18 +3,19 @@ import 'package:flutter/material.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
+import '../../../../features/auth/presentation/bloc/session_controller.dart';
 import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import '../../../../shared/widgets/team_logo.dart';
 
 class MyPagePage extends StatelessWidget {
   const MyPagePage({super.key});
 
-  static const String _defaultNickname = 'lck_archive';
-  static const String _defaultName = '게스트 사용자';
-
   @override
   Widget build(BuildContext context) {
     final favoriteTeam = FavoriteTeamScope.of(context).favoriteTeam;
+    final session = SessionScope.of(context);
+    final nickname = session.userNickname ?? '게스트 사용자';
+    final email = session.userEmail ?? '로그인하지 않음';
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -37,7 +38,9 @@ class MyPagePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '내 프로필과 응원팀 정보를 한 화면에서 확인할 수 있습니다.',
+                    session.isSignedIn
+                        ? '서버에서 가져온 내 프로필과 현재 응원팀 기준을 한 화면에서 확인합니다.'
+                        : '게스트 세션으로 둘러보는 중입니다. 로그인하면 내 프로필과 토큰 기반 세션이 저장됩니다.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: AppColors.textSecondary,
                     ),
@@ -72,11 +75,32 @@ class MyPagePage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('프로필', style: Theme.of(context).textTheme.titleMedium),
+              Row(
+                children: [
+                  Text('프로필', style: Theme.of(context).textTheme.titleMedium),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      session.isSignedIn ? '로그인됨' : '게스트',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 18),
-              const _ProfileField(label: '닉네임', value: _defaultNickname),
+              _ProfileField(label: '닉네임', value: nickname),
               const Divider(height: 32),
-              const _ProfileField(label: '이름', value: _defaultName),
+              _ProfileField(label: '이메일', value: email),
               const Divider(height: 32),
               Row(
                 children: [
@@ -107,6 +131,17 @@ class MyPagePage extends StatelessWidget {
                   ),
                 ],
               ),
+              if (!session.isSignedIn) ...[
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: session.showLogin,
+                    icon: const Icon(Icons.login_rounded),
+                    label: const Text('로그인 / 회원가입으로 전환'),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

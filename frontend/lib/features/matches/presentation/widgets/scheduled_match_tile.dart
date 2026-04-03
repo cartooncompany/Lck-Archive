@@ -6,9 +6,16 @@ import '../../../../shared/models/lck_scheduled_match.dart';
 import '../../../../shared/widgets/team_logo.dart';
 
 class ScheduledMatchTile extends StatelessWidget {
-  const ScheduledMatchTile({required this.match, super.key});
+  const ScheduledMatchTile({
+    required this.match,
+    this.predictedWinnerTeamId,
+    this.onPredictWinner,
+    super.key,
+  });
 
   final LckScheduledMatch match;
+  final String? predictedWinnerTeamId;
+  final ValueChanged<String>? onPredictWinner;
 
   @override
   Widget build(BuildContext context) {
@@ -93,6 +100,51 @@ class ScheduledMatchTile extends StatelessWidget {
               Expanded(child: _TeamSlot(team: match.awayTeam, alignEnd: true)),
             ],
           ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Text(
+                '승부 예측',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                predictedWinnerTeamId == null ? '미선택' : '선택 완료',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: predictedWinnerTeamId == null
+                      ? AppColors.textSecondary
+                      : AppColors.accent,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _PredictionButton(
+                  team: match.homeTeam,
+                  isSelected: predictedWinnerTeamId == match.homeTeam.id,
+                  onTap: onPredictWinner == null
+                      ? null
+                      : () => onPredictWinner!(match.homeTeam.id),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _PredictionButton(
+                  team: match.awayTeam,
+                  isSelected: predictedWinnerTeamId == match.awayTeam.id,
+                  onTap: onPredictWinner == null
+                      ? null
+                      : () => onPredictWinner!(match.awayTeam.id),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -150,6 +202,65 @@ class _TeamSlot extends StatelessWidget {
       children: alignEnd
           ? [Flexible(child: details), const SizedBox(width: 12), logo]
           : [logo, const SizedBox(width: 12), Flexible(child: details)],
+    );
+  }
+}
+
+class _PredictionButton extends StatelessWidget {
+  const _PredictionButton({
+    required this.team,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final LckScheduledTeam team;
+  final bool isSelected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: isSelected
+          ? AppColors.accentStrong.withValues(alpha: 0.18)
+          : AppColors.surfaceElevated,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? AppColors.accentStrong : AppColors.divider,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                team.shortName,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: isSelected
+                      ? AppColors.textPrimary
+                      : AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isSelected ? '승리 예측 중' : '승리 선택',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: isSelected
+                      ? AppColors.accent
+                      : AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -13,7 +13,9 @@ class FavoriteTeamPickerSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = FavoriteTeamScope.of(context);
     final maxHeight = MediaQuery.sizeOf(context).height * 0.8;
-    final teamsFuture = AppDependenciesScope.of(context).teamsRepository.getTeams();
+    final teamsFuture = AppDependenciesScope.of(
+      context,
+    ).teamsRepository.getTeams();
 
     return SafeArea(
       top: false,
@@ -69,9 +71,11 @@ class FavoriteTeamPickerSheet extends StatelessWidget {
                         return _FavoriteTeamTile(
                           team: team,
                           isSelected: team.id == controller.favoriteTeam.id,
-                          onTap: () {
-                            controller.selectTeam(team);
-                            Navigator.of(context).pop();
+                          onTap: () async {
+                            await controller.selectTeam(team);
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                            }
                           },
                         );
                       },

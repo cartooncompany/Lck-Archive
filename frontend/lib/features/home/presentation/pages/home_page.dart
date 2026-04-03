@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
@@ -6,18 +8,17 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/app_failure.dart';
-import '../../../../core/utils/mock_lck_data.dart';
 import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
-import '../../../../shared/models/news_article.dart';
 import '../../../../shared/models/lck_scheduled_match.dart';
-import '../../../../shared/models/player_profile.dart';
+import '../../../../shared/models/news_article.dart';
 import '../../../../shared/models/team_summary.dart';
+import '../../../../shared/utils/news_article_launcher.dart';
 import '../../../../shared/widgets/section_header.dart';
-import '../../../matches/presentation/widgets/match_result_tile.dart';
+import '../../../matches/presentation/utils/match_prediction_storage.dart';
 import '../../../matches/presentation/widgets/scheduled_match_tile.dart';
+import '../../../teams/presentation/widgets/team_list_card.dart';
 import '../widgets/favorite_team_card.dart';
 import '../widgets/headline_news_card.dart';
-import '../widgets/key_player_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -30,6 +31,19 @@ class _HomePageState extends State<HomePage> {
   Future<_HomePageData>? _homeFuture;
   String? _loadedTeamId;
   bool _isSyncingSchedule = false;
+  bool _showAllStandings = false;
+  bool _hasLoadedPredictions = false;
+  Map<String, String> _matchPredictions = <String, String>{};
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hasLoadedPredictions) {
+      return;
+    }
+    _hasLoadedPredictions = true;
+    unawaited(_loadMatchPredictions(context));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,13 +58,11 @@ class _HomePageState extends State<HomePage> {
       builder: (context, snapshot) {
         final data = snapshot.data;
         final team = data?.team ?? favoriteTeam;
-        final keyPlayers = data?.keyPlayers ?? const <PlayerProfile>[];
-        final featuredNews =
-            data?.featuredNews ??
-            MockLckData.newsForTeamName(
-              team.name,
-              shortName: team.initials,
-            ).take(3).toList();
+        final standings = data?.standings ?? const <TeamSummary>[];
+        final visibleStandings = _showAllStandings
+            ? standings
+            : standings.take(5).toList();
+        final featuredNews = data?.featuredNews ?? const <NewsArticle>[];
         final scheduledMatches =
             data?.scheduledMatches ?? const <LckScheduledMatch>[];
         final scheduleError = data?.scheduleError;
@@ -80,30 +92,10 @@ class _HomePageState extends State<HomePage> {
               onTap: () => _openTeamDetail(context, team),
             ),
             const SizedBox(height: AppSpacing.section),
-            const SectionHeader(title: '응원팀 최근 경기 결과'),
-            const SizedBox(height: 14),
-            if (snapshot.connectionState == ConnectionState.waiting &&
-                team.recentMatches.isEmpty)
-              const Center(child: CircularProgressIndicator())
-            else if (team.recentMatches.isEmpty)
-              _EmptySectionMessage(message: '최근 경기 기록이 아직 없습니다.')
-            else
-              ...team.recentMatches
-                  .take(2)
-                  .map(
-                    (match) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: MatchResultTile(
-                        match: match,
-                        accentColor: team.color,
-                      ),
-                    ),
-                  ),
-            const SizedBox(height: AppSpacing.section - 4),
             SectionHeader(
-              title: '예정 경기 일정',
-              actionLabel: '새로고침',
-              onActionTap: () => _refreshHomeData(context),
+              title: '경기 일정',
+              actionLabel: '더 보기',
+              onActionTap: () => _openSchedulePage(context),
             ),
             const SizedBox(height: 14),
             if (snapshot.connectionState == ConnectionState.waiting &&
@@ -121,7 +113,7 @@ class _HomePageState extends State<HomePage> {
               )
             else if (scheduledMatches.isEmpty)
               _EmptySectionMessage(
-                message: '표시할 예정 경기가 없습니다. 일정 데이터가 비어 있다면 동기화를 먼저 요청해 주세요.',
+                message: '표시할 경기 일정이 없습니다. 일정 데이터가 비어 있다면 동기화를 먼저 요청해 주세요.',
                 actionLabel: _isSyncingSchedule ? '동기화 요청 중...' : '동기화 요청',
                 onActionTap: _isSyncingSchedule
                     ? null
@@ -133,49 +125,77 @@ class _HomePageState extends State<HomePage> {
                   .map(
                     (match) => Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: ScheduledMatchTile(match: match),
+                      child: ScheduledMatchTile(
+                        match: match,
+                        predictedWinnerTeamId: _matchPredictions[match.id],
+                        onPredictWinner: (teamId) => _handleMatchPrediction(
+                          matchId: match.id,
+                          teamId: teamId,
+                        ),
+                      ),
                     ),
                   ),
-            const SizedBox(height: AppSpacing.section - 4),
-            const SectionHeader(title: '응원팀 주요 선수'),
+            const SizedBox(height: AppSpacing.section),
+            const SectionHeader(title: '팀 순위'),
             const SizedBox(height: 14),
             if (snapshot.connectionState == ConnectionState.waiting &&
-                keyPlayers.isEmpty)
+                standings.isEmpty)
               const SizedBox(
                 height: 120,
                 child: Center(child: CircularProgressIndicator()),
               )
-            else if (keyPlayers.isEmpty)
-              _EmptySectionMessage(message: '표시할 선수 정보가 없습니다.')
+            else if (standings.isEmpty)
+              const _EmptySectionMessage(message: '표시할 팀 순위가 없습니다.')
             else
-              SizedBox(
-                height: 208,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: keyPlayers.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 12),
-                  itemBuilder: (context, index) {
-                    final player = keyPlayers[index];
-                    return KeyPlayerCard(
-                      player: player,
-                      onTap: () => _openPlayerDetail(context, player),
-                    );
-                  },
+              ...visibleStandings.map(
+                (standingTeam) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: TeamListCard(
+                    team: standingTeam,
+                    onTap: () => _openTeamDetail(context, standingTeam),
+                  ),
+                ),
+              ),
+            if (standings.length > 5)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Center(
+                  child: TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _showAllStandings = !_showAllStandings;
+                      });
+                    },
+                    child: Text(
+                      _showAllStandings ? '접기' : '더 보기',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ),
                 ),
               ),
             const SizedBox(height: AppSpacing.section),
             const SectionHeader(title: '이번 주 주요 뉴스'),
             const SizedBox(height: 14),
-            ...featuredNews.map(
-              (article) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: HeadlineNewsCard(
-                  article: article,
-                  onTagTap: (tag) => _handleTagTap(context, tag),
-                  onSourceTap: () => _showSourceLink(context, article),
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                featuredNews.isEmpty)
+              const SizedBox(
+                height: 120,
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (featuredNews.isEmpty)
+              const _EmptySectionMessage(
+                message: '표시할 뉴스가 없습니다. 뉴스 데이터가 비어 있다면 백엔드에서 동기화를 먼저 요청해 주세요.',
+              )
+            else
+              ...featuredNews.map(
+                (article) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: HeadlineNewsCard(
+                    article: article,
+                    onTap: () => _openNewsArticle(context, article),
+                  ),
                 ),
               ),
-            ),
           ],
         );
       },
@@ -188,14 +208,31 @@ class _HomePageState extends State<HomePage> {
   ) async {
     final dependencies = AppDependenciesScope.of(context);
     final teamFuture = dependencies.teamsRepository.getTeam(favoriteTeam.id);
-    final playersFuture = dependencies.playersRepository.getPlayers(
-      teamId: favoriteTeam.id,
-    );
+    final standingsFuture = dependencies.teamsRepository.getTeams();
+    final featuredNewsFuture = dependencies.newsRepository
+        .getFeaturedNewsForTeam(
+          teamName: favoriteTeam.name,
+          shortName: favoriteTeam.initials,
+          limit: 3,
+        );
     final scheduledMatchesFuture = dependencies.matchesRepository
         .getScheduledMatches(from: DateTime.now().toUtc());
 
     final team = await teamFuture;
-    final players = await playersFuture;
+    final standings = await standingsFuture
+      ..sort((left, right) {
+        if (left.rank == 0 && right.rank == 0) {
+          return left.name.compareTo(right.name);
+        }
+        if (left.rank == 0) {
+          return 1;
+        }
+        if (right.rank == 0) {
+          return -1;
+        }
+        return left.rank.compareTo(right.rank);
+      });
+    final featuredNews = await featuredNewsFuture;
     List<LckScheduledMatch> scheduledMatches = const [];
     String? scheduleError;
 
@@ -204,16 +241,13 @@ class _HomePageState extends State<HomePage> {
     } on AppFailure catch (error) {
       scheduleError = error.message;
     } catch (_) {
-      scheduleError = '예정 경기 일정을 불러오지 못했습니다.';
+      scheduleError = '경기 일정을 불러오지 못했습니다.';
     }
 
     return _HomePageData(
       team: team,
-      keyPlayers: players.take(3).toList(),
-      featuredNews: MockLckData.newsForTeamName(
-        team.name,
-        shortName: team.initials,
-      ).take(3).toList(),
+      standings: standings,
+      featuredNews: featuredNews,
       scheduledMatches: scheduledMatches,
       scheduleError: scheduleError,
     );
@@ -231,34 +265,8 @@ class _HomePageState extends State<HomePage> {
     Navigator.of(context).pushNamed(AppRouter.teamDetail, arguments: team);
   }
 
-  void _openPlayerDetail(BuildContext context, PlayerProfile player) {
-    Navigator.of(context).pushNamed(AppRouter.playerDetail, arguments: player);
-  }
-
-  Future<void> _handleTagTap(BuildContext context, String tag) async {
-    final dependencies = AppDependenciesScope.of(context);
-    final team = await dependencies.teamsRepository.findTeamByTag(tag);
-    if (team != null) {
-      if (!context.mounted) {
-        return;
-      }
-      _openTeamDetail(context, team);
-      return;
-    }
-
-    final player = await dependencies.playersRepository.findPlayerByTag(tag);
-    if (player != null) {
-      if (!context.mounted) {
-        return;
-      }
-      _openPlayerDetail(context, player);
-    }
-  }
-
-  void _showSourceLink(BuildContext context, NewsArticle article) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('원문 링크 예시: ${article.link}')));
+  Future<void> _openNewsArticle(BuildContext context, NewsArticle article) {
+    return openNewsArticle(context, article);
   }
 
   Future<void> _requestScheduleSync(BuildContext context) async {
@@ -303,19 +311,55 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
+
+  Future<void> _loadMatchPredictions(BuildContext context) async {
+    final storage = AppDependenciesScope.of(context).localStorage;
+    final predictions = await loadMatchPredictions(storage);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _matchPredictions = predictions;
+    });
+  }
+
+  Future<void> _handleMatchPrediction({
+    required String matchId,
+    required String teamId,
+  }) async {
+    final currentTeamId = _matchPredictions[matchId];
+    final nextPredictions = <String, String>{..._matchPredictions};
+
+    if (currentTeamId == teamId) {
+      nextPredictions.remove(matchId);
+    } else {
+      nextPredictions[matchId] = teamId;
+    }
+
+    setState(() {
+      _matchPredictions = nextPredictions;
+    });
+
+    final storage = AppDependenciesScope.of(context).localStorage;
+    await saveMatchPredictions(storage, nextPredictions);
+  }
+
+  void _openSchedulePage(BuildContext context) {
+    Navigator.of(context).pushNamed(AppRouter.matchesSchedule);
+  }
 }
 
 class _HomePageData {
   const _HomePageData({
     required this.team,
-    required this.keyPlayers,
+    required this.standings,
     required this.featuredNews,
     required this.scheduledMatches,
     required this.scheduleError,
   });
 
   final TeamSummary team;
-  final List<PlayerProfile> keyPlayers;
+  final List<TeamSummary> standings;
   final List<NewsArticle> featuredNews;
   final List<LckScheduledMatch> scheduledMatches;
   final String? scheduleError;

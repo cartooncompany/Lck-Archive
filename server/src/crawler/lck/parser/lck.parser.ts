@@ -71,7 +71,7 @@ export class LckParser {
         externalId: team.id,
         name: team.name,
         shortName: team.code,
-        logoUrl: team.image ?? null,
+        logoUrl: this.normalizeMediaUrl(team.image),
         rank: ranking?.rank ?? null,
         wins: ranking?.wins ?? 0,
         losses: ranking?.losses ?? 0,
@@ -91,7 +91,7 @@ export class LckParser {
           name: player.summonerName,
           teamExternalId: team.id,
           position: this.toPlayerPosition(player.role),
-          profileImageUrl: player.image ?? null,
+          profileImageUrl: this.normalizeMediaUrl(player.image),
           realName: this.toRealName(player.firstName, player.lastName),
           nationality: null,
           birthDate: null,
@@ -310,6 +310,29 @@ export class LckParser {
         return MatchStatus.CANCELED;
       default:
         return MatchStatus.SCHEDULED;
+    }
+  }
+
+  private normalizeMediaUrl(url?: string | null): string | null {
+    const normalizedUrl = url?.trim();
+
+    if (!normalizedUrl) {
+      return null;
+    }
+
+    try {
+      const parsedUrl = new URL(normalizedUrl);
+
+      if (
+        parsedUrl.protocol === 'http:' &&
+        parsedUrl.hostname === 'static.lolesports.com'
+      ) {
+        parsedUrl.protocol = 'https:';
+      }
+
+      return parsedUrl.toString();
+    } catch {
+      return normalizedUrl;
     }
   }
 

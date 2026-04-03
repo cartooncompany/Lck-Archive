@@ -7,6 +7,9 @@ import 'package:frontend/app/theme/app_theme.dart';
 import 'package:frontend/core/network/api_client.dart';
 import 'package:frontend/core/storage/local_storage.dart';
 import 'package:frontend/core/utils/mock_lck_data.dart';
+import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
+import 'package:frontend/features/auth/data/repository/auth_repository.dart';
+import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
 import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import 'package:frontend/features/matches/data/datasource/matches_remote_data_source.dart';
 import 'package:frontend/features/matches/data/repository/matches_repository.dart';
@@ -31,6 +34,12 @@ void main() {
     );
     final apiClient = _ThrowingApiClient();
     final localStorage = _MemoryLocalStorage();
+    final authRepository = AuthRepository(
+      remoteDataSource: AuthRemoteDataSource(apiClient),
+      localStorage: localStorage,
+    );
+    final sessionController = SessionController(authRepository: authRepository)
+      ..continueAsGuest();
     final teamsRepository = TeamsRepository(
       remoteDataSource: TeamsRemoteDataSource(apiClient),
       localStorage: localStorage,
@@ -38,6 +47,7 @@ void main() {
     final dependencies = AppDependencies(
       apiClient: apiClient,
       localStorage: localStorage,
+      authRepository: authRepository,
       teamsRepository: teamsRepository,
       playersRepository: PlayersRepository(
         remoteDataSource: PlayersRemoteDataSource(apiClient),
@@ -52,16 +62,20 @@ void main() {
       ),
     );
     addTearDown(controller.dispose);
+    addTearDown(sessionController.dispose);
 
     await tester.pumpWidget(
       AppDependenciesScope(
         dependencies: dependencies,
         child: FavoriteTeamScope(
           controller: controller,
-          child: MaterialApp(
-            theme: AppTheme.dark(),
-            routes: {AppRouter.settings: (_) => const SettingsPage()},
-            home: const MyPagePage(),
+          child: SessionScope(
+            controller: sessionController,
+            child: MaterialApp(
+              theme: AppTheme.dark(),
+              routes: {AppRouter.settings: (_) => const SettingsPage()},
+              home: const MyPagePage(),
+            ),
           ),
         ),
       ),
@@ -84,16 +98,29 @@ class _ThrowingApiClient implements ApiClient {
   Future<T> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
     required T Function(dynamic data) decoder,
   }) {
     throw Exception('Network disabled in widget tests.');
   }
 
   @override
-  Future<void> post(
+  Future<T> post<T>(
     String path, {
     Object? data,
     Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    required T Function(dynamic data) decoder,
+  }) {
+    throw Exception('Network disabled in widget tests.');
+  }
+
+  @override
+  Future<void> postVoid(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
   }) {
     throw Exception('Network disabled in widget tests.');
   }
@@ -101,6 +128,11 @@ class _ThrowingApiClient implements ApiClient {
 
 class _MemoryLocalStorage implements LocalStorage {
   final Map<String, String> _values = <String, String>{};
+
+  @override
+  Future<void> delete(String key) async {
+    _values.remove(key);
+  }
 
   @override
   Future<String?> readString(String key) async {

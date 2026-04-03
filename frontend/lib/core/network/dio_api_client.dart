@@ -20,35 +20,71 @@ class DioApiClient implements ApiClient {
   Future<T> get<T>(
     String path, {
     Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
     required T Function(dynamic data) decoder,
   }) async {
     try {
       final response = await _dio.get<dynamic>(
         path,
         queryParameters: queryParameters,
+        options: Options(headers: headers),
       );
       return decoder(response.data);
     } on DioException catch (error) {
-      throw AppFailure(_messageFromDio(error));
+      throw AppFailure(
+        _messageFromDio(error),
+        statusCode: error.response?.statusCode,
+      );
     } catch (_) {
       throw const AppFailure('API 요청 처리 중 오류가 발생했습니다.');
     }
   }
 
   @override
-  Future<void> post(
+  Future<T> post<T>(
     String path, {
     Object? data,
     Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    required T Function(dynamic data) decoder,
+  }) async {
+    try {
+      final response = await _dio.post<dynamic>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: Options(headers: headers),
+      );
+      return decoder(response.data);
+    } on DioException catch (error) {
+      throw AppFailure(
+        _messageFromDio(error),
+        statusCode: error.response?.statusCode,
+      );
+    } catch (_) {
+      throw const AppFailure('API 요청 처리 중 오류가 발생했습니다.');
+    }
+  }
+
+  @override
+  Future<void> postVoid(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
   }) async {
     try {
       await _dio.post<dynamic>(
         path,
         data: data,
         queryParameters: queryParameters,
+        options: Options(headers: headers),
       );
     } on DioException catch (error) {
-      throw AppFailure(_messageFromDio(error));
+      throw AppFailure(
+        _messageFromDio(error),
+        statusCode: error.response?.statusCode,
+      );
     } catch (_) {
       throw const AppFailure('API 요청 처리 중 오류가 발생했습니다.');
     }
