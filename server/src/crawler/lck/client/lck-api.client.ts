@@ -13,16 +13,18 @@ import {
 } from '../types/lck-source.types';
 
 const DEFAULT_BASE_URL = 'https://esports-api.lolesports.com/persisted/gw';
-const DEFAULT_API_KEY = '0TvQnueqKa5mxJntVWt0w4LpLfEkrV1Ta8rQBb9Z';
 const DEFAULT_LOCALE = 'ko-KR';
 const DEFAULT_LEAGUE_ID = '98767991310872058';
 const DEFAULT_TOURNAMENT_ID = '113503260417890076';
 const DEFAULT_SCHEDULE_PAGE_LIMIT = 12;
+const MISSING_API_KEY_MESSAGE =
+  'LOLESPORTS_API_KEY is not configured. Set it in the runtime environment before running LCK sync.';
 
 @Injectable()
 export class LckApiClient {
   private readonly logger = new Logger(LckApiClient.name);
   private readonly axiosClient: AxiosInstance;
+  private readonly apiKey?: string;
   private readonly locale: string;
   private readonly leagueId: string;
   private readonly tournamentId: string;
@@ -33,8 +35,7 @@ export class LckApiClient {
       this.configService.get<string>('LOLESPORTS_API_URL') ??
       this.configService.get<string>('LCK_API_BASE_URL') ??
       DEFAULT_BASE_URL;
-    const apiKey =
-      this.configService.get<string>('LOLESPORTS_API_KEY') ?? DEFAULT_API_KEY;
+    this.apiKey = this.configService.get<string>('LOLESPORTS_API_KEY')?.trim();
 
     this.locale =
       this.configService.get<string>('LOLESPORTS_API_LOCALE') ?? DEFAULT_LOCALE;
@@ -51,13 +52,12 @@ export class LckApiClient {
     this.axiosClient = axios.create({
       baseURL: baseUrl,
       timeout: 10000,
-      headers: {
-        'x-api-key': apiKey,
-      },
+      headers: this.apiKey ? { 'x-api-key': this.apiKey } : undefined,
     });
   }
 
   async fetchSnapshot(): Promise<LolesportsSnapshotPayload> {
+    this.assertApiKeyConfigured();
     const [standings, schedule] = await Promise.all([
       this.fetchStandings(),
       this.fetchSchedule(),
@@ -78,6 +78,11 @@ export class LckApiClient {
     };
   }
 
+  private assertApiKeyConfigured(): void {
+    if (!this.apiKey) {
+      throw new Error(MISSING_API_KEY_MESSAGE);
+    }
+  }
   private async fetchStandings(): Promise<LolesportsStandingsEntry[]> {
     const response = await this.axiosClient.get<
       LolesportsApiResponse<LolesportsStandingsData>

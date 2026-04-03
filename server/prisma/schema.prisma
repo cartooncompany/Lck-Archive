@@ -28,7 +28,6 @@ enum NewsSource {
   LOLESPORTS
   NAVER_ESPORTS
 }
-
 model Team {
   id              String   @id @default(cuid())
   name            String
@@ -71,7 +70,6 @@ model User {
 
   @@index([favoriteTeamId])
 }
-
 model Player {
   id               String         @id @default(cuid())
   teamId           String?
@@ -163,7 +161,6 @@ model NewsArticle {
   @@index([externalSource, publishedAt])
   @@unique([externalSource, externalId])
 }
-
 model SyncJobLog {
   id           String   @id @default(cuid())
   jobName      String
