@@ -28,12 +28,18 @@
 ## Docs
 
 - [Flutter API Integration Guide](./docs/flutter-api-integration-guide.md)
+- [GRID API Integration Notes](./docs/grid-api-integration-notes.md)
 
 ## Project setup
 
 ```bash
 $ pnpm install
+$ docker compose up -d
+$ cp .env.example .env.local
 ```
+
+The default local Postgres container is exposed on host port `15432`, so
+`DATABASE_URL` should match `postgresql://postgres:postgres@localhost:15432/lck_archive`.
 
 ## Compile and run the project
 
