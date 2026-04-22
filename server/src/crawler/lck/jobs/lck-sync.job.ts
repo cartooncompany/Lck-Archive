@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
-import { LckApiClient } from '../client/lck-api.client';
 import { LckMapper } from '../mapper/lck.mapper';
-import { LckParser } from '../parser/lck.parser';
+import { LckSnapshotService } from '../services/lck-snapshot.service';
 
 @Injectable()
 export class LckSyncJob {
@@ -10,8 +9,7 @@ export class LckSyncJob {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly lckApiClient: LckApiClient,
-    private readonly lckParser: LckParser,
+    private readonly lckSnapshotService: LckSnapshotService,
     private readonly lckMapper: LckMapper,
   ) {}
 
@@ -24,8 +22,7 @@ export class LckSyncJob {
     });
 
     try {
-      const rawSnapshot = await this.lckApiClient.fetchSnapshot();
-      const parsedSnapshot = this.lckParser.parseSnapshot(rawSnapshot);
+      const parsedSnapshot = await this.lckSnapshotService.fetchSnapshot();
       const teamIdMap = new Map<string, string>();
 
       await this.prisma.$transaction(async (tx) => {

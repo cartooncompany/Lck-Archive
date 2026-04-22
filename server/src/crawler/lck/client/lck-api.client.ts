@@ -18,7 +18,7 @@ const DEFAULT_LEAGUE_ID = '98767991310872058';
 const DEFAULT_TOURNAMENT_ID = '113503260417890076';
 const DEFAULT_SCHEDULE_PAGE_LIMIT = 12;
 const MISSING_API_KEY_MESSAGE =
-  'LOLESPORTS_API_KEY is not configured. Set it in the runtime environment before running LCK sync.';
+  'LCK API key is not configured. Set GRID_API_KEY or LOLESPORTS_API_KEY in the runtime environment before running LCK sync.';
 
 @Injectable()
 export class LckApiClient {
@@ -33,9 +33,12 @@ export class LckApiClient {
   constructor(private readonly configService: ConfigService) {
     const baseUrl =
       this.configService.get<string>('LOLESPORTS_API_URL') ??
+      this.configService.get<string>('GRID_API_URL') ??
       this.configService.get<string>('LCK_API_BASE_URL') ??
       DEFAULT_BASE_URL;
-    this.apiKey = this.configService.get<string>('LOLESPORTS_API_KEY')?.trim();
+    this.apiKey =
+      this.configService.get<string>('GRID_API_KEY')?.trim() ??
+      this.configService.get<string>('LOLESPORTS_API_KEY')?.trim();
 
     this.locale =
       this.configService.get<string>('LOLESPORTS_API_LOCALE') ?? DEFAULT_LOCALE;
@@ -54,6 +57,12 @@ export class LckApiClient {
       timeout: 10000,
       headers: this.apiKey ? { 'x-api-key': this.apiKey } : undefined,
     });
+
+    if (baseUrl.includes('api.grid.gg')) {
+      this.logger.warn(
+        'GRID base URL is configured. The current LCK client still expects LoL Esports persisted endpoints (/getStandings, /getSchedule, /getTeams), so a dedicated GRID adapter is still required for central-data/graphql or file-download APIs.',
+      );
+    }
   }
 
   async fetchSnapshot(): Promise<LolesportsSnapshotPayload> {

@@ -12,7 +12,7 @@ describe('LckApiClient', () => {
     const client = new LckApiClient(
       new ConfigService({
         LCK_SCHEDULE_PAGE_LIMIT: 3,
-        LOLESPORTS_API_KEY: 'test-api-key',
+        GRID_API_KEY: 'test-api-key',
       }),
     );
 
@@ -117,6 +117,23 @@ describe('LckApiClient', () => {
     expect(
       get.mock.calls.filter(([url]) => url === '/getSchedule'),
     ).toHaveLength(3);
+  });
+
+  it('prefers GRID_API_KEY when both env names are present', () => {
+    const client = new LckApiClient(
+      new ConfigService({
+        GRID_API_KEY: 'grid-key',
+        LOLESPORTS_API_KEY: 'legacy-key',
+      }),
+    );
+
+    expect(
+      (
+        client as unknown as {
+          axiosClient: { defaults: { headers: { 'x-api-key': string } } };
+        }
+      ).axiosClient.defaults.headers['x-api-key'],
+    ).toBe('grid-key');
   });
 });
 
