@@ -12,6 +12,7 @@ export class GetNewsQueryDto extends PageQueryDto {
   @ApiPropertyOptional({
     enum: NewsSource,
     description: '뉴스 출처 필터',
+    example: NewsSource.NAVER_ESPORTS,
   })
   @IsOptional()
   @IsEnum(NewsSource)

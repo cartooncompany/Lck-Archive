@@ -4,7 +4,10 @@ import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { PageQueryDto } from '../../../common/dto/page-query.dto';
 
 export class GetPlayersQueryDto extends PageQueryDto {
-  @ApiPropertyOptional({ description: '팀 id' })
+  @ApiPropertyOptional({
+    description: '특정 팀 소속 선수만 조회할 때 사용하는 팀 id',
+    example: 'clx123team',
+  })
   @IsOptional()
   @IsString()
   teamId?: string;

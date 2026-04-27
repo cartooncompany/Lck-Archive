@@ -17,24 +17,37 @@ export enum MatchSortOrder {
 }
 
 export class GetMatchesQueryDto extends PageQueryDto {
-  @ApiPropertyOptional({ description: '팀 id' })
+  @ApiPropertyOptional({
+    description: '특정 팀이 참여한 경기만 조회할 때 사용하는 팀 id',
+    example: 'clx123team',
+  })
   @IsOptional()
   @IsString()
   teamId?: string;
 
-  @ApiPropertyOptional({ description: '시즌 연도', example: 2026 })
+  @ApiPropertyOptional({
+    description: '시즌 연도',
+    example: 2026,
+    minimum: 2020,
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(2020)
   seasonYear?: number;
 
-  @ApiPropertyOptional({ description: 'Split 필터', example: 'SPRING' })
+  @ApiPropertyOptional({
+    description: 'Split 필터',
+    example: 'SPRING',
+  })
   @IsOptional()
   @IsString()
   split?: string;
 
-  @ApiPropertyOptional({ description: 'Stage 필터', example: 'ROUND 1' })
+  @ApiPropertyOptional({
+    description: 'Stage 필터',
+    example: 'ROUND 1',
+  })
   @IsOptional()
   @IsString()
   stage?: string;

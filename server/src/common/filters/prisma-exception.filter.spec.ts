@@ -9,6 +9,9 @@ describe('PrismaExceptionFilter', () => {
     const status = jest.fn().mockReturnValue({ json });
     const host = {
       switchToHttp: () => ({
+        getRequest: () => ({
+          url: '/api/teams',
+        }),
         getResponse: () => ({
           status,
         }),
@@ -23,11 +26,24 @@ describe('PrismaExceptionFilter', () => {
     );
 
     expect(status).toHaveBeenCalledWith(HttpStatus.SERVICE_UNAVAILABLE);
-    expect(json).toHaveBeenCalledWith({
+    const [firstCall] = json.mock.calls as unknown[][];
+    const responseBody = firstCall?.[0] as {
+      statusCode: number;
+      message: string;
+      error: string;
+      path: string;
+      timestamp: string;
+      details: string;
+    };
+
+    expect(responseBody).toMatchObject({
       statusCode: HttpStatus.SERVICE_UNAVAILABLE,
-      message: 'Database is unavailable. Check DATABASE_URL and database status.',
+      message:
+        'Database is unavailable. Check DATABASE_URL and database status.',
       error: 'Service Unavailable',
+      path: '/api/teams',
       details: 'Database connection failed',
     });
+    expect(responseBody.timestamp).toEqual(expect.any(String));
   });
 });

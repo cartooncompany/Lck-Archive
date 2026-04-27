@@ -11,6 +11,7 @@ export class TeamDetailResponseDto extends TeamSummaryResponseDto {
     enum: RecentFormResult,
     isArray: true,
     example: ['W', 'W', 'L', 'W', 'L'],
+    description: '최근 5경기 기준 승패 흐름',
   })
   recentForm: RecentFormResult[];
 }
