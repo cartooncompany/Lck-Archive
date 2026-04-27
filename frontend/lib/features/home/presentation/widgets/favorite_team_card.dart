@@ -22,202 +22,231 @@ class FavoriteTeamCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(28),
-      child: Ink(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [heroStartColor, heroEndColor],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: ExcludeSemantics(
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Opacity(
-                              opacity: 0.22,
-                              child: Padding(
-                                padding: const EdgeInsets.only(right: 0),
-                                child: resolvedLogoUrl != null
-                                    ? Image.network(
-                                        resolvedLogoUrl,
-                                        width: 320,
-                                        height: 320,
-                                        fit: BoxFit.contain,
-                                        filterQuality: FilterQuality.high,
-                                        errorBuilder: (_, _, _) =>
-                                            _BackgroundMonogram(
-                                              initials: team.initials,
-                                            ),
-                                      )
-                                    : _BackgroundMonogram(
-                                        initials: team.initials,
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 700;
+          final titleFontSize = isCompact ? 36.0 : 48.0;
+
+          return Ink(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [heroStartColor, heroEndColor],
                     ),
-                    Positioned.fill(
-                      child: IgnorePointer(
-                        child: ExcludeSemantics(
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                colors: [
-                                  Colors.black.withValues(alpha: 0.08),
-                                  Colors.black.withValues(alpha: 0.02),
-                                  Colors.transparent,
-                                ],
-                                stops: const [0.0, 0.42, 1.0],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(22),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '응원팀',
-                                style: Theme.of(context).textTheme.labelLarge
-                                    ?.copyWith(color: Colors.white70),
-                              ),
-                              const Spacer(),
-                              _RankBadge(rankLabel: team.rankLabel),
-                            ],
-                          ),
-                          const SizedBox(height: 28),
-                          ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 360),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  team.name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineLarge
-                                      ?.copyWith(
-                                        fontSize: 48,
-                                        height: 0.92,
-                                        fontWeight: FontWeight.w900,
-                                        letterSpacing: -1.8,
-                                      ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  team.summary,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodyLarge
-                                      ?.copyWith(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.88,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: ExcludeSemantics(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Opacity(
+                                  opacity: 0.22,
+                                  child: resolvedLogoUrl != null
+                                      ? Image.network(
+                                          resolvedLogoUrl,
+                                          width: 320,
+                                          height: 320,
+                                          fit: BoxFit.contain,
+                                          filterQuality: FilterQuality.high,
+                                          errorBuilder: (_, _, _) =>
+                                              _BackgroundMonogram(
+                                                initials: team.initials,
+                                              ),
+                                        )
+                                      : _BackgroundMonogram(
+                                          initials: team.initials,
                                         ),
-                                        height: 1.55,
-                                      ),
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 18),
-                          Row(
+                        ),
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: ExcludeSemantics(
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                    colors: [
+                                      Colors.black.withValues(alpha: 0.08),
+                                      Colors.black.withValues(alpha: 0.02),
+                                      Colors.transparent,
+                                    ],
+                                    stops: const [0.0, 0.42, 1.0],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(22),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: _HeroStatChip(
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '응원팀',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(color: Colors.white70),
+                                  ),
+                                  const Spacer(),
+                                  _RankBadge(rankLabel: team.rankLabel),
+                                ],
+                              ),
+                              const SizedBox(height: 28),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 420,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      team.name,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineLarge
+                                          ?.copyWith(
+                                            fontSize: titleFontSize,
+                                            height: 0.92,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: -1.8,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      team.summary,
+                                      maxLines: isCompact ? 3 : 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.88,
+                                            ),
+                                            height: 1.55,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 18),
+                              if (isCompact) ...[
+                                _HeroStatChip(
                                   label: '전적',
                                   value: team.seasonRecord,
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _HeroStatChip(
+                                const SizedBox(height: 10),
+                                _HeroStatChip(
                                   label: '세트 득실',
                                   value: team.setRecord,
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _HeroStatChip(
+                                const SizedBox(height: 10),
+                                _HeroStatChip(
                                   label: '최근 흐름',
                                   value: formSummary,
                                   caption: streakLabel,
                                 ),
-                              ),
+                              ] else
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: _HeroStatChip(
+                                        label: '전적',
+                                        value: team.seasonRecord,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: _HeroStatChip(
+                                        label: '세트 득실',
+                                        value: team.setRecord,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: _HeroStatChip(
+                                        label: '최근 흐름',
+                                        value: formSummary,
+                                        caption: streakLabel,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                             ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.divider),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '최근 5경기',
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(color: AppColors.textSecondary),
+                          ),
+                          const Spacer(),
+                          Text(
+                            streakLabel,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceElevated,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.divider),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        '최근 5경기',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        streakLabel,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                      const SizedBox(height: 10),
+                      FormStrip(form: team.recentForm),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  FormStrip(form: team.recentForm),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,14 +17,15 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('응원팀 기준으로\nLCK를 바로 봅니다.'), findsOneWidget);
-    expect(find.text('로그인'), findsOneWidget);
-    expect(find.text('게스트로 보기'), findsOneWidget);
+    expect(find.text('좋아하는 팀을 중심으로\nLCK를 더 빠르게 봅니다.'), findsOneWidget);
+    expect(find.text('로그인하고 시작'), findsOneWidget);
+    expect(find.text('게스트로 둘러보기'), findsOneWidget);
 
-    await tester.tap(find.text('로그인'));
+    await tester.tap(find.text('로그인하고 시작'));
     await tester.pumpAndSettle();
 
-    expect(find.text('아카이브 로그인'), findsOneWidget);
-    expect(find.text('아카이브 입장'), findsOneWidget);
+    expect(find.text('로그인'), findsWidgets);
+    expect(find.text('이메일'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, '로그인'), findsOneWidget);
   });
 }

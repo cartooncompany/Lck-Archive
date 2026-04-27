@@ -16,61 +16,79 @@ class TeamListCard extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(22),
-      child: Ink(
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: AppColors.divider),
-        ),
-        child: Row(
-          children: [
-            TeamLogo(
-              initials: team.initials,
-              logoUrl: team.logoUrl,
-              size: 56,
-              foregroundColor: team.color,
-              borderRadius: 18,
-              textStyle: TextStyle(
-                color: team.color,
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
-              ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final stackHeader = constraints.maxWidth < 440;
+
+          return Ink(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppColors.divider),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+            child: Row(
+              children: [
+                TeamLogo(
+                  initials: team.initials,
+                  logoUrl: team.logoUrl,
+                  size: 56,
+                  foregroundColor: team.color,
+                  borderRadius: 18,
+                  textStyle: TextStyle(
+                    color: team.color,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
+                      if (stackHeader) ...[
+                        Text(
                           team.name,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
-                      ),
+                        const SizedBox(height: 4),
+                        Text(
+                          team.rankLabel,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(color: AppColors.accent),
+                        ),
+                      ] else
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                team.name,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ),
+                            Text(
+                              team.rankLabel,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(color: AppColors.accent),
+                            ),
+                          ],
+                        ),
+                      const SizedBox(height: 6),
                       Text(
-                        team.rankLabel,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(color: AppColors.accent),
+                        '${team.seasonRecord}  |  세트 ${team.setRecord}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
+                      const SizedBox(height: 10),
+                      FormStrip(form: team.recentForm),
                     ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${team.seasonRecord}  |  세트 ${team.setRecord}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  FormStrip(form: team.recentForm),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

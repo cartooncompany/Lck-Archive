@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/theme/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/models/lck_scheduled_match.dart';
+import '../../../../shared/widgets/responsive_page_container.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../utils/match_prediction_storage.dart';
 import '../widgets/scheduled_match_tile.dart';
@@ -53,16 +53,14 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
             if (snapshot.hasError && matches.isEmpty) {
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen,
-                  20,
-                  AppSpacing.screen,
-                  32,
-                ),
+                padding: const EdgeInsets.only(top: 20, bottom: 32),
                 children: const [
-                  _ScheduleMessageCard(
-                    title: '경기 일정을 불러오지 못했습니다.',
-                    body: '아래로 당겨 새로고침하거나 잠시 후 다시 시도해 주세요.',
+                  ResponsivePageContainer(
+                    maxWidth: 1040,
+                    child: _ScheduleMessageCard(
+                      title: '경기 일정을 불러오지 못했습니다.',
+                      body: '아래로 당겨 새로고침하거나 잠시 후 다시 시도해 주세요.',
+                    ),
                   ),
                 ],
               );
@@ -71,16 +69,14 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
             if (matches.isEmpty) {
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen,
-                  20,
-                  AppSpacing.screen,
-                  32,
-                ),
+                padding: const EdgeInsets.only(top: 20, bottom: 32),
                 children: const [
-                  _ScheduleMessageCard(
-                    title: '1주 안에 예정된 경기가 없습니다.',
-                    body: '새 일정이 등록되면 이 화면에 요일별로 정리됩니다.',
+                  ResponsivePageContainer(
+                    maxWidth: 1040,
+                    child: _ScheduleMessageCard(
+                      title: '1주 안에 예정된 경기가 없습니다.',
+                      body: '새 일정이 등록되면 이 화면에 요일별로 정리됩니다.',
+                    ),
                   ),
                 ],
               );
@@ -92,49 +88,54 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
 
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen,
-                12,
-                AppSpacing.screen,
-                32,
-              ),
+              padding: const EdgeInsets.only(top: 12, bottom: 32),
               children: [
-                const SectionHeader(title: '요일별 경기 일정'),
-                const SizedBox(height: 8),
-                Text(
-                  '오늘부터 1주 동안 열리는 경기를 날짜별로 모아서 볼 수 있습니다.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ...dayEntries.expand((entry) {
-                  final sectionChildren = <Widget>[
-                    _ScheduleDayHeader(
-                      date: entry.key,
-                      count: entry.value.length,
-                    ),
-                    const SizedBox(height: 12),
-                  ];
-
-                  sectionChildren.addAll(
-                    entry.value.map(
-                      (match) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: ScheduledMatchTile(
-                          match: match,
-                          predictedWinnerTeamId: _matchPredictions[match.id],
-                          onPredictWinner: (teamId) => _handleMatchPrediction(
-                            matchId: match.id,
-                            teamId: teamId,
-                          ),
+                ResponsivePageContainer(
+                  maxWidth: 1040,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionHeader(title: '요일별 경기 일정'),
+                      const SizedBox(height: 8),
+                      Text(
+                        '오늘부터 1주 동안 열리는 경기를 날짜별로 모아서 볼 수 있습니다.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                    ),
-                  );
-                  sectionChildren.add(const SizedBox(height: 8));
-                  return sectionChildren;
-                }),
+                      const SizedBox(height: 20),
+                      ...dayEntries.expand((entry) {
+                        final sectionChildren = <Widget>[
+                          _ScheduleDayHeader(
+                            date: entry.key,
+                            count: entry.value.length,
+                          ),
+                          const SizedBox(height: 12),
+                        ];
+
+                        sectionChildren.addAll(
+                          entry.value.map(
+                            (match) => Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: ScheduledMatchTile(
+                                match: match,
+                                predictedWinnerTeamId:
+                                    _matchPredictions[match.id],
+                                onPredictWinner: (teamId) =>
+                                    _handleMatchPrediction(
+                                      matchId: match.id,
+                                      teamId: teamId,
+                                    ),
+                              ),
+                            ),
+                          ),
+                        );
+                        sectionChildren.add(const SizedBox(height: 8));
+                        return sectionChildren;
+                      }),
+                    ],
+                  ),
+                ),
               ],
             );
           },

@@ -124,6 +124,16 @@ class _ThrowingApiClient implements ApiClient {
   }) {
     throw Exception('Network disabled in widget tests.');
   }
+
+  @override
+  Future<void> deleteVoid(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+  }) {
+    throw Exception('Network disabled in widget tests.');
+  }
 }
 
 class _MemoryLocalStorage implements LocalStorage {

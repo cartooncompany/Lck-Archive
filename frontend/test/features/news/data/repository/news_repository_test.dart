@@ -172,6 +172,16 @@ class _FakeApiClient implements ApiClient {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> deleteVoid(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _StubNewsRemoteDataSource extends NewsRemoteDataSource {

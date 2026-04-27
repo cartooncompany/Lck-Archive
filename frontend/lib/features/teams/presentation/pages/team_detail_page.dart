@@ -9,6 +9,7 @@ import '../../../../features/favorite_team/presentation/bloc/favorite_team_contr
 import '../../../../shared/models/player_profile.dart';
 import '../../../../shared/models/team_summary.dart';
 import '../../../../shared/widgets/player_avatar.dart';
+import '../../../../shared/widgets/responsive_page_container.dart';
 import '../../../matches/presentation/widgets/form_strip.dart';
 import '../../../matches/presentation/widgets/match_result_tile.dart';
 
@@ -45,218 +46,286 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
         return Scaffold(
           appBar: AppBar(title: Text(team.name)),
           body: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screen,
-              8,
-              AppSpacing.screen,
-              32,
-            ),
+            padding: const EdgeInsets.only(top: 8, bottom: 32),
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      _buildDetailStartColor(team),
-                      _buildDetailEndColor(team),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(28),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: ExcludeSemantics(
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: Opacity(
-                                opacity: 0.18,
-                                child: resolvedLogoUrl != null
-                                    ? Image.network(
-                                        resolvedLogoUrl,
-                                        width: 280,
-                                        height: 280,
-                                        fit: BoxFit.contain,
-                                        filterQuality: FilterQuality.high,
-                                        errorBuilder: (_, _, _) =>
-                                            _TeamBackgroundMonogram(
-                                              initials: team.initials,
-                                            ),
-                                      )
-                                    : _TeamBackgroundMonogram(
-                                        initials: team.initials,
-                                      ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: ExcludeSemantics(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 0.08),
-                                    Colors.black.withValues(alpha: 0.02),
-                                    Colors.transparent,
-                                  ],
-                                  stops: const [0.0, 0.42, 1.0],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(22),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  team.rankLabel,
-                                  style: Theme.of(context).textTheme.labelLarge
-                                      ?.copyWith(color: Colors.white70),
-                                ),
-                                const Spacer(),
-                                FilledButton.icon(
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: Colors.white.withValues(
-                                      alpha: 0.14,
-                                    ),
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  onPressed: () =>
-                                      favoriteController.selectTeam(team),
-                                  icon: Icon(
-                                    isFavorite
-                                        ? Icons.favorite_rounded
-                                        : Icons.favorite_border_rounded,
-                                  ),
-                                  label: Text(isFavorite ? '응원팀' : '응원팀 설정'),
-                                ),
+              ResponsivePageContainer(
+                maxWidth: 1080,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isCompact = constraints.maxWidth < 640;
+
+                        return Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                _buildDetailStartColor(team),
+                                _buildDetailEndColor(team),
                               ],
                             ),
-                            const SizedBox(height: 18),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 360),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    team.name,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineLarge
-                                        ?.copyWith(
-                                          fontSize: 40,
-                                          height: 0.96,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: -1.2,
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: Stack(
+                              children: [
+                                Positioned.fill(
+                                  child: IgnorePointer(
+                                    child: ExcludeSemantics(
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Opacity(
+                                          opacity: 0.18,
+                                          child: resolvedLogoUrl != null
+                                              ? Image.network(
+                                                  resolvedLogoUrl,
+                                                  width: 280,
+                                                  height: 280,
+                                                  fit: BoxFit.contain,
+                                                  filterQuality:
+                                                      FilterQuality.high,
+                                                  errorBuilder: (_, _, _) =>
+                                                      _TeamBackgroundMonogram(
+                                                        initials: team.initials,
+                                                      ),
+                                                )
+                                              : _TeamBackgroundMonogram(
+                                                  initials: team.initials,
+                                                ),
                                         ),
+                                      ),
+                                    ),
                                   ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    team.summary,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.88,
+                                ),
+                                Positioned.fill(
+                                  child: IgnorePointer(
+                                    child: ExcludeSemantics(
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.centerLeft,
+                                            end: Alignment.centerRight,
+                                            colors: [
+                                              Colors.black.withValues(
+                                                alpha: 0.08,
+                                              ),
+                                              Colors.black.withValues(
+                                                alpha: 0.02,
+                                              ),
+                                              Colors.transparent,
+                                            ],
+                                            stops: const [0.0, 0.42, 1.0],
                                           ),
                                         ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 18),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _HeroInfoMetric(
-                                    label: '시즌 전적',
-                                    value: team.seasonRecord,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: _HeroInfoMetric(
-                                    label: '세트 득실',
-                                    value: team.setRecord,
+                                Padding(
+                                  padding: const EdgeInsets.all(22),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (isCompact) ...[
+                                        Text(
+                                          team.rankLabel,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelLarge
+                                              ?.copyWith(color: Colors.white70),
+                                        ),
+                                        const SizedBox(height: 12),
+                                        FilledButton.icon(
+                                          style: FilledButton.styleFrom(
+                                            backgroundColor: Colors.white
+                                                .withValues(alpha: 0.14),
+                                            foregroundColor: Colors.white,
+                                          ),
+                                          onPressed: () => favoriteController
+                                              .selectTeam(team),
+                                          icon: Icon(
+                                            isFavorite
+                                                ? Icons.favorite_rounded
+                                                : Icons.favorite_border_rounded,
+                                          ),
+                                          label: Text(
+                                            isFavorite ? '응원팀' : '응원팀 설정',
+                                          ),
+                                        ),
+                                      ] else
+                                        Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              team.rankLabel,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .labelLarge
+                                                  ?.copyWith(
+                                                    color: Colors.white70,
+                                                  ),
+                                            ),
+                                            const Spacer(),
+                                            FilledButton.icon(
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor: Colors.white
+                                                    .withValues(alpha: 0.14),
+                                                foregroundColor: Colors.white,
+                                              ),
+                                              onPressed: () =>
+                                                  favoriteController.selectTeam(
+                                                    team,
+                                                  ),
+                                              icon: Icon(
+                                                isFavorite
+                                                    ? Icons.favorite_rounded
+                                                    : Icons
+                                                          .favorite_border_rounded,
+                                              ),
+                                              label: Text(
+                                                isFavorite ? '응원팀' : '응원팀 설정',
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      const SizedBox(height: 18),
+                                      ConstrainedBox(
+                                        constraints: const BoxConstraints(
+                                          maxWidth: 420,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              team.name,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .headlineLarge
+                                                  ?.copyWith(
+                                                    fontSize: isCompact
+                                                        ? 34
+                                                        : 40,
+                                                    height: 0.96,
+                                                    fontWeight: FontWeight.w900,
+                                                    letterSpacing: -1.2,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 10),
+                                            Text(
+                                              team.summary,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyMedium
+                                                  ?.copyWith(
+                                                    color: Colors.white
+                                                        .withValues(
+                                                          alpha: 0.88,
+                                                        ),
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 18),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _HeroInfoMetric(
+                                              label: '시즌 전적',
+                                              value: team.seasonRecord,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: _HeroInfoMetric(
+                                              label: '세트 득실',
+                                              value: team.setRecord,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        '최근 5경기 흐름',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelLarge
+                                            ?.copyWith(color: Colors.white70),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      if (team.recentForm.isEmpty)
+                                        const Text(
+                                          '아직 최근 흐름 데이터가 없습니다.',
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                          ),
+                                        )
+                                      else
+                                        FormStrip(form: team.recentForm),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            Text(
-                              '최근 5경기 흐름',
-                              style: Theme.of(context).textTheme.labelLarge
-                                  ?.copyWith(color: Colors.white70),
-                            ),
-                            const SizedBox(height: 10),
-                            if (team.recentForm.isEmpty)
-                              const Text(
-                                '아직 최근 흐름 데이터가 없습니다.',
-                                style: TextStyle(color: Colors.white70),
-                              )
-                            else
-                              FormStrip(form: team.recentForm),
-                          ],
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.section),
+                    Text(
+                      '최근 경기 결과',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 14),
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        team.recentMatches.isEmpty)
+                      const Center(child: CircularProgressIndicator())
+                    else if (team.recentMatches.isEmpty)
+                      const _DetailMessage(message: '최근 경기 결과가 없습니다.')
+                    else
+                      ...team.recentMatches.map(
+                        (match) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: MatchResultTile(
+                            match: match,
+                            accentColor: team.color,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    const SizedBox(height: AppSpacing.section - 4),
+                    Text(
+                      '소속 선수',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 14),
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        players.isEmpty)
+                      const Center(child: CircularProgressIndicator())
+                    else if (players.isEmpty)
+                      const _DetailMessage(message: '소속 선수 정보가 없습니다.')
+                    else
+                      ...players.map(
+                        (player) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _PlayerRow(
+                            player: player,
+                            onTap: () => Navigator.of(context).pushNamed(
+                              AppRouter.playerDetail,
+                              arguments: player,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.section),
-              Text('최근 경기 결과', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 14),
-              if (snapshot.connectionState == ConnectionState.waiting &&
-                  team.recentMatches.isEmpty)
-                const Center(child: CircularProgressIndicator())
-              else if (team.recentMatches.isEmpty)
-                const _DetailMessage(message: '최근 경기 결과가 없습니다.')
-              else
-                ...team.recentMatches.map(
-                  (match) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: MatchResultTile(
-                      match: match,
-                      accentColor: team.color,
-                    ),
-                  ),
-                ),
-              const SizedBox(height: AppSpacing.section - 4),
-              Text('소속 선수', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 14),
-              if (snapshot.connectionState == ConnectionState.waiting &&
-                  players.isEmpty)
-                const Center(child: CircularProgressIndicator())
-              else if (players.isEmpty)
-                const _DetailMessage(message: '소속 선수 정보가 없습니다.')
-              else
-                ...players.map(
-                  (player) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _PlayerRow(
-                      player: player,
-                      onTap: () => Navigator.of(
-                        context,
-                      ).pushNamed(AppRouter.playerDetail, arguments: player),
-                    ),
-                  ),
-                ),
             ],
           ),
         );

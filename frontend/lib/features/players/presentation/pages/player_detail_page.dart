@@ -8,6 +8,7 @@ import '../../../../shared/extensions/date_extensions.dart';
 import '../../../../shared/models/player_profile.dart';
 import '../../../../shared/models/team_summary.dart';
 import '../../../../shared/widgets/player_avatar.dart';
+import '../../../../shared/widgets/responsive_page_container.dart';
 
 class PlayerDetailPage extends StatefulWidget {
   const PlayerDetailPage({required this.player, super.key});
@@ -43,163 +44,259 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
         return Scaffold(
           appBar: AppBar(title: Text(player.name)),
           body: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screen,
-              8,
-              AppSpacing.screen,
-              32,
-            ),
+            padding: const EdgeInsets.only(top: 8, bottom: 32),
             children: [
-              Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: AppColors.divider),
-                ),
+              ResponsivePageContainer(
+                maxWidth: 1040,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        PlayerAvatar(
-                          name: player.name,
-                          profileImageUrl: player.profileImageUrl,
-                          size: 72,
-                          accentColor: player.teamColor,
-                          borderRadius: 22,
-                          textStyle: TextStyle(
-                            color: player.teamColor,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 28,
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final isCompact = constraints.maxWidth < 640;
+
+                        return Container(
+                          padding: const EdgeInsets.all(22),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(28),
+                            border: Border.all(color: AppColors.divider),
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              if (isCompact) ...[
+                                Row(
+                                  children: [
+                                    PlayerAvatar(
+                                      name: player.name,
+                                      profileImageUrl: player.profileImageUrl,
+                                      size: 72,
+                                      accentColor: player.teamColor,
+                                      borderRadius: 22,
+                                      textStyle: TextStyle(
+                                        color: player.teamColor,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 28,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            player.name,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.headlineSmall,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${player.teamName}  |  ${player.position}',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.copyWith(
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                FilledButton.tonalIcon(
+                                  onPressed: () => _openTeam(context, player),
+                                  icon: const Icon(Icons.shield_rounded),
+                                  label: const Text('소속 팀 보기'),
+                                ),
+                              ] else
+                                Row(
+                                  children: [
+                                    PlayerAvatar(
+                                      name: player.name,
+                                      profileImageUrl: player.profileImageUrl,
+                                      size: 72,
+                                      accentColor: player.teamColor,
+                                      borderRadius: 22,
+                                      textStyle: TextStyle(
+                                        color: player.teamColor,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 28,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            player.name,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.headlineSmall,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${player.teamName}  |  ${player.position}',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.copyWith(
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 10),
+                                          FilledButton.tonalIcon(
+                                            onPressed: () =>
+                                                _openTeam(context, player),
+                                            icon: const Icon(
+                                              Icons.shield_rounded,
+                                            ),
+                                            label: const Text('소속 팀 보기'),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              const SizedBox(height: 18),
                               Text(
-                                player.name,
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineSmall,
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${player.teamName}  |  ${player.position}',
-                                style: Theme.of(context).textTheme.bodyLarge
+                                player.headline,
+                                style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(color: AppColors.textSecondary),
-                              ),
-                              const SizedBox(height: 10),
-                              FilledButton.tonalIcon(
-                                onPressed: () => _openTeam(context, player),
-                                icon: const Icon(Icons.shield_rounded),
-                                label: const Text('소속 팀 보기'),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: AppSpacing.section),
                     Text(
-                      player.headline,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                      '시즌 기록',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
+                    const SizedBox(height: 14),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final crossAxisCount = constraints.maxWidth >= 900
+                            ? 3
+                            : constraints.maxWidth >= 560
+                            ? 2
+                            : 1;
+                        final aspectRatio = crossAxisCount == 1
+                            ? 3.4
+                            : crossAxisCount == 2
+                            ? 1.35
+                            : 1.45;
+
+                        return GridView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: metrics.length,
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                crossAxisSpacing: 12,
+                                mainAxisSpacing: 12,
+                                childAspectRatio: aspectRatio,
+                              ),
+                          itemBuilder: (context, index) {
+                            final metric = metrics[index];
+                            return _StatCard(
+                              label: metric.label,
+                              value: metric.value,
+                            );
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.section),
+                    Text(
+                      '최근 경기 출전 정보',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 14),
+                    if (player.recentAppearances.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.divider),
+                        ),
+                        child: Text(
+                          '현재 API에는 선수별 최근 출전 기록이 없어 기본 정보만 표시합니다.',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppColors.textSecondary),
+                        ),
+                      )
+                    else
+                      ...player.recentAppearances.map(
+                        (appearance) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.divider),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      appearance.playedAt.toKoreanDate(),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      appearance.result,
+                                      style: TextStyle(
+                                        color: appearance.result == '승'
+                                            ? AppColors.success
+                                            : AppColors.danger,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'vs ${appearance.opponent}',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  appearance.performance,
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.section),
-              Text('시즌 기록', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 14),
-              GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: metrics.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.35,
-                ),
-                itemBuilder: (context, index) {
-                  final metric = metrics[index];
-                  return _StatCard(label: metric.label, value: metric.value);
-                },
-              ),
-              const SizedBox(height: AppSpacing.section),
-              Text(
-                '최근 경기 출전 정보',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 14),
-              if (player.recentAppearances.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: Text(
-                    '현재 API에는 선수별 최근 출전 기록이 없어 기본 정보만 표시합니다.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                )
-              else
-                ...player.recentAppearances.map(
-                  (appearance) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.divider),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                appearance.playedAt.toKoreanDate(),
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.textSecondary),
-                              ),
-                              const Spacer(),
-                              Text(
-                                appearance.result,
-                                style: TextStyle(
-                                  color: appearance.result == '승'
-                                      ? AppColors.success
-                                      : AppColors.danger,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'vs ${appearance.opponent}',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            appearance.performance,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         );

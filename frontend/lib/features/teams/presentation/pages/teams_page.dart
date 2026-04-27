@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
 import '../../../../shared/models/team_summary.dart';
 import '../../../../shared/widgets/app_search_field.dart';
+import '../../../../shared/widgets/responsive_page_container.dart';
 import '../widgets/team_list_card.dart';
 
 class TeamsPage extends StatefulWidget {
@@ -33,47 +33,53 @@ class _TeamsPageState extends State<TeamsPage> {
         final teams = snapshot.data ?? const <TeamSummary>[];
 
         return ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screen,
-            12,
-            AppSpacing.screen,
-            120,
-          ),
+          padding: const EdgeInsets.only(top: 12, bottom: 120),
           children: [
-            Text('LCK 팀', style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 6),
-            Text(
-              '순위, 전적, 최근 흐름을 빠르게 비교할 수 있습니다.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 18),
-            AppSearchField(
-              hintText: '팀명으로 검색',
-              onChanged: (value) {
-                setState(() {
-                  _query = value.trim();
-                  _teamsFuture = _loadTeams();
-                });
-              },
-            ),
-            const SizedBox(height: 18),
-            if (snapshot.connectionState == ConnectionState.waiting &&
-                teams.isEmpty)
-              const Center(child: CircularProgressIndicator())
-            else if (teams.isEmpty)
-              _TeamsMessage(message: '검색 결과가 없습니다.')
-            else
-              ...teams.map(
-                (team) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: TeamListCard(
-                    team: team,
-                    onTap: () => _openTeam(context, team),
+            ResponsivePageContainer(
+              maxWidth: 960,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'LCK 팀',
+                    style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '순위, 전적, 최근 흐름을 빠르게 비교할 수 있습니다.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  AppSearchField(
+                    hintText: '팀명으로 검색',
+                    onChanged: (value) {
+                      setState(() {
+                        _query = value.trim();
+                        _teamsFuture = _loadTeams();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 18),
+                  if (snapshot.connectionState == ConnectionState.waiting &&
+                      teams.isEmpty)
+                    const Center(child: CircularProgressIndicator())
+                  else if (teams.isEmpty)
+                    _TeamsMessage(message: '검색 결과가 없습니다.')
+                  else
+                    ...teams.map(
+                      (team) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: TeamListCard(
+                          team: team,
+                          onTap: () => _openTeam(context, team),
+                        ),
+                      ),
+                    ),
+                ],
               ),
+            ),
           ],
         );
       },

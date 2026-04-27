@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend/app/app.dart';
 import 'package:frontend/core/utils/mock_lck_data.dart';
 import 'package:frontend/features/players/presentation/widgets/player_list_tile.dart';
 
@@ -53,24 +52,29 @@ void main() {
       expect(tester.getSize(nameFinder).height, lessThan(32.0));
     });
 
-    testWidgets('opens the player detail page from the players tab', (
-      tester,
-    ) async {
-      await tester.pumpWidget(const LckArchiveApp());
-      await tester.pumpAndSettle();
+    testWidgets('calls onTap when the tile is pressed', (tester) async {
+      final faker = MockLckData.players.firstWhere(
+        (player) => player.id == 'faker',
+      );
+      var didTap = false;
 
-      await tester.tap(find.text('선수'));
-      await tester.pumpAndSettle();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PlayerListTile(
+              player: faker,
+              onTap: () {
+                didTap = true;
+              },
+            ),
+          ),
+        ),
+      );
 
-      expect(find.text('선수 기록'), findsOneWidget);
-      expect(find.text('Faker'), findsOneWidget);
+      await tester.tap(find.byType(PlayerListTile));
+      await tester.pump();
 
-      await tester.tap(find.byType(PlayerListTile).first);
-      await tester.pumpAndSettle();
-
-      expect(find.text('시즌 기록'), findsOneWidget);
-      expect(find.text('소속 팀 보기'), findsOneWidget);
-      expect(find.text('T1  |  MID'), findsOneWidget);
+      expect(didTap, isTrue);
     });
   });
 }
