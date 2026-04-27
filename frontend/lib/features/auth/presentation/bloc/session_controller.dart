@@ -137,6 +137,29 @@ class SessionController extends ChangeNotifier {
     }
   }
 
+  Future<bool> deleteAccount() async {
+    _setBusy(true);
+    _clearError();
+    try {
+      await _authRepository.deleteAccount();
+      _session = null;
+      _isGuest = false;
+      _stage = SessionStage.landing;
+      return true;
+    } catch (error) {
+      if (error is AppFailure && error.isUnauthorized) {
+        _session = null;
+        _isGuest = false;
+        _stage = SessionStage.landing;
+      }
+      _errorMessage = _messageFromError(error);
+      return false;
+    } finally {
+      _isBusy = false;
+      notifyListeners();
+    }
+  }
+
   Future<bool> _runAuthTask(Future<void> Function() action) async {
     _setBusy(true);
     _clearError();

@@ -18,4 +18,12 @@ export class UsersService {
       email: user.email,
     };
   }
+
+  async deleteMyAccount(userId: string): Promise<void> {
+    const isDeleted = await this.usersRepository.deleteAccountData(userId);
+
+    if (!isDeleted) {
+      throw new NotFoundException(`User not found: ${userId}`);
+    }
+  }
 }

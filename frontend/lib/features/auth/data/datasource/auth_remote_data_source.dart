@@ -52,4 +52,11 @@ class AuthRemoteDataSource {
       decoder: (data) => AuthUserDto.fromJson(data as Map<String, dynamic>),
     );
   }
+
+  Future<void> deleteMyAccount(String accessToken) {
+    return _apiClient.deleteVoid(
+      '/users/me',
+      headers: <String, String>{'Authorization': 'Bearer $accessToken'},
+    );
+  }
 }

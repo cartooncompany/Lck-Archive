@@ -20,4 +20,11 @@ abstract interface class ApiClient {
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
   });
+
+  Future<void> deleteVoid(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+  });
 }

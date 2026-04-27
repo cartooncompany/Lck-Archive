@@ -71,4 +71,16 @@ export class UsersRepository {
       },
     });
   }
+
+  async deleteAccountData(userId: string): Promise<boolean> {
+    const deletedUsersCount = await this.prisma.$transaction(async (tx) => {
+      const deletedUsers = await tx.user.deleteMany({
+        where: { id: userId },
+      });
+
+      return deletedUsers.count;
+    });
+
+    return deletedUsersCount > 0;
+  }
 }

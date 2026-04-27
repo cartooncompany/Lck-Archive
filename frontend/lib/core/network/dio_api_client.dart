@@ -90,6 +90,30 @@ class DioApiClient implements ApiClient {
     }
   }
 
+  @override
+  Future<void> deleteVoid(
+    String path, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+  }) async {
+    try {
+      await _dio.delete<dynamic>(
+        path,
+        data: data,
+        queryParameters: queryParameters,
+        options: Options(headers: headers),
+      );
+    } on DioException catch (error) {
+      throw AppFailure(
+        _messageFromDio(error),
+        statusCode: error.response?.statusCode,
+      );
+    } catch (_) {
+      throw const AppFailure('API 요청 처리 중 오류가 발생했습니다.');
+    }
+  }
+
   String _messageFromDio(DioException error) {
     final data = error.response?.data;
     if (data is Map<String, dynamic>) {

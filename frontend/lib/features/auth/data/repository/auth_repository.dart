@@ -94,6 +94,31 @@ class AuthRepository {
     }
   }
 
+  Future<void> deleteAccount() async {
+    final session = await _readSession();
+    if (session == null) {
+      throw const AppFailure('로그인이 필요합니다.', statusCode: 401);
+    }
+
+    final activeSession = await _ensureFreshSession(session);
+    try {
+      await _remoteDataSource.deleteMyAccount(activeSession.accessToken);
+      await signOut();
+    } on AppFailure catch (error) {
+      if (error.isUnauthorized) {
+        final refreshedSession = await _refreshSession(activeSession);
+        await _remoteDataSource.deleteMyAccount(refreshedSession.accessToken);
+        await signOut();
+        return;
+      }
+      if (error.statusCode == 404) {
+        await signOut();
+        return;
+      }
+      rethrow;
+    }
+  }
+
   Future<void> signOut() async {
     await _localStorage.delete(_storageKey);
   }
