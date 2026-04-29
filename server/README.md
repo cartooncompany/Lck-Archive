@@ -1,108 +1,177 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# LCK Archive Server
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS backend for LCK Archive. The server stores LCK teams, players, matches, news, auth data, and GRID-derived match state.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Architecture
 
-## Description
+The server follows NestJS module boundaries with a pragmatic service/repository split.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+```text
+Controller -> Service -> Repository -> Prisma
+```
+
+Crawler modules use a separate ingestion flow:
+
+```text
+Client -> Parser/Mapper -> Job/Service -> Prisma
+```
+
+Do not add a separate Domain/UseCase layer unless a module develops complex business workflows that are reused across controllers, schedulers, and crawler jobs.
+
+## Project Structure
+
+```text
+src/
+  common/
+    dto/
+    entities/
+    filters/
+    responses/
+    utils/
+  database/
+    prisma.service.ts
+  modules/
+    auth/
+    matches/
+    news/
+    players/
+    teams/
+    users/
+  crawler/
+    lck/
+      client/
+      jobs/
+      mapper/
+      parser/
+      responses/
+      services/
+      types/
+    news/
+      client/
+      jobs/
+      parser/
+      responses/
+      types/
+  scheduler/
+prisma/
+  schema.prisma
+  migrations/
+docs/
+```
+
+## Layer Responsibilities
+
+### Controller
+
+- HTTP route boundary.
+- Validate and receive DTO/query params through Nest decorators.
+- Delegate behavior to services.
+- Avoid direct Prisma access.
+
+### Service
+
+- Application behavior for a module.
+- Coordinates repositories and other services.
+- Owns authorization-sensitive decisions where applicable.
+- Keeps controller methods thin.
+
+### Repository
+
+- Prisma query boundary.
+- Builds query filters, includes/selects, and maps database records to response DTOs when that keeps services simpler.
+- Avoid HTTP-specific behavior.
+
+### Crawler Client
+
+- External API boundary.
+- Handles request construction, authentication headers, rate limits, and external API errors.
+- Does not write to the database.
+
+### Crawler Parser/Mapper
+
+- Converts external payloads into raw normalized payloads.
+- Keeps GRID/static source shape isolated from database upsert logic.
+
+### Crawler Job/Service
+
+- Orchestrates sync work.
+- Upserts normalized data through Prisma.
+- Owns stale-data cleanup and idempotency behavior.
+
+## GRID Integration
+
+The LCK crawler currently combines:
+
+- Central/static data for teams, players, tournaments, series, schedules, and service coverage.
+- Series State data for participants, games, per-game player stats, maps, winners, and draft actions.
+
+Series Events over WebSocket are not part of the current Open Access path and should be treated as a future enhancement unless the product gains access.
+
+Current priority for GRID-related code:
+
+1. Keep static match metadata stable.
+2. Store participants and game-level stats when Series State has them.
+3. Log GraphQL error metadata clearly.
+4. Respect GRID rate limits.
+5. Avoid crawling private/protected content when official API data exists.
+
+## Data Model
+
+Prisma is the source of truth for persisted schema.
+
+Important match-related models include:
+
+- `Match`
+- `MatchPlayerParticipation`
+- `MatchGame`
+- `MatchGamePlayerStat`
+- `MatchDraftAction`
+
+When adding persisted data:
+
+- Add/adjust Prisma schema.
+- Create a migration.
+- Update repository response DTOs if the API should expose it.
+- Update frontend DTO/model mapping only after the backend response shape is stable.
+
+## Commands
+
+```bash
+pnpm install
+docker compose up -d
+cp .env.example .env.local
+pnpm exec prisma generate
+pnpm run start:dev
+```
+
+The default local Postgres container is exposed on host port `15432`.
+
+`DATABASE_URL` should match:
+
+```text
+postgresql://postgres:postgres@localhost:15432/lck_archive
+```
+
+## Tests And Checks
+
+```bash
+pnpm run build
+pnpm run test
+pnpm run test:e2e
+pnpm run test:cov
+```
+
+For focused Jest runs, use the relevant spec path. If local Watchman causes issues, run Jest with `--watchman=false`.
 
 ## Docs
 
 - [Flutter API Integration Guide](./docs/flutter-api-integration-guide.md)
 - [GRID API Integration Notes](./docs/grid-api-integration-notes.md)
 
-## Project setup
+## Practical Rules
 
-```bash
-$ pnpm install
-$ docker compose up -d
-$ cp .env.example .env.local
-```
-
-The default local Postgres container is exposed on host port `15432`, so
-`DATABASE_URL` should match `postgresql://postgres:postgres@localhost:15432/lck_archive`.
-
-## Compile and run the project
-
-```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- Keep Nest modules cohesive by feature.
+- Prefer explicit Prisma queries over generic repository abstractions.
+- Keep external API quirks inside crawler clients/parsers.
+- Keep response DTOs stable for the Flutter app.
+- Do not add layers for symmetry; add layers when they remove real coupling or repeated logic.
