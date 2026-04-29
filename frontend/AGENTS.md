@@ -94,7 +94,7 @@ Do not create one UseCase per simple CRUD/read operation by default.
   - `refactor:` 리팩토링
   - `chore:` 기타 작업
   - `test:` 테스트 관련
-- 커밋 메시지는 한국어로 작성.
+- 커밋 메시지는 영어로 작성.
 - 한 커밋에는 하나의 변경 의도를 담는다.
 - 커밋 전 기본 확인:
   - `flutter analyze`
