@@ -8,6 +8,9 @@ import {
 } from './dto/get-matches.query.dto';
 import {
   MatchDetailResponseDto,
+  MatchDraftActionResponseDto,
+  MatchGamePlayerStatResponseDto,
+  MatchGameResponseDto,
   MatchParticipantResponseDto,
 } from './responses/match-detail.response';
 import { MatchSummaryResponseDto } from './responses/match-summary.response';
@@ -49,6 +52,30 @@ const matchDetailInclude = Prisma.validator<Prisma.MatchInclude>()({
       },
     },
     orderBy: [{ teamId: 'asc' }, { createdAt: 'asc' }],
+  },
+  games: {
+    include: {
+      winnerTeam: {
+        select: teamReferenceSelect,
+      },
+      playerStats: {
+        include: {
+          player: true,
+          team: {
+            select: teamReferenceSelect,
+          },
+        },
+        orderBy: [{ teamId: 'asc' }, { player: { name: 'asc' } }],
+      },
+      draftActions: {
+        orderBy: [
+          { sequenceOrder: 'asc' },
+          { sequenceNumber: 'asc' },
+          { createdAt: 'asc' },
+        ],
+      },
+    },
+    orderBy: { sequenceNumber: 'asc' },
   },
 });
 
@@ -130,6 +157,7 @@ export class MatchesRepository {
       participants: match.participations.map((participation) =>
         this.toParticipantDto(participation),
       ),
+      games: match.games.map((game) => this.toGameDto(game)),
     };
   }
 
@@ -168,6 +196,123 @@ export class MatchesRepository {
       position: participation.role ?? participation.player.position,
       isStarter: participation.isStarter,
       team: this.toTeamReference(participation.team),
+    };
+  }
+
+  private toGameDto(game: {
+    sequenceNumber: number;
+    mapName: string | null;
+    duration: string | null;
+    startedAt: Date | null;
+    winnerTeam: {
+      id: string;
+      name: string;
+      shortName: string;
+      logoUrl: string | null;
+    } | null;
+    playerStats: Array<{
+      player: {
+        id: string;
+        name: string;
+      };
+      team: {
+        id: string;
+        name: string;
+        shortName: string;
+        logoUrl: string | null;
+      };
+      role: MatchGamePlayerStatResponseDto['position'];
+      characterName: string | null;
+      kills: number | null;
+      deaths: number | null;
+      assists: number | null;
+      totalMoneyEarned: number | null;
+      damageDealt: number | null;
+      damageTaken: number | null;
+      visionScore: number | null;
+      kdaRatio: number | null;
+      killParticipation: number | null;
+    }>;
+    draftActions: Array<{
+      type: string;
+      sequenceNumber: string;
+      sequenceOrder: number | null;
+      drafterId: string | null;
+      drafterType: string | null;
+      draftableType: string | null;
+      draftableName: string | null;
+    }>;
+  }): MatchGameResponseDto {
+    return {
+      sequenceNumber: game.sequenceNumber,
+      mapName: game.mapName,
+      duration: game.duration,
+      startedAt: game.startedAt,
+      winner: game.winnerTeam ? this.toTeamReference(game.winnerTeam) : null,
+      playerStats: game.playerStats.map((stat) => this.toPlayerStatDto(stat)),
+      draftActions: game.draftActions.map((action) =>
+        this.toDraftActionDto(action),
+      ),
+    };
+  }
+
+  private toPlayerStatDto(stat: {
+    player: {
+      id: string;
+      name: string;
+    };
+    team: {
+      id: string;
+      name: string;
+      shortName: string;
+      logoUrl: string | null;
+    };
+    role: MatchGamePlayerStatResponseDto['position'];
+    characterName: string | null;
+    kills: number | null;
+    deaths: number | null;
+    assists: number | null;
+    totalMoneyEarned: number | null;
+    damageDealt: number | null;
+    damageTaken: number | null;
+    visionScore: number | null;
+    kdaRatio: number | null;
+    killParticipation: number | null;
+  }): MatchGamePlayerStatResponseDto {
+    return {
+      playerId: stat.player.id,
+      playerName: stat.player.name,
+      team: this.toTeamReference(stat.team),
+      position: stat.role,
+      championName: stat.characterName,
+      kills: stat.kills,
+      deaths: stat.deaths,
+      assists: stat.assists,
+      totalGold: stat.totalMoneyEarned,
+      damageDealt: stat.damageDealt,
+      damageTaken: stat.damageTaken,
+      visionScore: stat.visionScore,
+      kdaRatio: stat.kdaRatio,
+      killParticipation: stat.killParticipation,
+    };
+  }
+
+  private toDraftActionDto(action: {
+    type: string;
+    sequenceNumber: string;
+    sequenceOrder: number | null;
+    drafterId: string | null;
+    drafterType: string | null;
+    draftableType: string | null;
+    draftableName: string | null;
+  }): MatchDraftActionResponseDto {
+    return {
+      type: action.type,
+      sequenceNumber: action.sequenceNumber,
+      drafterId: action.drafterId,
+      drafterType: action.drafterType,
+      draftableType: action.draftableType,
+      draftableName: action.draftableName,
     };
   }
 

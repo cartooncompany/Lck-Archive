@@ -116,13 +116,79 @@ describe('GridLckParser', () => {
           teams: [
             {
               id: 'team-1',
+              name: 'T1',
               won: true,
               score: 2,
+              players: [
+                {
+                  id: 'player-1',
+                  name: 'Faker',
+                  participationStatus: 'active',
+                },
+              ],
             },
             {
               id: 'team-2',
+              name: 'Gen.G Esports',
               won: false,
               score: 1,
+              players: [
+                {
+                  id: 'player-2',
+                  name: 'Chovy',
+                  participationStatus: 'active',
+                },
+              ],
+            },
+          ],
+          games: [
+            {
+              id: 'game-1',
+              sequenceNumber: 1,
+              teams: [
+                {
+                  id: 'team-1',
+                  name: 'T1',
+                  won: true,
+                  score: 1,
+                  players: [
+                    {
+                      id: 'player-4',
+                      name: 'Smash',
+                      participationStatus: 'active',
+                      character: {
+                        id: 'champion-1',
+                        name: 'Varus',
+                      },
+                      kills: 5,
+                      deaths: 1,
+                      killAssistsGiven: 8,
+                      totalMoneyEarned: 14500,
+                      damageDealt: 23000,
+                      damageTaken: 9000,
+                      visionScore: 31,
+                      kdaRatio: 13,
+                      killParticipation: 0.76,
+                    },
+                  ],
+                },
+              ],
+              draftActions: [
+                {
+                  id: 'draft-1',
+                  type: 'ban',
+                  sequenceNumber: '1',
+                  drafter: {
+                    id: 'team-1',
+                    type: 'team',
+                  },
+                  draftable: {
+                    id: 'champion-2',
+                    type: 'champion',
+                    name: 'Azir',
+                  },
+                },
+              ],
             },
           ],
         },
@@ -198,6 +264,12 @@ describe('GridLckParser', () => {
           teamExternalId: 'team-2',
           position: PlayerPosition.MID,
         }),
+        expect.objectContaining({
+          externalId: 'player-4',
+          name: 'Smash',
+          teamExternalId: 'team-1',
+          position: PlayerPosition.FLEX,
+        }),
       ]),
     );
 
@@ -212,6 +284,63 @@ describe('GridLckParser', () => {
         awayScore: 1,
         winnerTeamExternalId: 'team-1',
         status: MatchStatus.COMPLETED,
+        participants: expect.arrayContaining([
+          expect.objectContaining({
+            playerExternalId: 'player-1',
+            teamExternalId: 'team-1',
+            role: PlayerPosition.MID,
+            isStarter: true,
+          }),
+          expect.objectContaining({
+            playerExternalId: 'player-2',
+            teamExternalId: 'team-2',
+            role: PlayerPosition.MID,
+            isStarter: true,
+          }),
+          expect.objectContaining({
+            playerExternalId: 'player-4',
+            teamExternalId: 'team-1',
+            role: PlayerPosition.FLEX,
+            isStarter: true,
+          }),
+        ]),
+        games: [
+          expect.objectContaining({
+            externalId: 'game-1',
+            sequenceNumber: 1,
+            winnerTeamExternalId: 'team-1',
+            playerStats: [
+              expect.objectContaining({
+                playerExternalId: 'player-4',
+                teamExternalId: 'team-1',
+                characterId: 'champion-1',
+                characterName: 'Varus',
+                kills: 5,
+                deaths: 1,
+                assists: 8,
+                totalMoneyEarned: 14500,
+                damageDealt: 23000,
+                damageTaken: 9000,
+                visionScore: 31,
+                kdaRatio: 13,
+                killParticipation: 0.76,
+              }),
+            ],
+            draftActions: [
+              expect.objectContaining({
+                externalId: 'draft-1',
+                type: 'ban',
+                sequenceNumber: '1',
+                sequenceOrder: 1,
+                drafterId: 'team-1',
+                drafterType: 'team',
+                draftableId: 'champion-2',
+                draftableType: 'champion',
+                draftableName: 'Azir',
+              }),
+            ],
+          }),
+        ],
       }),
       expect.objectContaining({
         externalId: 'series-2',

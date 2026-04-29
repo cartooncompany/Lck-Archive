@@ -1,12 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { MatchStatus, PlayerPosition } from '@prisma/client';
 import {
+  RawLckMatchDraftActionPayload,
+  RawLckMatchGamePayload,
+  RawLckMatchGamePlayerStatPayload,
   RawLckMatchPayload,
+  RawLckMatchParticipantPayload,
   RawLckPlayerPayload,
   RawLckSnapshotPayload,
   RawLckTeamPayload,
 } from '../types/lck-source.types';
 import {
+  GridGamePlayerState,
   GridLckSnapshotPayload,
   GridPlayerNode,
   GridSeriesNode,
@@ -31,10 +36,20 @@ interface GridTeamRecord {
 export class GridLckParser {
   parseSnapshot(payload: GridLckSnapshotPayload): RawLckSnapshotPayload {
     const teamsById = this.collectTeams(payload.series);
-    const matches = this.parseMatches(payload.series, payload.statesBySeriesId);
+    const players = this.parsePlayers(
+      payload.playersByTeamId,
+      payload.statesBySeriesId,
+    );
+    const positionByPlayerId = new Map(
+      players.map((player) => [player.externalId, player.position]),
+    );
+    const matches = this.parseMatches(
+      payload.series,
+      payload.statesBySeriesId,
+      positionByPlayerId,
+    );
     const teamRecords = this.buildTeamRecords(matches);
     const teams = this.rankTeams(teamsById, teamRecords);
-    const players = this.parsePlayers(payload.playersByTeamId);
 
     return {
       teams,
@@ -71,6 +86,7 @@ export class GridLckParser {
   private parseMatches(
     series: GridSeriesNode[],
     statesBySeriesId: Record<string, GridSeriesState | null>,
+    positionByPlayerId: Map<string, PlayerPosition>,
   ): RawLckMatchPayload[] {
     const matches: RawLckMatchPayload[] = [];
 
@@ -113,17 +129,21 @@ export class GridLckParser {
         winnerTeamExternalId: winnerTeamId,
         status: state?.finished ? MatchStatus.COMPLETED : MatchStatus.SCHEDULED,
         vodUrl: null,
+        participants: this.parseParticipants(state, positionByPlayerId),
+        games: this.parseGames(state, positionByPlayerId),
       });
     }
 
     return matches.sort(
       (left, right) =>
-        new Date(left.scheduledAt).getTime() - new Date(right.scheduledAt).getTime(),
+        new Date(left.scheduledAt).getTime() -
+        new Date(right.scheduledAt).getTime(),
     );
   }
 
   private parsePlayers(
     playersByTeamId: Record<string, GridPlayerNode[]>,
+    statesBySeriesId: Record<string, GridSeriesState | null>,
   ): RawLckPlayerPayload[] {
     const players = new Map<string, RawLckPlayerPayload>();
 
@@ -143,9 +163,192 @@ export class GridLckParser {
       }
     }
 
+    for (const state of Object.values(statesBySeriesId)) {
+      for (const [teamId, statePlayers] of this.collectStatePlayersByTeam(
+        state,
+      )) {
+        for (const player of statePlayers) {
+          if (!this.isActiveParticipation(player.participationStatus)) {
+            continue;
+          }
+
+          if (players.has(player.id)) {
+            continue;
+          }
+
+          players.set(player.id, {
+            externalId: player.id,
+            name: player.name,
+            teamExternalId: teamId,
+            position: this.toPlayerPosition(player.roles),
+            profileImageUrl: null,
+            realName: null,
+            nationality: null,
+            birthDate: null,
+            recentMatchCount: 0,
+          });
+        }
+      }
+    }
+
     return [...players.values()].sort((left, right) =>
       left.name.localeCompare(right.name),
     );
+  }
+
+  private parseParticipants(
+    state: GridSeriesState | null | undefined,
+    positionByPlayerId: Map<string, PlayerPosition>,
+  ): RawLckMatchParticipantPayload[] {
+    const participants = new Map<string, RawLckMatchParticipantPayload>();
+
+    for (const [teamId, players] of this.collectStatePlayersByTeam(state)) {
+      for (const player of players) {
+        if (!this.isActiveParticipation(player.participationStatus)) {
+          continue;
+        }
+
+        participants.set(player.id, {
+          playerExternalId: player.id,
+          teamExternalId: teamId,
+          role: player.roles?.length
+            ? this.toPlayerPosition(player.roles)
+            : (positionByPlayerId.get(player.id) ?? PlayerPosition.FLEX),
+          isStarter: true,
+        });
+      }
+    }
+
+    return [...participants.values()].sort((left, right) =>
+      left.playerExternalId.localeCompare(right.playerExternalId),
+    );
+  }
+
+  private parseGames(
+    state: GridSeriesState | null | undefined,
+    positionByPlayerId: Map<string, PlayerPosition>,
+  ): RawLckMatchGamePayload[] {
+    return (state?.games ?? [])
+      .filter((game) => typeof game.sequenceNumber === 'number')
+      .map((game) => ({
+        externalId: game.id ?? null,
+        sequenceNumber: game.sequenceNumber ?? 0,
+        startedAt: game.startedAt ?? null,
+        duration: game.duration ?? null,
+        mapId: game.map?.id ?? null,
+        mapName: game.map?.name ?? null,
+        winnerTeamExternalId: this.resolveGameWinnerTeamId(game),
+        playerStats: this.parseGamePlayerStats(game, positionByPlayerId),
+        draftActions: this.parseDraftActions(game.draftActions),
+      }))
+      .sort((left, right) => left.sequenceNumber - right.sequenceNumber);
+  }
+
+  private parseGamePlayerStats(
+    game: NonNullable<GridSeriesState['games']>[number],
+    positionByPlayerId: Map<string, PlayerPosition>,
+  ): RawLckMatchGamePlayerStatPayload[] {
+    const playerStats: RawLckMatchGamePlayerStatPayload[] = [];
+
+    for (const team of game.teams ?? []) {
+      for (const player of team.players ?? []) {
+        if (!this.isActiveParticipation(player.participationStatus)) {
+          continue;
+        }
+
+        playerStats.push({
+          playerExternalId: player.id,
+          teamExternalId: team.id,
+          role: player.roles?.length
+            ? this.toPlayerPosition(player.roles)
+            : (positionByPlayerId.get(player.id) ?? PlayerPosition.FLEX),
+          participationStatus: player.participationStatus ?? null,
+          characterId: player.character?.id ?? null,
+          characterName: player.character?.name ?? null,
+          kills: this.toNullableNumber(player.kills),
+          deaths: this.toNullableNumber(player.deaths),
+          assists: this.toNullableNumber(player.killAssistsGiven),
+          totalMoneyEarned: this.toNullableNumber(player.totalMoneyEarned),
+          damageDealt: this.toNullableNumber(player.damageDealt),
+          damageTaken: this.toNullableNumber(player.damageTaken),
+          visionScore: this.toNullableNumber(player.visionScore),
+          kdaRatio: this.toNullableNumber(player.kdaRatio),
+          killParticipation: this.toNullableNumber(player.killParticipation),
+        });
+      }
+    }
+
+    return playerStats.sort((left, right) =>
+      left.playerExternalId.localeCompare(right.playerExternalId),
+    );
+  }
+
+  private parseDraftActions(
+    draftActions: NonNullable<
+      NonNullable<GridSeriesState['games']>[number]['draftActions']
+    > | null = [],
+  ): RawLckMatchDraftActionPayload[] {
+    return (draftActions ?? [])
+      .map((action) => ({
+        externalId: action.id,
+        type: action.type,
+        sequenceNumber: action.sequenceNumber,
+        sequenceOrder: this.toNullableNumber(Number(action.sequenceNumber)),
+        drafterId: action.drafter?.id ?? null,
+        drafterType: action.drafter?.type ?? null,
+        draftableId: action.draftable?.id ?? null,
+        draftableType: action.draftable?.type ?? null,
+        draftableName: action.draftable?.name ?? null,
+      }))
+      .sort(
+        (left, right) =>
+          (left.sequenceOrder ?? Number.MAX_SAFE_INTEGER) -
+            (right.sequenceOrder ?? Number.MAX_SAFE_INTEGER) ||
+          left.sequenceNumber.localeCompare(right.sequenceNumber),
+      );
+  }
+
+  private collectStatePlayersByTeam(
+    state: GridSeriesState | null | undefined,
+  ): Array<[string, GridGamePlayerState[]]> {
+    const playersByTeamId = new Map<string, GridGamePlayerState[]>();
+
+    const appendPlayers = (
+      teamId: string,
+      players: GridGamePlayerState[] | null | undefined,
+    ) => {
+      if (!players?.length) {
+        return;
+      }
+
+      const currentPlayers = playersByTeamId.get(teamId) ?? [];
+      const currentPlayerIds = new Set(
+        currentPlayers.map((player) => player.id),
+      );
+
+      for (const player of players) {
+        if (currentPlayerIds.has(player.id)) {
+          continue;
+        }
+
+        currentPlayerIds.add(player.id);
+        currentPlayers.push(player);
+      }
+
+      playersByTeamId.set(teamId, currentPlayers);
+    };
+
+    for (const team of state?.teams ?? []) {
+      appendPlayers(team.id, team.players ?? []);
+    }
+
+    for (const game of state?.games ?? []) {
+      for (const team of game.teams ?? []) {
+        appendPlayers(team.id, team.players ?? []);
+      }
+    }
+
+    return [...playersByTeamId.entries()];
   }
 
   private buildTeamRecords(
@@ -167,7 +370,10 @@ export class GridLckParser {
         match.homeScore ?? 0,
       );
 
-      if (match.status !== MatchStatus.COMPLETED || !match.winnerTeamExternalId) {
+      if (
+        match.status !== MatchStatus.COMPLETED ||
+        !match.winnerTeamExternalId
+      ) {
         continue;
       }
 
@@ -261,9 +467,7 @@ export class GridLckParser {
     return firstToken || name;
   }
 
-  private toPlayerPosition(
-    roles?: GridPlayerNode['roles'],
-  ): PlayerPosition {
+  private toPlayerPosition(roles?: GridPlayerNode['roles']): PlayerPosition {
     const candidates = (roles ?? [])
       .flatMap((role) => [role.name, role.title?.name])
       .filter((value): value is string => Boolean(value))
@@ -317,6 +521,20 @@ export class GridLckParser {
     }
 
     return homeScore > awayScore ? homeTeamId : awayTeamId;
+  }
+
+  private resolveGameWinnerTeamId(
+    game: NonNullable<GridSeriesState['games']>[number],
+  ): string | null {
+    return (game.teams ?? []).find((team) => team.won)?.id ?? null;
+  }
+
+  private isActiveParticipation(status?: string | null): boolean {
+    return status !== 'inactive';
+  }
+
+  private toNullableNumber(value?: number | null): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
   }
 
   private accumulateSeriesOutcome(

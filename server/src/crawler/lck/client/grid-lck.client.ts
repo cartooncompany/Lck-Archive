@@ -19,8 +19,21 @@ const DEFAULT_GRID_LOOKAHEAD_DAYS = 120;
 const DEFAULT_GRID_PAGE_SIZE = 50;
 const DEFAULT_SERIES_STATE_CONCURRENCY = 8;
 const DEFAULT_TEAM_QUERY_CONCURRENCY = 4;
+const DEFAULT_GRID_REQUESTS_PER_MINUTE = 18;
+const DEFAULT_GRID_RATE_LIMIT_WINDOW_MS = 60_000;
 const GRID_API_KEY_MISSING_MESSAGE =
   'GRID API key is not configured. Set GRID_API_KEY before running GRID-based LCK sync.';
+
+interface GridGraphqlError {
+  message?: string;
+  path?: Array<string | number>;
+  extensions?: {
+    code?: string;
+    serviceName?: string;
+    errorType?: string;
+    errorDetail?: string;
+  };
+}
 
 @Injectable()
 export class GridLckClient {
@@ -36,6 +49,10 @@ export class GridLckClient {
   private readonly pageSize: number;
   private readonly seriesStateConcurrency: number;
   private readonly teamQueryConcurrency: number;
+  private readonly requestsPerMinute: number;
+  private readonly rateLimitWindowMs: number;
+  private readonly requestTimestamps: number[] = [];
+  private rateLimitChain = Promise.resolve();
 
   constructor(
     private readonly configService: ConfigService,
@@ -82,6 +99,14 @@ export class GridLckClient {
     this.teamQueryConcurrency = this.toPositiveNumber(
       this.configService.get<string>('GRID_TEAM_QUERY_CONCURRENCY'),
       DEFAULT_TEAM_QUERY_CONCURRENCY,
+    );
+    this.requestsPerMinute = this.toPositiveNumber(
+      this.configService.get<string>('GRID_REQUESTS_PER_MINUTE'),
+      DEFAULT_GRID_REQUESTS_PER_MINUTE,
+    );
+    this.rateLimitWindowMs = this.toPositiveNumber(
+      this.configService.get<string>('GRID_RATE_LIMIT_WINDOW_MS'),
+      DEFAULT_GRID_RATE_LIMIT_WINDOW_MS,
     );
 
     this.axiosClient = axios.create({
@@ -148,18 +173,26 @@ export class GridLckClient {
   private async fetchPlayersByTeam(
     teamIds: string[],
   ): Promise<Record<string, GridPlayerNode[]>> {
-    const entries = await this.mapWithConcurrency(teamIds, this.teamQueryConcurrency, async (teamId) => {
-      try {
-        const roster = await this.fetchPlayersForTeam(teamId);
-        return [teamId, roster] as const;
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : 'Unknown GRID roster error';
+    const entries = await this.mapWithConcurrency(
+      teamIds,
+      this.teamQueryConcurrency,
+      async (teamId) => {
+        try {
+          const roster = await this.fetchPlayersForTeam(teamId);
+          return [teamId, roster] as const;
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : 'Unknown GRID roster error';
 
-        this.logger.warn(`Failed to fetch GRID roster for team ${teamId}: ${message}`);
-        return [teamId, []] as const;
-      }
-    });
+          this.logger.warn(
+            `Failed to fetch GRID roster for team ${teamId}: ${message}`,
+          );
+          return [teamId, []] as const;
+        }
+      },
+    );
 
     return Object.fromEntries(entries);
   }
@@ -196,9 +229,13 @@ export class GridLckClient {
           return [seriesId, state] as const;
         } catch (error) {
           const message =
-            error instanceof Error ? error.message : 'Unknown GRID series-state error';
+            error instanceof Error
+              ? error.message
+              : 'Unknown GRID series-state error';
 
-          this.logger.warn(`Failed to fetch GRID series state for ${seriesId}: ${message}`);
+          this.logger.warn(
+            `Failed to fetch GRID series state for ${seriesId}: ${message}`,
+          );
           return [seriesId, null] as const;
         }
       },
@@ -210,26 +247,23 @@ export class GridLckClient {
   private async fetchSeriesState(
     seriesId: string,
   ): Promise<GridSeriesState | null> {
-    const data = await this.executeGraphql<{ seriesState?: GridSeriesState | null }>(
-      this.seriesStateUrl,
-      this.buildSeriesStateQuery(seriesId),
-    );
+    const data = await this.executeGraphql<{
+      seriesState?: GridSeriesState | null;
+    }>(this.seriesStateUrl, this.buildSeriesStateQuery(seriesId));
 
     return data.seriesState ?? null;
   }
 
   private async executeGraphql<T>(url: string, query: string): Promise<T> {
+    await this.waitForRateLimitSlot();
+
     const response = await this.axiosClient.post<{
       data?: T;
-      errors?: Array<{ message?: string }>;
+      errors?: GridGraphqlError[];
     }>(url, { query });
 
     if (response.data.errors?.length) {
-      throw new Error(
-        response.data.errors
-          .map((error) => error.message ?? 'Unknown GraphQL error')
-          .join('; '),
-      );
+      throw new Error(this.formatGraphqlErrors(response.data.errors));
     }
 
     if (!response.data.data) {
@@ -237,6 +271,64 @@ export class GridLckClient {
     }
 
     return response.data.data;
+  }
+
+  private async waitForRateLimitSlot(): Promise<void> {
+    const reservation = this.rateLimitChain.then(() =>
+      this.reserveRateLimitSlot(),
+    );
+
+    this.rateLimitChain = reservation.catch(() => undefined);
+
+    return reservation;
+  }
+
+  private async reserveRateLimitSlot(): Promise<void> {
+    while (true) {
+      const now = Date.now();
+      const windowStart = now - this.rateLimitWindowMs;
+
+      while (
+        this.requestTimestamps.length > 0 &&
+        this.requestTimestamps[0] <= windowStart
+      ) {
+        this.requestTimestamps.shift();
+      }
+
+      if (this.requestTimestamps.length < this.requestsPerMinute) {
+        this.requestTimestamps.push(now);
+        return;
+      }
+
+      const oldestRequestAt = this.requestTimestamps[0];
+      const waitMs = Math.max(
+        oldestRequestAt + this.rateLimitWindowMs - now + 1,
+        1,
+      );
+
+      await this.delay(waitMs);
+    }
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private formatGraphqlErrors(errors: GridGraphqlError[]): string {
+    return errors
+      .map((error) => {
+        const parts = [
+          error.extensions?.errorType,
+          error.extensions?.errorDetail,
+          error.extensions?.code,
+          error.extensions?.serviceName,
+          error.path?.length ? `path=${error.path.join('.')}` : undefined,
+          error.message ?? 'Unknown GraphQL error',
+        ].filter(Boolean);
+
+        return parts.join(': ');
+      })
+      .join('; ');
   }
 
   private buildAllSeriesQuery(afterCursor: string | null): string {
@@ -286,7 +378,10 @@ export class GridLckClient {
     `;
   }
 
-  private buildPlayersQuery(teamId: string, afterCursor: string | null): string {
+  private buildPlayersQuery(
+    teamId: string,
+    afterCursor: string | null,
+  ): string {
     return `
       query Players {
         players(
@@ -324,21 +419,81 @@ export class GridLckClient {
     return `
       query SeriesState {
         seriesState(id: ${JSON.stringify(seriesId)}) {
+          id
+          format
           valid
           started
           finished
+          forfeited
           startedAt
+          updatedAt
+          duration
           teams {
             id
+            name
             won
             score
+            players {
+              id
+              name
+              participationStatus
+            }
           }
           games {
+            id
             sequenceNumber
+            started
+            finished
+            forfeited
+            startedAt
+            duration
+            map {
+              id
+              name
+            }
             teams {
               id
+              name
+              side
               won
               score
+              players {
+                id
+                name
+                participationStatus
+                character {
+                  id
+                  name
+                }
+                roles {
+                  id
+                }
+                kills
+                deaths
+                killAssistsGiven
+                ... on GamePlayerStateLol {
+                  totalMoneyEarned
+                  damageDealt
+                  damageTaken
+                  visionScore
+                  kdaRatio
+                  killParticipation
+                }
+              }
+            }
+            draftActions {
+              id
+              type
+              sequenceNumber
+              drafter {
+                id
+                type
+              }
+              draftable {
+                id
+                type
+                name
+              }
             }
           }
         }
@@ -421,7 +576,10 @@ export class GridLckClient {
     }
   }
 
-  private toPositiveNumber(value: string | undefined, fallback: number): number {
+  private toPositiveNumber(
+    value: string | undefined,
+    fallback: number,
+  ): number {
     const parsed = Number(value);
 
     return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;

@@ -139,6 +139,55 @@ export interface RawLckPlayerPayload {
   recentMatchCount?: number;
 }
 
+export interface RawLckMatchParticipantPayload {
+  playerExternalId: string;
+  teamExternalId: string;
+  role?: PlayerPosition | null;
+  isStarter?: boolean;
+}
+
+export interface RawLckMatchGamePlayerStatPayload {
+  playerExternalId: string;
+  teamExternalId: string;
+  role?: PlayerPosition | null;
+  participationStatus?: string | null;
+  characterId?: string | null;
+  characterName?: string | null;
+  kills?: number | null;
+  deaths?: number | null;
+  assists?: number | null;
+  totalMoneyEarned?: number | null;
+  damageDealt?: number | null;
+  damageTaken?: number | null;
+  visionScore?: number | null;
+  kdaRatio?: number | null;
+  killParticipation?: number | null;
+}
+
+export interface RawLckMatchDraftActionPayload {
+  externalId?: string | null;
+  type: string;
+  sequenceNumber: string;
+  sequenceOrder?: number | null;
+  drafterId?: string | null;
+  drafterType?: string | null;
+  draftableId?: string | null;
+  draftableType?: string | null;
+  draftableName?: string | null;
+}
+
+export interface RawLckMatchGamePayload {
+  externalId?: string | null;
+  sequenceNumber: number;
+  startedAt?: string | null;
+  duration?: string | null;
+  mapId?: string | null;
+  mapName?: string | null;
+  winnerTeamExternalId?: string | null;
+  playerStats?: RawLckMatchGamePlayerStatPayload[];
+  draftActions?: RawLckMatchDraftActionPayload[];
+}
+
 export interface RawLckMatchPayload {
   externalId: string;
   scheduledAt: string;
@@ -153,6 +202,8 @@ export interface RawLckMatchPayload {
   winnerTeamExternalId?: string | null;
   status?: MatchStatus;
   vodUrl?: string | null;
+  participants?: RawLckMatchParticipantPayload[];
+  games?: RawLckMatchGamePayload[];
 }
 
 export interface RawLckSnapshotPayload {

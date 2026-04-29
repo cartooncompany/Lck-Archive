@@ -28,6 +28,7 @@ enum NewsSource {
   LOLESPORTS
   NAVER_ESPORTS
 }
+
 model Team {
   id              String   @id @default(cuid())
   name            String
@@ -46,14 +47,16 @@ model Team {
   updatedAt       DateTime @updatedAt
 
   players        Player[]
-  homeMatches    Match[]                  @relation("HomeTeam")
-  awayMatches    Match[]                  @relation("AwayTeam")
-  wonMatches     Match[]                  @relation("WinnerTeam")
+  homeMatches    Match[]                    @relation("HomeTeam")
+  awayMatches    Match[]                    @relation("AwayTeam")
+  wonMatches     Match[]                    @relation("WinnerTeam")
+  wonGames       MatchGame[]                @relation("MatchGameWinnerTeam")
   participations MatchPlayerParticipation[]
-  supporters     User[]                   @relation("FavoriteTeam")
+  gameStats      MatchGamePlayerStat[]
+  supporters     User[]                     @relation("FavoriteTeam")
 
-  @@index([rank])
   @@unique([externalSource, externalId])
+  @@index([rank])
 }
 
 model User {
@@ -70,6 +73,7 @@ model User {
 
   @@index([favoriteTeamId])
 }
+
 model Player {
   id               String         @id @default(cuid())
   teamId           String?
@@ -86,12 +90,13 @@ model Player {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
-  team           Team?                     @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  team           Team?                      @relation(fields: [teamId], references: [id], onDelete: SetNull)
   participations MatchPlayerParticipation[]
+  gameStats      MatchGamePlayerStat[]
 
+  @@unique([externalSource, externalId])
   @@index([teamId])
   @@index([position])
-  @@unique([externalSource, externalId])
 }
 
 model Match {
@@ -117,22 +122,23 @@ model Match {
   awayTeam       Team                       @relation("AwayTeam", fields: [awayTeamId], references: [id])
   winnerTeam     Team?                      @relation("WinnerTeam", fields: [winnerTeamId], references: [id])
   participations MatchPlayerParticipation[]
+  games          MatchGame[]
 
+  @@unique([externalSource, externalId])
   @@index([scheduledAt])
   @@index([seasonYear, split, stage])
   @@index([homeTeamId, scheduledAt])
   @@index([awayTeamId, scheduledAt])
-  @@unique([externalSource, externalId])
 }
 
 model MatchPlayerParticipation {
-  id        String         @id @default(cuid())
+  id        String          @id @default(cuid())
   matchId   String
   playerId  String
   teamId    String
   role      PlayerPosition?
-  isStarter Boolean        @default(true)
-  createdAt DateTime       @default(now())
+  isStarter Boolean         @default(true)
+  createdAt DateTime        @default(now())
 
   match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
   player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
@@ -141,6 +147,79 @@ model MatchPlayerParticipation {
   @@unique([matchId, playerId])
   @@index([playerId, matchId])
   @@index([teamId, matchId])
+}
+
+model MatchGame {
+  id             String    @id @default(cuid())
+  matchId        String
+  externalId     String?
+  sequenceNumber Int
+  startedAt      DateTime?
+  duration       String?
+  mapId          String?
+  mapName        String?
+  winnerTeamId   String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  match        Match                 @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  winnerTeam   Team?                 @relation("MatchGameWinnerTeam", fields: [winnerTeamId], references: [id], onDelete: SetNull)
+  playerStats  MatchGamePlayerStat[]
+  draftActions MatchDraftAction[]
+
+  @@unique([matchId, sequenceNumber])
+  @@index([matchId])
+  @@index([winnerTeamId])
+}
+
+model MatchGamePlayerStat {
+  id                  String          @id @default(cuid())
+  matchGameId         String
+  playerId            String
+  teamId              String
+  role                PlayerPosition?
+  participationStatus String?
+  characterId         String?
+  characterName       String?
+  kills               Int?
+  deaths              Int?
+  assists             Int?
+  totalMoneyEarned    Int?
+  damageDealt         Int?
+  damageTaken         Int?
+  visionScore         Float?
+  kdaRatio            Float?
+  killParticipation   Float?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  matchGame MatchGame @relation(fields: [matchGameId], references: [id], onDelete: Cascade)
+  player    Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([matchGameId, playerId])
+  @@index([playerId, matchGameId])
+  @@index([teamId, matchGameId])
+}
+
+model MatchDraftAction {
+  id             String   @id @default(cuid())
+  matchGameId    String
+  externalId     String?
+  type           String
+  sequenceNumber String
+  sequenceOrder  Int?
+  drafterId      String?
+  drafterType    String?
+  draftableId    String?
+  draftableType  String?
+  draftableName  String?
+  createdAt      DateTime @default(now())
+
+  matchGame MatchGame @relation(fields: [matchGameId], references: [id], onDelete: Cascade)
+
+  @@index([matchGameId])
+  @@index([matchGameId, sequenceNumber])
 }
 
 model NewsArticle {
@@ -157,19 +236,20 @@ model NewsArticle {
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
+  @@unique([externalSource, externalId])
   @@index([publishedAt])
   @@index([externalSource, publishedAt])
-  @@unique([externalSource, externalId])
 }
+
 model SyncJobLog {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   jobName      String
   status       String
   message      String?
-  startedAt    DateTime @default(now())
+  startedAt    DateTime  @default(now())
   finishedAt   DateTime?
-  recordsCount Int      @default(0)
-  createdAt    DateTime @default(now())
+  recordsCount Int       @default(0)
+  createdAt    DateTime  @default(now())
 
   @@index([jobName, startedAt])
 }
