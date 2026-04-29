@@ -8,11 +8,13 @@ class MatchResultTile extends StatelessWidget {
   const MatchResultTile({
     required this.match,
     required this.accentColor,
+    this.onTap,
     super.key,
   });
 
   final LckMatchResult match;
   final Color accentColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -91,6 +93,17 @@ class MatchResultTile extends StatelessWidget {
               context,
             ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
           ),
+          if (onTap != null) ...[
+            const SizedBox(height: 10),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: onTap,
+                icon: const Icon(Icons.chevron_right_rounded),
+                label: const Text('상세 보기'),
+              ),
+            ),
+          ],
         ],
       ),
     );

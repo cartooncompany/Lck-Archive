@@ -6,18 +6,18 @@ import '../../../../shared/models/team_summary.dart';
 
 class FavoriteTeamController extends ChangeNotifier {
   FavoriteTeamController({
-    required TeamSummary initialTeam,
+    TeamSummary? initialTeam,
     Future<void> Function(TeamSummary team)? onChanged,
   }) : _favoriteTeam = initialTeam,
        _onChanged = onChanged;
 
-  TeamSummary _favoriteTeam;
+  TeamSummary? _favoriteTeam;
   final Future<void> Function(TeamSummary team)? _onChanged;
 
-  TeamSummary get favoriteTeam => _favoriteTeam;
+  TeamSummary? get favoriteTeam => _favoriteTeam;
 
   Future<void> selectTeam(TeamSummary team) async {
-    if (_favoriteTeam.id == team.id) {
+    if (_favoriteTeam?.id == team.id) {
       return;
     }
 

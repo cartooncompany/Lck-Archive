@@ -10,12 +10,14 @@ class ScheduledMatchTile extends StatelessWidget {
     required this.match,
     this.predictedWinnerTeamId,
     this.onPredictWinner,
+    this.onOpenDetail,
     super.key,
   });
 
   final LckScheduledMatch match;
   final String? predictedWinnerTeamId;
   final ValueChanged<String>? onPredictWinner;
+  final VoidCallback? onOpenDetail;
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +147,17 @@ class ScheduledMatchTile extends StatelessWidget {
               ),
             ],
           ),
+          if (onOpenDetail != null) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: onOpenDetail,
+                icon: const Icon(Icons.chevron_right_rounded),
+                label: const Text('상세 보기'),
+              ),
+            ),
+          ],
         ],
       ),
     );

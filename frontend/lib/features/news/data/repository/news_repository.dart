@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import '../../../../core/network/paged_response.dart';
 import '../../../../core/network/pagination_meta.dart';
-import '../../../../core/utils/mock_lck_data.dart';
 import '../../../../shared/models/news_article.dart';
 import '../datasource/news_remote_data_source.dart';
 import '../dto/news_item_dto.dart';
@@ -27,36 +26,26 @@ class NewsRepository {
     final normalizedKeyword = keyword?.trim();
     final normalizedSource = source?.trim().toUpperCase();
 
-    try {
-      if (normalizedSource == 'LOLESPORTS') {
-        final response = await _remoteDataSource.getNews(
-          page: safePage,
-          limit: safeLimit,
-          source: source,
-          keyword: normalizedKeyword,
-          sortOrder: sortOrder,
-        );
-        return PagedResponse(
-          items: response.items.map(_mapNewsItem).toList(),
-          meta: response.meta,
-        );
-      }
-
-      final articles = await _getFilteredRemoteNews(
-        source: source,
-        keyword: normalizedKeyword,
-        sortOrder: sortOrder,
-      );
-      return _paginateArticles(articles, page: safePage, limit: safeLimit);
-    } catch (_) {
-      return _fallbackNews(
+    if (normalizedSource == 'LOLESPORTS') {
+      final response = await _remoteDataSource.getNews(
         page: safePage,
         limit: safeLimit,
         source: source,
         keyword: normalizedKeyword,
         sortOrder: sortOrder,
       );
+      return PagedResponse(
+        items: response.items.map(_mapNewsItem).toList(),
+        meta: response.meta,
+      );
     }
+
+    final articles = await _getFilteredRemoteNews(
+      source: source,
+      keyword: normalizedKeyword,
+      sortOrder: sortOrder,
+    );
+    return _paginateArticles(articles, page: safePage, limit: safeLimit);
   }
 
   Future<List<NewsArticle>> getFeaturedNewsForTeam({
@@ -138,34 +127,6 @@ class NewsRepository {
     }
 
     return collectedArticles;
-  }
-
-  PagedResponse<NewsArticle> _fallbackNews({
-    required int page,
-    required int limit,
-    String? source,
-    String? keyword,
-    required String sortOrder,
-  }) {
-    final normalizedSource = source?.trim().toUpperCase();
-    final normalizedKeyword = keyword?.trim() ?? '';
-    final isAscending = sortOrder.trim().toLowerCase() == 'asc';
-
-    final filtered =
-        MockLckData.news.where((article) {
-          final matchesSource =
-              normalizedSource == null ||
-              article.normalizedSource == normalizedSource;
-          final matchesKeyword =
-              normalizedKeyword.isEmpty ||
-              article.matchesKeyword(normalizedKeyword);
-          return matchesSource && matchesKeyword && article.isVisibleNews;
-        }).toList()..sort((left, right) {
-          final comparison = _compareByPublishedAt(left, right);
-          return isAscending ? comparison : -comparison;
-        });
-
-    return _paginateArticles(filtered, page: page, limit: limit);
   }
 
   PagedResponse<NewsArticle> _paginateArticles(

@@ -55,16 +55,22 @@ class _SettingsContent extends StatelessWidget {
                         horizontal: 18,
                         vertical: 8,
                       ),
-                      leading: TeamLogo(
-                        initials: favoriteTeam.initials,
-                        logoUrl: favoriteTeam.logoUrl,
-                        size: 40,
-                        foregroundColor: favoriteTeam.color,
-                        borderRadius: 999,
-                      ),
+                      leading: favoriteTeam != null
+                          ? TeamLogo(
+                              initials: favoriteTeam.initials,
+                              logoUrl: favoriteTeam.logoUrl,
+                              size: 40,
+                              foregroundColor: favoriteTeam.color,
+                              borderRadius: 999,
+                            )
+                          : const Icon(Icons.shield_outlined),
                       title: const Text('응원팀 변경'),
                       subtitle: Text(
-                        session.isSignedIn
+                        favoriteTeam == null
+                            ? session.isSignedIn
+                                  ? '아직 선택한 응원팀이 없습니다. 선택 후 앱 로컬 개인화 기준이 적용됩니다.'
+                                  : '아직 선택한 응원팀이 없습니다.'
+                            : session.isSignedIn
                             ? '현재 ${favoriteTeam.name} 선택됨 · 앱 로컬 개인화 기준'
                             : '현재 ${favoriteTeam.name} 선택됨',
                       ),
@@ -154,7 +160,9 @@ class _SettingsContent extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      session.isSignedIn
+                      favoriteTeam == null
+                          ? '응원팀을 선택하면 홈의 팀 카드, 최근 경기, 주요 선수, 관련 뉴스 노출 순서가 개인화됩니다.'
+                          : session.isSignedIn
                           ? '응원팀을 바꾸면 홈의 팀 카드, 최근 경기, 주요 선수, 관련 뉴스 노출 순서가 로컬 기준으로 함께 바뀝니다. 현재 서버에는 응원팀 수정 API가 없어 앱 로컬 상태로 유지합니다.'
                           : '응원팀을 변경하면 홈의 팀 카드, 최근 경기, 주요 선수, 관련 뉴스 노출 순서가 함께 바뀝니다.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(

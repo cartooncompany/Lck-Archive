@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
+import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/models/lck_scheduled_match.dart';
 import '../../../../shared/widgets/responsive_page_container.dart';
@@ -126,6 +127,8 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
                                       matchId: match.id,
                                       teamId: teamId,
                                     ),
+                                onOpenDetail: () =>
+                                    _openMatchDetail(context, match.id),
                               ),
                             ),
                           ),
@@ -217,6 +220,10 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
     }
 
     return grouped;
+  }
+
+  void _openMatchDetail(BuildContext context, String matchId) {
+    Navigator.of(context).pushNamed(AppRouter.matchDetail, arguments: matchId);
   }
 }
 

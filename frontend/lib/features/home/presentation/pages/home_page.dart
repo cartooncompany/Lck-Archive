@@ -9,6 +9,7 @@ import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/app_failure.dart';
 import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
+import '../../../../features/favorite_team/presentation/widgets/favorite_team_picker_sheet.dart';
 import '../../../../shared/models/lck_scheduled_match.dart';
 import '../../../../shared/models/news_article.dart';
 import '../../../../shared/models/team_summary.dart';
@@ -49,8 +50,8 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final favoriteTeam = FavoriteTeamScope.of(context).favoriteTeam;
-    if (_loadedTeamId != favoriteTeam.id || _homeFuture == null) {
-      _loadedTeamId = favoriteTeam.id;
+    if (_loadedTeamId != favoriteTeam?.id || _homeFuture == null) {
+      _loadedTeamId = favoriteTeam?.id;
       _homeFuture = _loadHomeData(context, favoriteTeam);
     }
 
@@ -92,10 +93,15 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                       const SizedBox(height: 22),
-                      FavoriteTeamCard(
-                        team: team,
-                        onTap: () => _openTeamDetail(context, team),
-                      ),
+                      if (team != null)
+                        FavoriteTeamCard(
+                          team: team,
+                          onTap: () => _openTeamDetail(context, team),
+                        )
+                      else
+                        _FavoriteTeamEmptyCard(
+                          onTap: () => _showFavoriteTeamPicker(context),
+                        ),
                       const SizedBox(height: AppSpacing.section),
                       if (useSplitLayout)
                         Row(
@@ -214,6 +220,7 @@ class _HomePageState extends State<HomePage> {
                       matchId: match.id,
                       teamId: teamId,
                     ),
+                    onOpenDetail: () => _openMatchDetail(context, match.id),
                   ),
                 ),
               ),
@@ -307,21 +314,31 @@ class _HomePageState extends State<HomePage> {
 
   Future<_HomePageData> _loadHomeData(
     BuildContext context,
-    TeamSummary favoriteTeam,
+    TeamSummary? favoriteTeam,
   ) async {
     final dependencies = AppDependenciesScope.of(context);
-    final teamFuture = dependencies.teamsRepository.getTeam(favoriteTeam.id);
     final standingsFuture = dependencies.teamsRepository.getTeams();
-    final featuredNewsFuture = dependencies.newsRepository
-        .getFeaturedNewsForTeam(
-          teamName: favoriteTeam.name,
-          shortName: favoriteTeam.initials,
-          limit: 3,
-        );
+    final featuredNewsFuture = favoriteTeam == null
+        ? dependencies.newsRepository
+              .getNews(limit: 3)
+              .then((response) => response.items)
+        : dependencies.newsRepository.getFeaturedNewsForTeam(
+            teamName: favoriteTeam.name,
+            shortName: favoriteTeam.initials,
+            limit: 3,
+          );
     final scheduledMatchesFuture = dependencies.matchesRepository
         .getScheduledMatches(from: DateTime.now().toUtc());
 
-    final team = await teamFuture;
+    TeamSummary? team = favoriteTeam;
+    if (favoriteTeam != null) {
+      try {
+        team = await dependencies.teamsRepository.getTeam(favoriteTeam.id);
+      } catch (_) {
+        team = favoriteTeam;
+      }
+    }
+
     final standings = await standingsFuture
       ..sort((left, right) {
         if (left.rank == 0 && right.rank == 0) {
@@ -335,7 +352,12 @@ class _HomePageState extends State<HomePage> {
         }
         return left.rank.compareTo(right.rank);
       });
-    final featuredNews = await featuredNewsFuture;
+    List<NewsArticle> featuredNews = const [];
+    try {
+      featuredNews = await featuredNewsFuture;
+    } catch (_) {
+      featuredNews = const <NewsArticle>[];
+    }
     List<LckScheduledMatch> scheduledMatches = const [];
     String? scheduleError;
 
@@ -359,7 +381,7 @@ class _HomePageState extends State<HomePage> {
   void _refreshHomeData(BuildContext context) {
     final favoriteTeam = FavoriteTeamScope.of(context).favoriteTeam;
     setState(() {
-      _loadedTeamId = favoriteTeam.id;
+      _loadedTeamId = favoriteTeam?.id;
       _homeFuture = _loadHomeData(context, favoriteTeam);
     });
   }
@@ -370,6 +392,16 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _openNewsArticle(BuildContext context, NewsArticle article) {
     return openNewsArticle(context, article);
+  }
+
+  Future<void> _showFavoriteTeamPicker(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.background,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => const FavoriteTeamPickerSheet(),
+    );
   }
 
   Future<void> _requestScheduleSync(BuildContext context) async {
@@ -450,6 +482,10 @@ class _HomePageState extends State<HomePage> {
   void _openSchedulePage(BuildContext context) {
     Navigator.of(context).pushNamed(AppRouter.matchesSchedule);
   }
+
+  void _openMatchDetail(BuildContext context, String matchId) {
+    Navigator.of(context).pushNamed(AppRouter.matchDetail, arguments: matchId);
+  }
 }
 
 class _HomePageData {
@@ -461,11 +497,54 @@ class _HomePageData {
     required this.scheduleError,
   });
 
-  final TeamSummary team;
+  final TeamSummary? team;
   final List<TeamSummary> standings;
   final List<NewsArticle> featuredNews;
   final List<LckScheduledMatch> scheduledMatches;
   final String? scheduleError;
+}
+
+class _FavoriteTeamEmptyCard extends StatelessWidget {
+  const _FavoriteTeamEmptyCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('응원팀', style: Theme.of(context).textTheme.labelLarge),
+          const SizedBox(height: 14),
+          Text(
+            '아직 선택하지 않았습니다.',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '응원팀을 선택하면 홈 카드와 관련 뉴스가 개인화됩니다.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+          ),
+          const SizedBox(height: 18),
+          FilledButton.tonalIcon(
+            onPressed: onTap,
+            icon: const Icon(Icons.shield_outlined),
+            label: const Text('응원팀 선택'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _EmptySectionMessage extends StatelessWidget {

@@ -70,7 +70,7 @@ class FavoriteTeamPickerSheet extends StatelessWidget {
                         final team = teams[index];
                         return _FavoriteTeamTile(
                           team: team,
-                          isSelected: team.id == controller.favoriteTeam.id,
+                          isSelected: team.id == controller.favoriteTeam?.id,
                           onTap: () async {
                             await controller.selectTeam(team);
                             if (context.mounted) {

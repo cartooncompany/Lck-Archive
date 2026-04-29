@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend/core/utils/mock_lck_data.dart';
 import 'package:frontend/features/players/presentation/pages/player_detail_page.dart';
+import '../../../../test_helpers/sample_lck_test_data.dart';
 
 void main() {
   testWidgets('does not overflow when a metric value wraps to two lines', (
@@ -10,7 +10,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.binding.setSurfaceSize(const Size(390, 844));
 
-    final player = MockLckData.players.first.copyWith(
+    final player = sampleFaker.copyWith(
       realName: 'Minseok Ryu',
       nationality: 'Korea',
       birthDate: DateTime(1996, 5, 7),
@@ -33,7 +33,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.binding.setSurfaceSize(const Size(1280, 900));
 
-    final player = MockLckData.players.first.copyWith(
+    final player = sampleFaker.copyWith(
       realName: 'Lee Sang-hyeok',
       nationality: 'Korea',
       birthDate: DateTime(1996, 5, 7),

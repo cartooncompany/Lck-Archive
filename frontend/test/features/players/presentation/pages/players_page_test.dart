@@ -1,19 +1,52 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend/app/app_dependencies.dart';
 import 'package:frontend/app/app_dependencies_scope.dart';
-import 'package:frontend/core/utils/mock_lck_data.dart';
+import 'package:frontend/app/app_dependencies.dart';
+import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
+import 'package:frontend/features/auth/data/repository/auth_repository.dart';
 import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
+import 'package:frontend/features/matches/data/datasource/matches_remote_data_source.dart';
+import 'package:frontend/features/matches/data/repository/matches_repository.dart';
+import 'package:frontend/features/news/data/datasource/news_remote_data_source.dart';
+import 'package:frontend/features/news/data/repository/news_repository.dart';
+import 'package:frontend/features/players/data/datasource/players_remote_data_source.dart';
+import 'package:frontend/features/players/data/repository/players_repository.dart';
 import 'package:frontend/features/players/presentation/pages/players_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:frontend/features/teams/data/datasource/teams_remote_data_source.dart';
+import 'package:frontend/features/teams/data/repository/teams_repository.dart';
+import '../../../../test_helpers/sample_lck_test_data.dart';
 
 void main() {
   group('PlayersPage search', () {
     Future<void> pumpPlayersPage(WidgetTester tester) async {
-      SharedPreferences.setMockInitialValues(<String, Object>{});
-      final dependencies = await AppDependencies.create();
+      final apiClient = SampleLckApiClient();
+      final localStorage = MemoryLocalStorage();
+      final teamsRepository = TeamsRepository(
+        remoteDataSource: TeamsRemoteDataSource(apiClient),
+        localStorage: localStorage,
+      );
+      final dependencies = AppDependencies(
+        apiClient: apiClient,
+        localStorage: localStorage,
+        authRepository: AuthRepository(
+          remoteDataSource: AuthRemoteDataSource(apiClient),
+          localStorage: localStorage,
+        ),
+        teamsRepository: teamsRepository,
+        playersRepository: PlayersRepository(
+          remoteDataSource: PlayersRemoteDataSource(apiClient),
+          teamsRepository: teamsRepository,
+          localStorage: localStorage,
+        ),
+        matchesRepository: MatchesRepository(
+          remoteDataSource: MatchesRemoteDataSource(apiClient),
+        ),
+        newsRepository: NewsRepository(
+          remoteDataSource: NewsRemoteDataSource(apiClient),
+        ),
+      );
       final controller = FavoriteTeamController(
-        initialTeam: MockLckData.defaultFavoriteTeam,
+        initialTeam: sampleFavoriteTeam,
       );
       addTearDown(controller.dispose);
 

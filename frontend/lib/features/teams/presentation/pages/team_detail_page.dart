@@ -40,7 +40,7 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
       builder: (context, snapshot) {
         final team = snapshot.data?.team ?? widget.team;
         final players = snapshot.data?.players ?? const <PlayerProfile>[];
-        final isFavorite = favoriteController.favoriteTeam.id == team.id;
+        final isFavorite = favoriteController.favoriteTeam?.id == team.id;
         final resolvedLogoUrl = resolveMediaUrl(team.logoUrl);
 
         return Scaffold(
@@ -296,6 +296,9 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                           child: MatchResultTile(
                             match: match,
                             accentColor: team.color,
+                            onTap: match.id == null
+                                ? null
+                                : () => _openMatchDetail(context, match.id!),
                           ),
                         ),
                       ),
@@ -331,6 +334,10 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
         );
       },
     );
+  }
+
+  void _openMatchDetail(BuildContext context, String matchId) {
+    Navigator.of(context).pushNamed(AppRouter.matchDetail, arguments: matchId);
   }
 
   Future<_TeamDetailData> _loadDetail() async {

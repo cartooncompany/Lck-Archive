@@ -4,9 +4,6 @@ import 'package:frontend/app/app_dependencies.dart';
 import 'package:frontend/app/app_dependencies_scope.dart';
 import 'package:frontend/app/router/app_router.dart';
 import 'package:frontend/app/theme/app_theme.dart';
-import 'package:frontend/core/network/api_client.dart';
-import 'package:frontend/core/storage/local_storage.dart';
-import 'package:frontend/core/utils/mock_lck_data.dart';
 import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
 import 'package:frontend/features/auth/data/repository/auth_repository.dart';
 import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
@@ -21,6 +18,7 @@ import 'package:frontend/features/players/data/repository/players_repository.dar
 import 'package:frontend/features/settings/presentation/pages/settings_page.dart';
 import 'package:frontend/features/teams/data/datasource/teams_remote_data_source.dart';
 import 'package:frontend/features/teams/data/repository/teams_repository.dart';
+import '../../../../test_helpers/sample_lck_test_data.dart';
 
 void main() {
   testWidgets('favorite team picker does not overflow on a short screen', (
@@ -29,11 +27,9 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.binding.setSurfaceSize(const Size(390, 640));
 
-    final controller = FavoriteTeamController(
-      initialTeam: MockLckData.defaultFavoriteTeam,
-    );
-    final apiClient = _ThrowingApiClient();
-    final localStorage = _MemoryLocalStorage();
+    final controller = FavoriteTeamController(initialTeam: sampleFavoriteTeam);
+    final apiClient = SampleLckApiClient();
+    final localStorage = MemoryLocalStorage();
     final authRepository = AuthRepository(
       remoteDataSource: AuthRemoteDataSource(apiClient),
       localStorage: localStorage,
@@ -91,66 +87,4 @@ void main() {
     expect(find.text('응원팀 선택'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
-}
-
-class _ThrowingApiClient implements ApiClient {
-  @override
-  Future<T> get<T>(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    Map<String, String>? headers,
-    required T Function(dynamic data) decoder,
-  }) {
-    throw Exception('Network disabled in widget tests.');
-  }
-
-  @override
-  Future<T> post<T>(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Map<String, String>? headers,
-    required T Function(dynamic data) decoder,
-  }) {
-    throw Exception('Network disabled in widget tests.');
-  }
-
-  @override
-  Future<void> postVoid(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Map<String, String>? headers,
-  }) {
-    throw Exception('Network disabled in widget tests.');
-  }
-
-  @override
-  Future<void> deleteVoid(
-    String path, {
-    Object? data,
-    Map<String, dynamic>? queryParameters,
-    Map<String, String>? headers,
-  }) {
-    throw Exception('Network disabled in widget tests.');
-  }
-}
-
-class _MemoryLocalStorage implements LocalStorage {
-  final Map<String, String> _values = <String, String>{};
-
-  @override
-  Future<void> delete(String key) async {
-    _values.remove(key);
-  }
-
-  @override
-  Future<String?> readString(String key) async {
-    return _values[key];
-  }
-
-  @override
-  Future<void> writeString(String key, String value) async {
-    _values[key] = value;
-  }
 }

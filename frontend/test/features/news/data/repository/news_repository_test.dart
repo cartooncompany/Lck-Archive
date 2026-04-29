@@ -11,35 +11,107 @@ void main() {
 
   setUp(() {
     repository = NewsRepository(
-      remoteDataSource: _ThrowingNewsRemoteDataSource(),
+      remoteDataSource: _StubNewsRemoteDataSource(
+        responses: const {
+          1: PagedResponse(
+            items: [
+              NewsItemDto(
+                id: 'naver-lck-1',
+                title: 'LCK Hanwha Life Esports 연승 분석',
+                summary: 'LCK 상위권 경쟁이 치열해졌습니다.',
+                thumbnailUrl: null,
+                articleUrl: 'https://example.com/1',
+                publisher: 'Naver',
+                source: 'NAVER_ESPORTS',
+                publishedAt: null,
+                publishedAtText: null,
+              ),
+            ],
+            meta: PaginationMeta(page: 1, limit: 100, total: 1, totalPages: 1),
+          ),
+        },
+      ),
     );
   });
 
-  test(
-    'falls back to local news data with source and keyword filters',
-    () async {
-      final response = await repository.getNews(
-        source: 'NAVER_ESPORTS',
-        keyword: 'Hanwha',
-        limit: 10,
-      );
+  test('uses remote news data with source and keyword filters', () async {
+    final response = await repository.getNews(
+      source: 'NAVER_ESPORTS',
+      keyword: 'Hanwha',
+      limit: 10,
+    );
 
-      expect(response.items, hasLength(1));
-      expect(response.items.first.source, 'NAVER_ESPORTS');
-      expect(response.items.first.title, contains('Hanwha'));
-      expect(response.meta.total, 1);
-      expect(response.meta.totalPages, 1);
-    },
-  );
+    expect(response.items, hasLength(1));
+    expect(response.items.first.source, 'NAVER_ESPORTS');
+    expect(response.items.first.title, contains('Hanwha'));
+    expect(response.meta.total, 1);
+    expect(response.meta.totalPages, 1);
+  });
 
-  test('supports fallback pagination with ascending sort order', () async {
-    final response = await repository.getNews(limit: 2, sortOrder: 'asc');
+  test('supports remote pagination with ascending sort order', () async {
+    final remoteRepository = NewsRepository(
+      remoteDataSource: _StubNewsRemoteDataSource(
+        responses: const {
+          1: PagedResponse(
+            items: [
+              NewsItemDto(
+                id: 'news-5',
+                title: 'DRX 반등 가능성',
+                summary: 'LCK 중하위권 경쟁 기사입니다.',
+                thumbnailUrl: null,
+                articleUrl: 'https://example.com/5',
+                publisher: 'Naver',
+                source: 'NAVER_ESPORTS',
+                publishedAt: null,
+                publishedAtText: null,
+              ),
+              NewsItemDto(
+                id: 'news-4',
+                title: 'KT Rolster 운영 점검',
+                summary: 'LCK 상위권 상대전 분석입니다.',
+                thumbnailUrl: null,
+                articleUrl: 'https://example.com/4',
+                publisher: 'Naver',
+                source: 'NAVER_ESPORTS',
+                publishedAt: null,
+                publishedAtText: null,
+              ),
+              NewsItemDto(
+                id: 'news-3',
+                title: 'Dplus KIA 템포 회복',
+                summary: 'LCK 경기 리뷰입니다.',
+                thumbnailUrl: null,
+                articleUrl: 'https://example.com/3',
+                publisher: 'Naver',
+                source: 'NAVER_ESPORTS',
+                publishedAt: null,
+                publishedAtText: null,
+              ),
+            ],
+            meta: PaginationMeta(page: 1, limit: 100, total: 3, totalPages: 1),
+          ),
+        },
+      ),
+    );
+
+    final response = await remoteRepository.getNews(limit: 2, sortOrder: 'asc');
 
     expect(response.items.map((article) => article.id), ['news-5', 'news-4']);
     expect(response.meta.page, 1);
     expect(response.meta.limit, 2);
-    expect(response.meta.total, 5);
-    expect(response.meta.totalPages, 3);
+    expect(response.meta.total, 3);
+    expect(response.meta.totalPages, 2);
+  });
+
+  test('propagates remote failures when news cannot be loaded', () async {
+    final failingRepository = NewsRepository(
+      remoteDataSource: _ThrowingNewsRemoteDataSource(),
+    );
+
+    await expectLater(
+      failingRepository.getNews(source: 'NAVER_ESPORTS'),
+      throwsException,
+    );
   });
 
   test(

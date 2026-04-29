@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/error/app_failure.dart';
 import '../../../../core/storage/local_storage.dart';
-import '../../../../core/utils/mock_lck_data.dart';
 import '../../../../shared/models/lck_match_result.dart';
 import '../../../../shared/models/team_summary.dart';
 import '../datasource/teams_remote_data_source.dart';
@@ -44,20 +43,11 @@ class TeamsRepository {
       if (cachedTeams.isNotEmpty) {
         return cachedTeams;
       }
-      final fallback = MockLckData.teams.where((team) {
-        final normalizedKeyword = keyword?.trim().toLowerCase() ?? '';
-        if (normalizedKeyword.isEmpty) {
-          return true;
-        }
-        return team.name.toLowerCase().contains(normalizedKeyword) ||
-            team.initials.toLowerCase().contains(normalizedKeyword);
-      }).toList();
-      _rememberTeams(fallback);
-      return fallback;
+      return const <TeamSummary>[];
     }
   }
 
-  Future<TeamSummary> getInitialFavoriteTeam() async {
+  Future<TeamSummary?> getInitialFavoriteTeam() async {
     await _ensureHydrated();
     final savedFavoriteTeamId = await _localStorage.readString(
       _favoriteTeamStorageKey,
@@ -80,7 +70,7 @@ class TeamsRepository {
 
     final teams = await getTeams();
     if (teams.isEmpty) {
-      return MockLckData.defaultFavoriteTeam;
+      return null;
     }
 
     for (final team in teams) {
@@ -125,11 +115,6 @@ class TeamsRepository {
         return cachedTeam;
       }
 
-      final fallbackTeam = MockLckData.findTeam(id: id);
-      if (fallbackTeam != null) {
-        return fallbackTeam;
-      }
-
       throw const AppFailure('팀 정보를 불러오지 못했습니다.');
     }
   }
@@ -155,7 +140,7 @@ class TeamsRepository {
       }
     }
 
-    return MockLckData.findTeam(name: tag, shortName: tag);
+    return null;
   }
 
   void _rememberTeams(List<TeamSummary> teams) {
@@ -169,26 +154,18 @@ class TeamsRepository {
     List<String>? recentForm,
     List<LckMatchResult>? recentMatches,
   }) {
-    final fallback = MockLckData.findTeam(
-      id: dto.id,
-      name: dto.name,
-      shortName: dto.shortName,
-    );
-    final resolvedRecentMatches =
-        recentMatches ?? fallback?.recentMatches ?? const [];
-
     return TeamSummary(
       id: dto.id,
       name: dto.name,
       initials: dto.shortName,
-      rank: dto.rank ?? fallback?.rank ?? 0,
+      rank: dto.rank ?? 0,
       seasonRecord: '${dto.wins}-${dto.losses}',
       setRecord: _formatDifferential(dto.setDifferential),
-      summary: fallback?.summary ?? '${dto.name}의 최근 경기 흐름과 시즌 기록을 확인할 수 있습니다.',
-      recentForm: recentForm ?? fallback?.recentForm ?? const [],
-      recentMatches: resolvedRecentMatches,
-      color: fallback?.color ?? _fallbackColor(dto.shortName),
-      logoUrl: dto.logoUrl ?? fallback?.logoUrl,
+      summary: _buildSummary(dto),
+      recentForm: recentForm ?? const [],
+      recentMatches: recentMatches ?? const [],
+      color: _fallbackColor(dto.shortName),
+      logoUrl: dto.logoUrl,
     );
   }
 
@@ -199,6 +176,7 @@ class TeamsRepository {
     final opponentScore = isHomeTeam ? dto.score.away : dto.score.home;
 
     return LckMatchResult(
+      id: dto.id,
       opponent: opponent.name,
       playedAt: dto.scheduledAt,
       outcome: _matchOutcome(dto, teamId: teamId),
@@ -228,6 +206,14 @@ class TeamsRepository {
 
   String _formatDifferential(int value) {
     return value > 0 ? '+$value' : '$value';
+  }
+
+  String _buildSummary(TeamSummaryDto dto) {
+    final rank = dto.rank;
+    if (rank != null && rank > 0) {
+      return '현재 $rank위, 시즌 ${dto.wins}승 ${dto.losses}패를 기록 중입니다.';
+    }
+    return '${dto.name}의 시즌 전적과 최근 경기 흐름을 확인할 수 있습니다.';
   }
 
   String _statusLabel(String status) {
@@ -323,6 +309,7 @@ class TeamsRepository {
       'recentMatches': team.recentMatches
           .map(
             (match) => <String, dynamic>{
+              'id': match.id,
               'opponent': match.opponent,
               'playedAt': match.playedAt.toIso8601String(),
               'outcome': match.outcome,
@@ -346,6 +333,7 @@ class TeamsRepository {
             .whereType<Map<String, dynamic>>()
             .map(
               (item) => LckMatchResult(
+                id: item['id']?.toString(),
                 opponent: item['opponent']?.toString() ?? '',
                 playedAt:
                     DateTime.tryParse(item['playedAt']?.toString() ?? '') ??

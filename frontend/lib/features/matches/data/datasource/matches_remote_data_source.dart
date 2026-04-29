@@ -1,6 +1,7 @@
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/paged_response.dart';
 import '../../../teams/data/dto/team_match_dto.dart';
+import '../dto/match_detail_dto.dart';
 
 class MatchesRemoteDataSource {
   const MatchesRemoteDataSource(this._apiClient);
@@ -23,6 +24,13 @@ class MatchesRemoteDataSource {
         data as Map<String, dynamic>,
         itemDecoder: TeamMatchDto.fromJson,
       ),
+    );
+  }
+
+  Future<MatchDetailDto> getMatchDetail(String id) {
+    return _apiClient.get(
+      '/matches/$id',
+      decoder: (data) => MatchDetailDto.fromJson(data as Map<String, dynamic>),
     );
   }
 

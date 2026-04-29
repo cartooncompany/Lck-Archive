@@ -128,39 +128,84 @@ class MyPagePage extends StatelessWidget {
                         const Divider(height: 32),
                         _ProfileField(label: '이메일', value: email),
                         const Divider(height: 32),
-                        Row(
-                          children: [
-                            TeamLogo(
-                              initials: favoriteTeam.initials,
-                              logoUrl: favoriteTeam.logoUrl,
-                              size: 44,
-                              foregroundColor: favoriteTeam.color,
-                              borderRadius: 14,
-                            ),
-                            const SizedBox(width: 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '응원팀',
-                                    style: Theme.of(context).textTheme.bodySmall
-                                        ?.copyWith(
-                                          color: AppColors.textSecondary,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    favoriteTeam.name,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleMedium,
-                                  ),
-                                ],
+                        if (favoriteTeam != null)
+                          Row(
+                            children: [
+                              TeamLogo(
+                                initials: favoriteTeam.initials,
+                                logoUrl: favoriteTeam.logoUrl,
+                                size: 44,
+                                foregroundColor: favoriteTeam.color,
+                                borderRadius: 14,
                               ),
-                            ),
-                          ],
-                        ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '응원팀',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      favoriteTeam.name,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceElevated,
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(color: AppColors.divider),
+                                ),
+                                child: const Icon(
+                                  Icons.shield_outlined,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '응원팀',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: AppColors.textSecondary,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '아직 선택하지 않음',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         if (!session.isSignedIn) ...[
                           const SizedBox(height: 20),
                           SizedBox(

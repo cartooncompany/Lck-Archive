@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/error/app_failure.dart';
 import '../../../../core/storage/local_storage.dart';
-import '../../../../core/utils/mock_lck_data.dart';
 import '../../../../shared/models/player_profile.dart';
 import '../../../../shared/models/team_summary.dart';
 import '../../../teams/data/repository/teams_repository.dart';
@@ -92,13 +91,7 @@ class PlayersRepository {
       if (cachedPlayers.isNotEmpty) {
         return cachedPlayers;
       }
-      final fallback = _fallbackPlayers(
-        keyword: normalizedKeyword,
-        position: position,
-        teamId: teamId,
-      );
-      _rememberPlayers(fallback);
-      return fallback;
+      return const <PlayerProfile>[];
     }
   }
 
@@ -115,11 +108,6 @@ class PlayersRepository {
       final cachedPlayer = _playerCache[id];
       if (cachedPlayer != null) {
         return cachedPlayer;
-      }
-
-      final fallbackPlayer = MockLckData.findPlayer(id: id);
-      if (fallbackPlayer != null) {
-        return fallbackPlayer;
       }
 
       throw const AppFailure('선수 정보를 불러오지 못했습니다.');
@@ -147,7 +135,7 @@ class PlayersRepository {
       }
     }
 
-    return MockLckData.findPlayer(name: tag);
+    return null;
   }
 
   void _rememberPlayers(List<PlayerProfile> players) {
@@ -157,36 +145,20 @@ class PlayersRepository {
   }
 
   PlayerProfile _mapSummary(PlayerSummaryDto dto) {
-    final fallbackPlayer = MockLckData.findPlayer(id: dto.id, name: dto.name);
-    final fallbackTeam = MockLckData.findTeam(
-      id: dto.team?.id,
-      name: dto.team?.name,
-      shortName: dto.team?.shortName,
-    );
-    final teamName =
-        dto.team?.name ??
-        fallbackPlayer?.teamName ??
-        dto.team?.shortName ??
-        '소속 팀 미상';
+    final teamName = dto.team?.name ?? dto.team?.shortName ?? '소속 팀 미상';
 
     return PlayerProfile(
       id: dto.id,
       name: dto.name,
-      teamId: dto.team?.id ?? fallbackPlayer?.teamId ?? '',
+      teamId: dto.team?.id ?? '',
       teamName: teamName,
       position: _displayPosition(dto.position),
       seasonMatches: dto.recentMatchCount,
-      headline:
-          fallbackPlayer?.headline ??
-          '$teamName 소속 ${_displayPosition(dto.position)} 포지션 선수입니다.',
-      keyStats: fallbackPlayer?.keyStats ?? const <String, String>{},
-      recentAppearances:
-          fallbackPlayer?.recentAppearances ?? const <PlayerMatchAppearance>[],
-      teamColor:
-          fallbackTeam?.color ??
-          fallbackPlayer?.teamColor ??
-          _fallbackColor(dto.team?.shortName ?? dto.name),
-      profileImageUrl: dto.profileImageUrl ?? fallbackPlayer?.profileImageUrl,
+      headline: '$teamName 소속 ${_displayPosition(dto.position)} 포지션 선수입니다.',
+      keyStats: const <String, String>{},
+      recentAppearances: const <PlayerMatchAppearance>[],
+      teamColor: _fallbackColor(dto.team?.shortName ?? dto.name),
+      profileImageUrl: dto.profileImageUrl,
     );
   }
 
@@ -197,28 +169,6 @@ class PlayersRepository {
       nationality: dto.nationality,
       birthDate: dto.birthDate,
     );
-  }
-
-  List<PlayerProfile> _fallbackPlayers({
-    String? keyword,
-    String? position,
-    String? teamId,
-  }) {
-    final normalizedKeyword = keyword?.trim().toLowerCase() ?? '';
-    final normalizedPosition = position?.trim().toUpperCase() ?? 'ALL';
-
-    return MockLckData.players.where((player) {
-      final matchesTeam = teamId == null || player.teamId == teamId;
-      final matchesPosition =
-          normalizedPosition == 'ALL' ||
-          normalizedPosition.isEmpty ||
-          player.position == normalizedPosition;
-      final matchesKeyword =
-          normalizedKeyword.isEmpty ||
-          player.name.toLowerCase().contains(normalizedKeyword) ||
-          _matchesTeamNameText(player.teamName, normalizedKeyword);
-      return matchesTeam && matchesPosition && matchesKeyword;
-    }).toList();
   }
 
   bool _matchesTeamKeyword(TeamSummary team, String keyword) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../features/matches/presentation/pages/match_detail_page.dart';
 import '../../features/matches/presentation/pages/matches_schedule_page.dart';
 import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/players/presentation/pages/player_detail_page.dart';
@@ -11,6 +12,7 @@ import '../../shared/widgets/app_shell.dart';
 final class AppRouter {
   static const String shell = '/';
   static const String matchesSchedule = '/matches-schedule';
+  static const String matchDetail = '/match-detail';
   static const String settings = '/settings';
   static const String teamDetail = '/team-detail';
   static const String playerDetail = '/player-detail';
@@ -25,6 +27,12 @@ final class AppRouter {
       case matchesSchedule:
         return MaterialPageRoute<void>(
           builder: (_) => const MatchesSchedulePage(),
+          settings: settings,
+        );
+      case matchDetail:
+        final matchId = settings.arguments as String;
+        return MaterialPageRoute<void>(
+          builder: (_) => MatchDetailPage(matchId: matchId),
           settings: settings,
         );
       case AppRouter.settings:

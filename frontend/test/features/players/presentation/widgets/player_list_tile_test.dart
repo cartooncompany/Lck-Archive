@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend/core/utils/mock_lck_data.dart';
 import 'package:frontend/features/players/presentation/widgets/player_list_tile.dart';
+import '../../../../test_helpers/sample_lck_test_data.dart';
 
 void main() {
   group('PlayerListTile', () {
@@ -11,9 +11,7 @@ void main() {
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.binding.setSurfaceSize(const Size(360, 800));
 
-      final faker = MockLckData.players.firstWhere(
-        (player) => player.id == 'faker',
-      );
+      final faker = sampleFaker;
 
       await tester.pumpWidget(
         MaterialApp(
@@ -53,9 +51,7 @@ void main() {
     });
 
     testWidgets('calls onTap when the tile is pressed', (tester) async {
-      final faker = MockLckData.players.firstWhere(
-        (player) => player.id == 'faker',
-      );
+      final faker = sampleFaker;
       var didTap = false;
 
       await tester.pumpWidget(

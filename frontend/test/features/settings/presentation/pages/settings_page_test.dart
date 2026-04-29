@@ -4,12 +4,12 @@ import 'package:frontend/app/theme/app_theme.dart';
 import 'package:frontend/core/error/app_failure.dart';
 import 'package:frontend/core/network/api_client.dart';
 import 'package:frontend/core/storage/local_storage.dart';
-import 'package:frontend/core/utils/mock_lck_data.dart';
 import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
 import 'package:frontend/features/auth/data/repository/auth_repository.dart';
 import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
 import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import 'package:frontend/features/settings/presentation/pages/settings_page.dart';
+import '../../../../test_helpers/sample_lck_test_data.dart';
 
 void main() {
   testWidgets('shows delete account action for signed-in users', (
@@ -70,7 +70,7 @@ Future<_SettingsPageHarness> _pumpSettingsPage(
   _FakeApiClient? apiClient,
 }) async {
   final favoriteTeamController = FavoriteTeamController(
-    initialTeam: MockLckData.defaultFavoriteTeam,
+    initialTeam: sampleFavoriteTeam,
   );
   final resolvedApiClient = apiClient ?? _FakeApiClient();
   final authRepository = AuthRepository(
