@@ -2,15 +2,15 @@ import 'package:flutter/widgets.dart';
 
 import '../../../../core/error/app_failure.dart';
 import '../../data/models/auth_session.dart';
-import '../../data/repository/auth_repository.dart';
+import '../../domain/repository/auth_repository_interface.dart';
 
 enum SessionStage { loading, landing, login, signUp, authenticated }
 
 class SessionController extends ChangeNotifier {
-  SessionController({required AuthRepository authRepository})
+  SessionController({required IAuthRepository authRepository})
     : _authRepository = authRepository;
 
-  final AuthRepository _authRepository;
+  final IAuthRepository _authRepository;
 
   SessionStage _stage = SessionStage.loading;
   AuthSession? _session;

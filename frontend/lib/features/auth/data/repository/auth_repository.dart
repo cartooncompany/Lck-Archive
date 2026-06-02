@@ -2,11 +2,12 @@ import 'dart:convert';
 
 import '../../../../core/error/app_failure.dart';
 import '../../../../core/storage/local_storage.dart';
+import '../../domain/repository/auth_repository_interface.dart';
 import '../datasource/auth_remote_data_source.dart';
 import '../models/auth_session.dart';
 import '../models/auth_user.dart';
 
-class AuthRepository {
+class AuthRepository implements IAuthRepository {
   AuthRepository({
     required AuthRemoteDataSource remoteDataSource,
     required LocalStorage localStorage,
