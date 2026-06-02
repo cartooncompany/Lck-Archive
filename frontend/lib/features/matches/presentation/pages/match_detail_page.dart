@@ -9,6 +9,7 @@ import '../../../../shared/models/lck_scheduled_match.dart';
 import '../../../../shared/widgets/responsive_page_container.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../../shared/widgets/team_logo.dart';
+import '../../../../shared/widgets/app_status_card.dart';
 
 class MatchDetailPage extends StatefulWidget {
   const MatchDetailPage({required this.matchId, super.key});
@@ -43,14 +44,24 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
           }
 
           if (snapshot.hasError || !snapshot.hasData) {
+            final errorMsg = snapshot.error?.toString() ?? '데이터를 불러오는 중 오류가 발생했습니다.';
             return ListView(
               padding: const EdgeInsets.only(top: 20, bottom: 32),
-              children: const [
+              children: [
                 ResponsivePageContainer(
                   maxWidth: 1040,
-                  child: _MessageCard(
+                  child: AppStatusCard(
                     title: '경기 정보를 불러오지 못했습니다.',
-                    body: '잠시 후 다시 시도해 주세요.',
+                    message: errorMsg,
+                    icon: Icons.error_outline_rounded,
+                    actionLabel: '다시 시도',
+                    onActionTap: () {
+                      setState(() {
+                        _matchFuture = AppDependenciesScope.of(
+                          context,
+                        ).matchesRepository.getMatchDetail(widget.matchId);
+                      });
+                    },
                   ),
                 ),
               ],
@@ -73,10 +84,11 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
                     const SectionHeader(title: '세트별 데이터'),
                     const SizedBox(height: 12),
                     if (match.games.isEmpty)
-                      const _MessageCard(
+                      const AppStatusCard(
                         title: '세트 데이터가 없습니다.',
-                        body:
+                        message:
                             'GRID Series State에서 세트별 상세 정보가 수집되면 이 영역에 표시됩니다.',
+                        icon: Icons.analytics_outlined,
                       )
                     else
                       ...match.games.map(
@@ -476,9 +488,11 @@ class _GameCard extends StatelessWidget {
               const SizedBox(height: 14),
             ],
             if (game.playerStats.isEmpty)
-              const _MessageCard(
+              const AppStatusCard(
                 title: '선수 스탯이 없습니다.',
-                body: '세트별 선수 통계가 수집되면 이곳에 표시됩니다.',
+                message: '세트별 선수 통계가 수집되면 이곳에 표시됩니다.',
+                icon: Icons.people_outline_rounded,
+                dense: true,
               )
             else
               _PlayerStatsSection(stats: game.playerStats),
@@ -751,39 +765,6 @@ class _SmallBadge extends StatelessWidget {
         style: Theme.of(
           context,
         ).textTheme.labelSmall?.copyWith(color: AppColors.textSecondary),
-      ),
-    );
-  }
-}
-
-class _MessageCard extends StatelessWidget {
-  const _MessageCard({required this.title, required this.body});
-
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(
-            body,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-          ),
-        ],
       ),
     );
   }

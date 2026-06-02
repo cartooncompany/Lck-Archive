@@ -6,6 +6,7 @@ import '../../../../app/router/app_router.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/models/player_profile.dart';
 import '../../../../shared/widgets/app_search_field.dart';
+import '../../../../shared/widgets/app_status_card.dart';
 import '../../../../shared/widgets/responsive_page_container.dart';
 import '../widgets/player_list_tile.dart';
 
@@ -91,8 +92,22 @@ class _PlayersPageState extends State<PlayersPage> {
                   if (snapshot.connectionState == ConnectionState.waiting &&
                       players.isEmpty)
                     const Center(child: CircularProgressIndicator())
+                  else if (snapshot.hasError)
+                    AppStatusCard(
+                      title: '선수 기록을 불러오지 못했습니다.',
+                      message: snapshot.error?.toString() ?? '일시적인 네트워크 장애일 수 있습니다.',
+                      icon: Icons.error_outline_rounded,
+                      actionLabel: '다시 시도',
+                      onActionTap: () => setState(() {
+                        _playersFuture = _loadPlayers();
+                      }),
+                    )
                   else if (players.isEmpty)
-                    _PlayersMessage(message: '검색 결과가 없습니다.')
+                    const AppStatusCard(
+                      title: '검색 결과가 없습니다.',
+                      message: '선수명 또는 팀명을 다르게 입력하거나 검색어를 지우고 확인해 보세요.',
+                      icon: Icons.search_off_rounded,
+                    )
                   else
                     ...players.map(
                       (player) => Padding(
@@ -124,18 +139,4 @@ class _PlayersPageState extends State<PlayersPage> {
   }
 }
 
-class _PlayersMessage extends StatelessWidget {
-  const _PlayersMessage({required this.message});
 
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      message,
-      style: Theme.of(
-        context,
-      ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
-    );
-  }
-}

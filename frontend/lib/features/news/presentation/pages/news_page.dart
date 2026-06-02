@@ -9,6 +9,7 @@ import '../../../../core/error/app_failure.dart';
 import '../../../../shared/models/news_article.dart';
 import '../../../../shared/utils/news_article_launcher.dart';
 import '../../../../shared/widgets/app_search_field.dart';
+import '../../../../shared/widgets/app_status_card.dart';
 import '../widgets/news_article_card.dart';
 
 class NewsPage extends StatefulWidget {
@@ -96,7 +97,7 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
                   _buildResultsHeader(context),
                   const SizedBox(height: 12),
                   if (_errorMessage != null && _articles.isNotEmpty) ...[
-                    _NewsStatusCard(
+                    AppStatusCard(
                       title: '불러오기에 일부 실패했습니다',
                       message: _errorMessage!,
                       icon: Icons.wifi_off_rounded,
@@ -588,7 +589,7 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
     }
 
     if (_errorMessage != null && _articles.isEmpty) {
-      return _NewsStatusCard(
+      return AppStatusCard(
         title: '뉴스를 불러오지 못했습니다',
         message: _errorMessage!,
         icon: Icons.wifi_off_rounded,
@@ -598,11 +599,11 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
     }
 
     if (_articles.isEmpty) {
-      return _NewsStatusCard(
-        title: '조건에 맞는 뉴스가 없습니다',
+      return AppStatusCard(
+        title: '표시할 뉴스가 아직 없습니다',
         message: _hasActiveFilters
-            ? '검색어를 줄이거나 필터를 초기화해 보세요.'
-            : '데이터가 비어 있다면 백엔드에서 수동 동기화를 먼저 요청해 주세요.',
+            ? '검색어를 조금 더 짧게 바꾸거나 필터를 초기화해 보세요.'
+            : '최신 경기와 뉴스 데이터를 실시간으로 가져오는 중입니다. 잠시 후 다시 확인해 주세요!',
         icon: Icons.filter_alt_off_rounded,
         actionLabel: _hasActiveFilters ? '필터 초기화' : null,
         onActionTap: _hasActiveFilters ? _resetFilters : null,
@@ -781,103 +782,6 @@ class _ChoiceFilterChip extends StatelessWidget {
         fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
       ),
       onSelected: (_) => onSelected(),
-    );
-  }
-}
-
-class _NewsStatusCard extends StatelessWidget {
-  const _NewsStatusCard({
-    required this.title,
-    required this.message,
-    required this.icon,
-    this.actionLabel,
-    this.onActionTap,
-    this.dense = false,
-  });
-
-  final String title;
-  final String message;
-  final IconData icon;
-  final String? actionLabel;
-  final VoidCallback? onActionTap;
-  final bool dense;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(dense ? 18 : 24),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.glassBorderMuted),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 12,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: dense ? 44 : 52,
-            height: dense ? 44 : 52,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceElevated,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppColors.accent.withValues(alpha: 0.25),
-              ),
-              boxShadow: AppColors.neonGlow(
-                color: AppColors.accent,
-                blurRadius: 6,
-              ),
-            ),
-            child: Icon(icon, color: AppColors.accent, size: dense ? 20 : 24),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.48,
-            ),
-          ),
-          if (actionLabel != null) ...[
-            const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: onActionTap,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.accent,
-                side: const BorderSide(color: AppColors.accent, width: 1.2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 10,
-                ),
-              ),
-              child: Text(
-                actionLabel!,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
     );
   }
 }

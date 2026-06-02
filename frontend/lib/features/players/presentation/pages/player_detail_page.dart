@@ -10,6 +10,7 @@ import '../../../../shared/models/player_profile.dart';
 import '../../../../shared/models/team_summary.dart';
 import '../../../../shared/widgets/player_avatar.dart';
 import '../../../../shared/widgets/responsive_page_container.dart';
+import '../../../../shared/widgets/app_status_card.dart';
 
 class PlayerDetailPage extends StatefulWidget {
   const PlayerDetailPage({required this.player, super.key});
@@ -52,6 +53,20 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (snapshot.hasError) ...[
+                      AppStatusCard(
+                        title: '상세 기록을 가져오지 못했습니다.',
+                        message: snapshot.error?.toString() ?? '통계 데이터를 최신화하는 중 오류가 발생했습니다.',
+                        icon: Icons.sync_problem_rounded,
+                        actionLabel: '상세 기록 다시 불러오기',
+                        dense: true,
+                        onActionTap: () => setState(() {
+                          _playerFuture = AppDependenciesScope.of(context)
+                              .playersRepository.getPlayer(widget.player.id);
+                        }),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final isCompact = constraints.maxWidth < 640;

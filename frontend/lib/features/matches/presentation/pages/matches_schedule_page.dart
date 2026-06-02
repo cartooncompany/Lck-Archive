@@ -10,6 +10,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/models/lck_scheduled_match.dart';
 import '../../../../shared/widgets/responsive_page_container.dart';
 import '../../../../shared/widgets/section_header.dart';
+import '../../../../shared/widgets/app_status_card.dart';
 import '../utils/match_prediction_storage.dart';
 import '../widgets/scheduled_match_tile.dart';
 
@@ -54,15 +55,19 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
             }
 
             if (snapshot.hasError && matches.isEmpty) {
+              final errorMsg = snapshot.error?.toString() ?? '일정을 불러오는 중 오류가 발생했습니다.';
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.only(top: 20, bottom: 32),
-                children: const [
+                children: [
                   ResponsivePageContainer(
                     maxWidth: 1040,
-                    child: _ScheduleMessageCard(
+                    child: AppStatusCard(
                       title: '경기 일정을 불러오지 못했습니다.',
-                      body: '아래로 당겨 새로고침하거나 잠시 후 다시 시도해 주세요.',
+                      message: errorMsg,
+                      icon: Icons.error_outline_rounded,
+                      actionLabel: '새로고침 시도',
+                      onActionTap: _refreshSchedule,
                     ),
                   ),
                 ],
@@ -76,9 +81,10 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
                 children: const [
                   ResponsivePageContainer(
                     maxWidth: 1040,
-                    child: _ScheduleMessageCard(
+                    child: AppStatusCard(
                       title: '1주 안에 예정된 경기가 없습니다.',
-                      body: '새 일정이 등록되면 이 화면에 요일별로 정리됩니다.',
+                      message: '새 일정이 등록되면 이 화면에 요일별로 정리됩니다.',
+                      icon: Icons.calendar_today_rounded,
                     ),
                   ),
                 ],
@@ -329,57 +335,5 @@ class _ScheduleDayHeader extends StatelessWidget {
       default:
         return '일';
     }
-  }
-}
-
-class _ScheduleMessageCard extends StatelessWidget {
-  const _ScheduleMessageCard({required this.title, required this.body});
-
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.surface.withValues(alpha: 0.65),
-                AppColors.surfaceMuted.withValues(alpha: 0.45),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.glassBorderMuted),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                body,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
-                  height: 1.45,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
