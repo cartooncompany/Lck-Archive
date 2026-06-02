@@ -37,14 +37,15 @@ void main() {
       );
 
       expect(tileFinder, findsOneWidget);
-      expect(find.text('${faker.seasonMatches}경기'), findsOneWidget);
+      expect(find.text('${faker.seasonMatches}'), findsOneWidget);
+      expect(find.text('Matches'), findsOneWidget);
 
       final nameText = tester.widget<Text>(nameFinder);
       expect(nameText.maxLines, 1);
       expect(nameText.overflow, TextOverflow.ellipsis);
 
       final headlineText = tester.widget<Text>(headlineFinder);
-      expect(headlineText.maxLines, 2);
+      expect(headlineText.maxLines, 1);
       expect(headlineText.overflow, TextOverflow.ellipsis);
 
       expect(tester.getSize(nameFinder).height, lessThan(32.0));

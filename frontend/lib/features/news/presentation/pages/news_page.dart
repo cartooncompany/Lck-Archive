@@ -18,7 +18,7 @@ class NewsPage extends StatefulWidget {
   State<NewsPage> createState() => _NewsPageState();
 }
 
-class _NewsPageState extends State<NewsPage> {
+class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
   static const int _pageSize = 20;
 
   final TextEditingController _searchController = TextEditingController();
@@ -36,6 +36,17 @@ class _NewsPageState extends State<NewsPage> {
   bool _isLoading = false;
   bool _isLoadingMore = false;
   bool _refreshAfterCurrentLoad = false;
+
+  late final AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+  }
 
   @override
   void didChangeDependencies() {
@@ -282,19 +293,30 @@ class _NewsPageState extends State<NewsPage> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.divider),
-        gradient: LinearGradient(
+        border: Border.all(
+          color: AppColors.accentStrong.withValues(alpha: 0.28),
+          width: 1.5,
+        ),
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            AppColors.accentStrong.withValues(alpha: 0.24),
-            AppColors.accent.withValues(alpha: 0.14),
-            AppColors.surfaceElevated,
-          ],
+          colors: [AppColors.surfaceElevated, AppColors.surface],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.accentStrong.withValues(alpha: 0.08),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: AppColors.accent.withValues(alpha: 0.04),
+            blurRadius: 16,
+            spreadRadius: -4,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,34 +325,51 @@ class _NewsPageState extends State<NewsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(16),
+                  color: Colors.black.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: AppColors.textPrimary.withValues(alpha: 0.08),
+                    color: AppColors.accent.withValues(alpha: 0.25),
+                    width: 1.2,
+                  ),
+                  boxShadow: AppColors.neonGlow(
+                    color: AppColors.accent,
+                    blurRadius: 6,
                   ),
                 ),
                 child: const Icon(
                   Icons.newspaper_rounded,
-                  color: AppColors.textPrimary,
+                  color: AppColors.accent,
+                  size: 24,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'LCK 뉴스 브리핑',
-                      style: Theme.of(context).textTheme.headlineSmall,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.8,
+                            shadows: [
+                              Shadow(
+                                color: AppColors.accent.withValues(alpha: 0.15),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
+                        height: 1.4,
                       ),
                     ),
                   ],
@@ -338,7 +377,7 @@ class _NewsPageState extends State<NewsPage> {
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 22),
           Wrap(
             spacing: 10,
             runSpacing: 10,
@@ -379,11 +418,18 @@ class _NewsPageState extends State<NewsPage> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surface.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: AppColors.glassBorderMuted),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,7 +443,10 @@ class _NewsPageState extends State<NewsPage> {
                   children: [
                     Text(
                       '검색과 필터',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -412,12 +461,26 @@ class _NewsPageState extends State<NewsPage> {
               if (_hasActiveFilters)
                 OutlinedButton.icon(
                   onPressed: _resetFilters,
-                  icon: const Icon(Icons.restart_alt_rounded, size: 18),
+                  icon: const Icon(Icons.restart_alt_rounded, size: 16),
                   label: const Text('초기화'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.accent,
+                    side: BorderSide(
+                      color: AppColors.accent.withValues(alpha: 0.35),
+                      width: 1.2,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                  ),
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           AppSearchField(
             controller: _searchController,
             hintText: '팀명, 선수명, 기사 제목으로 검색',
@@ -446,11 +509,6 @@ class _NewsPageState extends State<NewsPage> {
                   _ActiveFilterPill(
                     icon: Icons.hub_rounded,
                     label: _selectedSource.label,
-                  ),
-                if (_sortOrder != _NewsSortOrder.desc)
-                  _ActiveFilterPill(
-                    icon: Icons.swap_vert_rounded,
-                    label: _sortOrder.label,
                   ),
               ],
             ),
@@ -495,31 +553,43 @@ class _NewsPageState extends State<NewsPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surface.withValues(alpha: 0.65),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.divider),
+        border: Border.all(color: AppColors.glassBorderMuted),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: AppColors.surfaceMuted,
+              color: AppColors.surfaceMuted.withValues(alpha: 0.7),
               borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: AppColors.accent.withValues(alpha: 0.2),
+              ),
             ),
             child: const Icon(
               Icons.view_agenda_rounded,
-              color: AppColors.textPrimary,
+              color: AppColors.accent,
+              size: 20,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('결과 보기', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  '결과 보기',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 Text(
                   _buildMetaText(),
@@ -541,7 +611,10 @@ class _NewsPageState extends State<NewsPage> {
             const SizedBox(
               width: 18,
               height: 18,
-              child: CircularProgressIndicator(strokeWidth: 2),
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+              ),
             ),
         ],
       ),
@@ -550,11 +623,7 @@ class _NewsPageState extends State<NewsPage> {
 
   Widget _buildResults(BuildContext context, bool hasMore) {
     if (_isLoading && _articles.isEmpty) {
-      return const _NewsStatusCard(
-        title: '뉴스를 불러오는 중입니다',
-        message: '선택한 조건에 맞는 최신 기사를 정리하고 있습니다.',
-        icon: Icons.newspaper_rounded,
-      );
+      return _buildSkeletonList(context);
     }
 
     if (_errorMessage != null && _articles.isEmpty) {
@@ -591,16 +660,21 @@ class _NewsPageState extends State<NewsPage> {
           onTap: () => _openArticle(featuredArticle),
         ),
         if (remainingArticles.isNotEmpty) ...[
-          const SizedBox(height: 22),
-          Text('추가 기사', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
+          const SizedBox(height: 24),
+          Text(
+            '추가 기사',
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
           Text(
             '핵심만 빠르게 읽을 수 있도록 요약형 카드로 배치했습니다.',
             style: Theme.of(
               context,
             ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           ...remainingArticles.map(
             (article) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -619,9 +693,9 @@ class _NewsPageState extends State<NewsPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: AppColors.surface.withValues(alpha: 0.65),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.divider),
+                border: Border.all(color: AppColors.glassBorderMuted),
               ),
               child: OutlinedButton.icon(
                 onPressed: _isLoadingMore ? null : () => _fetchNews(),
@@ -629,13 +703,53 @@ class _NewsPageState extends State<NewsPage> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            AppColors.accent,
+                          ),
+                        ),
                       )
                     : const Icon(Icons.expand_more_rounded),
                 label: Text(_isLoadingMore ? '불러오는 중...' : '기사 더 불러오기'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.accent,
+                  side: const BorderSide(color: AppColors.accent, width: 1.2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
               ),
             ),
           ),
+      ],
+    );
+  }
+
+  Widget _buildSkeletonList(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _NewsSkeletonCard(controller: _pulseController, highlighted: true),
+        const SizedBox(height: 24),
+        Text(
+          '추가 기사',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+        ),
+        const SizedBox(height: 16),
+        ...List.generate(
+          3,
+          (index) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: _NewsSkeletonCard(
+              controller: _pulseController,
+              compact: true,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -703,16 +817,18 @@ class _ChoiceFilterChip extends StatelessWidget {
       label: Text(label),
       selected: selected,
       showCheckmark: false,
-      backgroundColor: AppColors.surfaceMuted,
-      selectedColor: AppColors.accent.withValues(alpha: 0.14),
+      backgroundColor: AppColors.surfaceMuted.withValues(alpha: 0.4),
+      selectedColor: AppColors.accent.withValues(alpha: 0.12),
       side: BorderSide(
         color: selected
-            ? AppColors.accent.withValues(alpha: 0.36)
+            ? AppColors.accent.withValues(alpha: 0.45)
             : AppColors.divider,
+        width: selected ? 1.5 : 1.0,
       ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
         color: selected ? AppColors.accent : AppColors.textSecondary,
-        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+        fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
       ),
       onSelected: (_) => onSelected(),
     );
@@ -740,40 +856,73 @@ class _NewsStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(dense ? 16 : 18),
+      padding: EdgeInsets.all(dense ? 18 : 24),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.divider),
+        color: AppColors.surface.withValues(alpha: 0.75),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.glassBorderMuted),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 12,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: dense ? 40 : 48,
-            height: dense ? 40 : 48,
+            width: dense ? 44 : 52,
+            height: dense ? 44 : 52,
             decoration: BoxDecoration(
-              color: AppColors.surfaceMuted,
+              color: AppColors.surfaceElevated,
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.accent.withValues(alpha: 0.25),
+              ),
+              boxShadow: AppColors.neonGlow(
+                color: AppColors.accent,
+                blurRadius: 6,
+              ),
             ),
-            child: Icon(icon, color: AppColors.textPrimary),
+            child: Icon(icon, color: AppColors.accent, size: dense ? 20 : 24),
           ),
-          const SizedBox(height: 14),
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 6),
+          const SizedBox(height: 16),
           Text(
-            message,
+            title,
             style: Theme.of(
               context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.48,
+            ),
           ),
           if (actionLabel != null) ...[
-            const SizedBox(height: 12),
-            TextButton(
+            const SizedBox(height: 16),
+            OutlinedButton(
               onPressed: onActionTap,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.accent,
+                side: const BorderSide(color: AppColors.accent, width: 1.2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+              ),
               child: Text(
                 actionLabel!,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
@@ -797,34 +946,35 @@ class _NewsMetricPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.textPrimary.withValues(alpha: 0.08),
-        ),
+        color: AppColors.surfaceElevated.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.glassBorderMuted),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppColors.textPrimary),
+          Icon(icon, size: 16, color: AppColors.accent),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: Theme.of(
-                  context,
-                ).textTheme.labelLarge?.copyWith(color: AppColors.textPrimary),
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ],
           ),
@@ -865,6 +1015,211 @@ class _ActiveFilterPill extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _NewsSkeletonCard extends StatelessWidget {
+  const _NewsSkeletonCard({
+    required this.controller,
+    this.compact = false,
+    this.highlighted = false,
+  });
+
+  final AnimationController controller;
+  final bool compact;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final borderRadius = BorderRadius.circular(highlighted ? 24 : 22);
+
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        final opacity = 0.35 + (controller.value * 0.45);
+        return Opacity(
+          opacity: opacity,
+          child: Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(compact ? 16 : 20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: highlighted
+                    ? [
+                        AppColors.accentStrong.withValues(alpha: 0.15),
+                        AppColors.surfaceElevated.withValues(alpha: 0.8),
+                      ]
+                    : [
+                        AppColors.surfaceElevated.withValues(alpha: 0.8),
+                        AppColors.surface.withValues(alpha: 0.5),
+                      ],
+              ),
+              borderRadius: borderRadius,
+              border: Border.all(
+                color: highlighted
+                    ? AppColors.accent.withValues(alpha: 0.3)
+                    : AppColors.divider,
+                width: highlighted ? 1.5 : 1.0,
+              ),
+              boxShadow: highlighted
+                  ? [
+                      BoxShadow(
+                        color: AppColors.accent.withValues(alpha: 0.04),
+                        blurRadius: 16,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: compact
+                ? _buildCompactSkeleton()
+                : _buildRegularSkeleton(context),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRegularSkeleton(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 70,
+              height: 20,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            const Spacer(),
+            Container(
+              width: 50,
+              height: 14,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          height: 24,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          width: 200,
+          height: 24,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+        if (highlighted) ...[
+          const SizedBox(height: 14),
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.surfaceMuted.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.image_outlined,
+                  color: AppColors.textMuted.withValues(alpha: 0.3),
+                  size: 40,
+                ),
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          height: 14,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          width: 250,
+          height: 14,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactSkeleton() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 60,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.image_outlined,
+              color: AppColors.textMuted.withValues(alpha: 0.2),
+              size: 24,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

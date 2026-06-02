@@ -1,6 +1,115 @@
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_colors.dart';
 import 'auth_shell.dart';
+
+/// 스무스하게 옆으로 미끄러지듯 나타나는 페이드 & 슬라이드 전환 애니메이션 위젯
+class _FormFadeTransition extends StatefulWidget {
+  const _FormFadeTransition({required this.child, super.key});
+
+  final Widget child;
+
+  @override
+  State<_FormFadeTransition> createState() => _FormFadeTransitionState();
+}
+
+class _FormFadeTransitionState extends State<_FormFadeTransition>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fadeAnimation;
+  late final Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0.04, 0.0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _fadeAnimation.value,
+          child: FractionalTranslation(
+            translation: _slideAnimation.value,
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
+
+/// 쫀득한 버튼 스케일 바운스 효과
+class _BounceAction extends StatefulWidget {
+  const _BounceAction({required this.child, required this.onTap, super.key});
+
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  State<_BounceAction> createState() => _BounceActionState();
+}
+
+class _BounceActionState extends State<_BounceAction>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      onTap: widget.onTap,
+      child: ScaleTransition(scale: _scale, child: widget.child),
+    );
+  }
+}
 
 class LoginHeroSection extends StatelessWidget {
   const LoginHeroSection({
@@ -18,91 +127,115 @@ class LoginHeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        TextButton.icon(
-          onPressed: onBack,
-          style: TextButton.styleFrom(
-            foregroundColor: AuthUiColors.heroMuted,
-            padding: EdgeInsets.zero,
+    return _FormFadeTransition(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 뒤로가기 버튼 리디자인
+          TextButton.icon(
+            onPressed: onBack,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textSecondary,
+              padding: EdgeInsets.zero,
+            ),
+            icon: const Icon(Icons.arrow_back_rounded, size: 20),
+            label: const Text(
+              '랜딩으로 돌아가기',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
           ),
-          icon: const Icon(Icons.arrow_back_rounded),
-          label: const Text('랜딩으로 돌아가기'),
-        ),
-        const SizedBox(height: 18),
-        AuthGlassPanel(
-          padding: const EdgeInsets.all(30),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const AuthSectionBadge(label: '로그인'),
-              const SizedBox(height: 18),
-              Text(
-                '내 계정으로 이어서\n바로 아카이브를 봅니다.',
-                style: textTheme.headlineLarge?.copyWith(
-                  color: AuthUiColors.heroText,
-                  fontSize: 40,
-                  height: 1.1,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1.2,
+          const SizedBox(height: 18),
+          AuthGlassPanel(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const AuthSectionBadge(label: '로그인'),
+                const SizedBox(height: 20),
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: AppColors.primaryGradient,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ).createShader(bounds),
+                  child: Text(
+                    '계정으로\n이어서 봅니다.',
+                    style: textTheme.headlineLarge?.copyWith(
+                      color: Colors.white,
+                      fontSize: 34,
+                      height: 1.15,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -1.0,
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                '로그인하면 프로필, 응원팀 기준, 저장된 세션이 그대로 이어집니다. 필요한 입력만 남겨 바로 홈으로 들어가도록 구성했습니다.',
-                style: textTheme.bodyLarge?.copyWith(
-                  color: AuthUiColors.heroMuted,
-                  fontSize: 15,
-                  height: 1.7,
+                const SizedBox(height: 16),
+                Text(
+                  'LCK 아카이브 회원 계정으로 로그인하여 나만의 응원팀 성적과 정밀한 기록 수치들을 계속 탐색하세요.',
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontSize: 15,
+                    height: 1.55,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              const AuthBulletPoint(
-                title: '세션과 프로필 유지',
-                description: '다시 들어와도 내 계정 상태와 프로필 정보를 이어서 사용할 수 있습니다.',
-              ),
-              const SizedBox(height: 16),
-              const AuthBulletPoint(
-                title: '게스트 진입도 유지',
-                description:
-                    '바로 가입하지 않아도 동일한 시작점에서 먼저 둘러본 뒤 나중에 계정을 연결할 수 있습니다.',
-              ),
-              const SizedBox(height: 20),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  OutlinedButton(
-                    onPressed: onSignUp,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AuthUiColors.heroText,
-                      side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.22),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 14,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 28),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    // 회원가입 버튼 (글래스 아웃라인 스타일)
+                    _BounceAction(
+                      onTap: onSignUp,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 22,
+                          vertical: 13,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface.withValues(alpha: 0.3),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.glassBorder),
+                        ),
+                        child: Text(
+                          '회원가입',
+                          style: textTheme.titleMedium?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                          ),
+                        ),
                       ),
                     ),
-                    child: const Text('회원가입'),
-                  ),
-                  TextButton(
-                    onPressed: onGuest,
-                    style: TextButton.styleFrom(
-                      foregroundColor: AuthUiColors.heroMuted,
+
+                    // 게스트로 둘러보기 (텍스트 버튼)
+                    _BounceAction(
+                      onTap: onGuest,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 10,
+                        ),
+                        child: Text(
+                          '게스트로 둘러보기',
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            decoration: TextDecoration.underline,
+                            decorationColor: AppColors.textSecondary.withValues(
+                              alpha: 0.4,
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    child: const Text('게스트로 둘러보기'),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -137,94 +270,128 @@ class LoginFormPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Form(
-      key: formKey,
-      child: AuthPhoneFrame(
-        header: const AuthLogoMark(),
-        body: AuthFormCard(
-          title: '로그인',
-          centerTitle: true,
-          errorMessage: errorMessage,
-          footer: Column(
-            children: [
-              const SizedBox(height: 2),
-              Text(
-                '계정이 없나요?',
-                textAlign: TextAlign.center,
-                style: textTheme.bodyMedium?.copyWith(
-                  color: AuthUiColors.muted,
+    return _FormFadeTransition(
+      child: Form(
+        key: formKey,
+        child: AuthPhoneFrame(
+          header: const AuthLogoMark(),
+          body: AuthFormCard(
+            title: '로그인',
+            description: '계정의 이메일과 비밀번호를 입력하세요.',
+            errorMessage: errorMessage,
+            footer: Column(
+              children: [
+                Row(
+                  children: [
+                    // 회원가입 아웃라인 버튼
+                    Expanded(
+                      child: _BounceAction(
+                        onTap: isBusy ? () {} : onShowSignUp,
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: AppColors.surface.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: AppColors.glassBorder),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            '회원가입',
+                            style: textTheme.titleMedium?.copyWith(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // 게스트 버튼
+                    Expanded(
+                      child: _BounceAction(
+                        onTap: isBusy ? () {} : onGuest,
+                        child: Container(
+                          height: 48,
+                          color: Colors.transparent,
+                          alignment: Alignment.center,
+                          child: Text(
+                            '게스트',
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+              ],
+            ),
+            children: [
+              // 이메일 필드
+              TextFormField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.username],
+                decoration: const InputDecoration(
+                  labelText: '이메일',
+                  hintText: 'fan@lckarchive.app',
+                  prefixIcon: Icon(Icons.mail_outline_rounded),
+                ),
+                validator: (value) {
+                  final trimmed = value?.trim() ?? '';
+                  if (trimmed.isEmpty) {
+                    return '이메일을 입력해 주세요.';
+                  }
+                  if (!trimmed.contains('@')) {
+                    return '올바른 이메일 형식을 입력해 주세요.';
+                  }
+                  return null;
+                },
               ),
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton(
-                    onPressed: isBusy ? null : onShowSignUp,
-                    child: const Text('회원가입'),
+              const SizedBox(height: 16),
+              // 비밀번호 필드
+              TextFormField(
+                controller: passwordController,
+                obscureText: obscurePassword,
+                textInputAction: TextInputAction.done,
+                autofillHints: const [AutofillHints.password],
+                decoration: InputDecoration(
+                  labelText: '비밀번호',
+                  hintText: '8자 이상 입력',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    onPressed: isBusy ? null : onTogglePassword,
+                    icon: Icon(
+                      obscurePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
                   ),
-                  const SizedBox(width: 6),
-                  TextButton(
-                    onPressed: isBusy ? null : onGuest,
-                    child: const Text('게스트'),
-                  ),
-                ],
+                ),
+                validator: (value) {
+                  if ((value ?? '').length < 8) {
+                    return '비밀번호는 8자 이상이어야 합니다.';
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (_) => onSubmit(),
+              ),
+              const SizedBox(height: 28),
+              // 로그인 버튼 (AuthPrimaryButton 활용)
+              AuthPrimaryButton(
+                label: isBusy ? '로그인 중...' : '로그인',
+                icon: Icons.arrow_forward_rounded,
+                onPressed: isBusy ? null : onSubmit,
               ),
             ],
           ),
-          children: [
-            TextFormField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              autofillHints: const [AutofillHints.username],
-              decoration: const InputDecoration(
-                labelText: '이메일',
-                hintText: 'fan@lckarchive.app',
-              ),
-              validator: (value) {
-                final trimmed = value?.trim() ?? '';
-                if (trimmed.isEmpty) {
-                  return '이메일을 입력해 주세요.';
-                }
-                if (!trimmed.contains('@')) {
-                  return '올바른 이메일 형식을 입력해 주세요.';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: passwordController,
-              obscureText: obscurePassword,
-              textInputAction: TextInputAction.done,
-              autofillHints: const [AutofillHints.password],
-              decoration: InputDecoration(
-                labelText: '비밀번호',
-                hintText: '8자 이상 입력',
-                suffixIcon: IconButton(
-                  onPressed: isBusy ? null : onTogglePassword,
-                  icon: Icon(
-                    obscurePassword
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                  ),
-                ),
-              ),
-              validator: (value) {
-                if ((value ?? '').length < 8) {
-                  return '비밀번호는 8자 이상이어야 합니다.';
-                }
-                return null;
-              },
-              onFieldSubmitted: (_) => onSubmit(),
-            ),
-            const SizedBox(height: 28),
-            AuthPrimaryButton(
-              label: isBusy ? '로그인 중...' : '로그인',
-              onPressed: isBusy ? null : onSubmit,
-            ),
-          ],
         ),
       ),
     );

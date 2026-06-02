@@ -1,28 +1,34 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
+import '../../../../app/theme/app_colors.dart';
+
 final class AuthUiColors {
-  static const Color canvas = Color(0xFF0A0E18);
-  static const Color canvasDeep = Color(0xFF060912);
-  static const Color canvasSoft = Color(0xFF121A2B);
+  static const Color canvas = AppColors.background;
+  static const Color canvasDeep = Color(0xFF070A14);
+  static const Color canvasSoft = AppColors.surface;
   static const Color panel = Colors.white;
-  static const Color ink = Color(0xFF111111);
-  static const Color inkSoft = Color(0xFF333333);
-  static const Color muted = Color(0xFF7C7C7C);
-  static const Color line = Color(0xFFE5E1DA);
-  static const Color lineStrong = Color(0xFFCAC4BA);
-  static const Color heroSurface = Color(0xFF131B2C);
-  static const Color heroSurfaceStrong = Color(0xFF1B2436);
-  static const Color heroLine = Color(0xFF283247);
-  static const Color heroText = Color(0xFFF7F9FC);
-  static const Color heroMuted = Color(0xFFB2BDD0);
+  static const Color panelSoft = Color(0xFFF6F8FC);
+  static const Color ink = Color(0xFF101828);
+  static const Color inkSoft = Color(0xFF344054);
+  static const Color muted = Color(0xFF667085);
+  static const Color line = Color(0xFFE4E9F2);
+  static const Color lineStrong = Color(0xFFC7D0DF);
+  static const Color heroSurface = AppColors.surface;
+  static const Color heroSurfaceStrong = AppColors.surfaceElevated;
+  static const Color heroLine = AppColors.divider;
+  static const Color heroText = AppColors.textPrimary;
+  static const Color heroMuted = AppColors.textSecondary;
+  static const Color accent = AppColors.accent;
+  static const Color accentStrong = AppColors.accentStrong;
 }
 
 class AuthGlassPanel extends StatelessWidget {
   const AuthGlassPanel({
     required this.child,
     super.key,
-    this.padding = const EdgeInsets.all(28),
-    this.radius = 30,
+    this.padding = const EdgeInsets.all(32),
+    this.radius = 24,
   });
 
   final Widget child;
@@ -31,27 +37,40 @@ class AuthGlassPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AuthUiColors.heroSurfaceStrong.withValues(alpha: 0.98),
-            AuthUiColors.heroSurface.withValues(alpha: 0.96),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.18),
-            blurRadius: 26,
-            offset: const Offset(0, 16),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.surface.withValues(alpha: 0.65),
+                AppColors.surfaceElevated.withValues(alpha: 0.45),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(color: AppColors.glassBorder, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 24,
+                spreadRadius: -4,
+                offset: const Offset(0, 12),
+              ),
+              BoxShadow(
+                color: AppColors.accent.withValues(alpha: 0.03),
+                blurRadius: 40,
+                spreadRadius: 2,
+              ),
+            ],
           ),
-        ],
+          child: child,
+        ),
       ),
-      child: Padding(padding: padding, child: child),
     );
   }
 }
@@ -64,17 +83,18 @@ class AuthSectionBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AuthUiColors.heroSurfaceStrong,
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AuthUiColors.heroLine),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: AuthUiColors.ink,
+          color: AuthUiColors.heroMuted,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.7,
+          letterSpacing: 0,
         ),
       ),
     );
@@ -91,16 +111,31 @@ class AuthFeaturePill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.04),
+        color: AuthUiColors.heroSurfaceStrong,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: AuthUiColors.heroLine),
       ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: AuthUiColors.heroText,
-          fontWeight: FontWeight.w600,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: AuthUiColors.heroMuted,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: AuthUiColors.heroText,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -126,12 +161,12 @@ class AuthMetricCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        color: AuthUiColors.heroSurface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AuthUiColors.heroLine),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -140,20 +175,20 @@ class AuthMetricCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
+                  color: AuthUiColors.heroSurfaceStrong,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, size: 18, color: AuthUiColors.heroText),
+                child: Icon(icon, size: 18, color: AuthUiColors.heroMuted),
               ),
-            if (icon != null) const SizedBox(height: 16),
+            if (icon != null) const SizedBox(height: 14),
             Text(
               label,
               style: textTheme.labelLarge?.copyWith(
                 color: AuthUiColors.heroMuted,
-                letterSpacing: 0.5,
+                letterSpacing: 0,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text(
               value,
               style: textTheme.titleLarge?.copyWith(
@@ -197,14 +232,14 @@ class AuthBulletPoint extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 30,
-          height: 30,
+          width: 32,
+          height: 32,
           margin: const EdgeInsets.only(top: 2),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: AuthUiColors.heroSurfaceStrong,
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, size: 12, color: AuthUiColors.heroText),
+          child: Icon(icon, size: 16, color: AuthUiColors.heroMuted),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -234,32 +269,124 @@ class AuthBulletPoint extends StatelessWidget {
   }
 }
 
-class AuthPrimaryButton extends StatelessWidget {
+class AuthPrimaryButton extends StatefulWidget {
   const AuthPrimaryButton({
     required this.label,
     required this.onPressed,
     super.key,
+    this.icon,
   });
 
   final String label;
   final VoidCallback? onPressed;
+  final IconData? icon;
+
+  @override
+  State<AuthPrimaryButton> createState() => _AuthPrimaryButtonState();
+}
+
+class _AuthPrimaryButtonState extends State<AuthPrimaryButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    if (widget.onPressed != null) _controller.forward();
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    if (widget.onPressed != null) {
+      _controller.reverse();
+    }
+  }
+
+  void _onTapCancel() {
+    if (widget.onPressed != null) _controller.reverse();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: AuthUiColors.ink,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 15),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+    final hasIcon = widget.icon != null;
+    final isEnabled = widget.onPressed != null;
+
+    final child = widget.icon == null
+        ? Text(widget.label)
+        : Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(widget.icon, size: 18),
+              const SizedBox(width: 8),
+              Text(widget.label),
+            ],
+          );
+
+    return GestureDetector(
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
+      onTap: isEnabled ? widget.onPressed : null,
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: double.infinity,
+          height: 52,
+          decoration: BoxDecoration(
+            gradient: isEnabled
+                ? const LinearGradient(
+                    colors: AppColors.primaryGradient,
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  )
+                : null,
+            color: isEnabled ? null : AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isEnabled
+                  ? AppColors.accent.withValues(alpha: 0.4)
+                  : Colors.transparent,
+              width: 1,
+            ),
+            boxShadow: isEnabled
+                ? AppColors.neonGlow(color: AppColors.accent, blurRadius: 8)
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: DefaultTextStyle(
+            style: TextStyle(
+              color: isEnabled ? AppColors.background : AppColors.textMuted,
+              fontWeight: FontWeight.w900,
+              fontSize: 15,
+              letterSpacing: -0.2,
+            ),
+            child: IconTheme(
+              data: IconThemeData(
+                color: isEnabled ? AppColors.background : AppColors.textMuted,
+              ),
+              child: child,
+            ),
           ),
         ),
-        child: Text(label),
       ),
     );
   }
@@ -307,22 +434,58 @@ class AuthLogoMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        alignment: Alignment.center,
-        child: Container(
-          width: 14,
-          height: 14,
-          decoration: BoxDecoration(
-            color: AuthUiColors.ink,
-            borderRadius: BorderRadius.circular(4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: AppColors.primaryGradient,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: AppColors.neonGlow(
+                color: AppColors.accent,
+                blurRadius: 10,
+              ),
+            ),
+            alignment: Alignment.center,
+            child: Container(
+              width: 18,
+              height: 18,
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: AppColors.accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
           ),
-        ),
+          const SizedBox(width: 14),
+          ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: AppColors.primaryGradient,
+            ).createShader(bounds),
+            child: Text(
+              'LCK ARCHIVE',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.6,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

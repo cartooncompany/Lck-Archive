@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/router/app_router.dart';
@@ -57,6 +58,51 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                       builder: (context, constraints) {
                         final isCompact = constraints.maxWidth < 640;
 
+                        Widget buildFavoriteButton() {
+                          return OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(
+                                color: isFavorite
+                                    ? Colors.pinkAccent.withOpacity(0.8)
+                                    : Colors.white.withOpacity(0.3),
+                                width: 1.2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 12,
+                              ),
+                              foregroundColor: Colors.white,
+                              backgroundColor: isFavorite
+                                  ? Colors.pinkAccent.withOpacity(0.12)
+                                  : Colors.white.withOpacity(0.06),
+                            ),
+                            onPressed: () =>
+                                favoriteController.selectTeam(team),
+                            icon: Icon(
+                              isFavorite
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              size: 16,
+                              color: isFavorite
+                                  ? Colors.pinkAccent
+                                  : Colors.white,
+                            ),
+                            label: Text(
+                              isFavorite ? '응원팀' : '응원팀 설정',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.5,
+                                color: isFavorite
+                                    ? Colors.pinkAccent
+                                    : Colors.white,
+                              ),
+                            ),
+                          );
+                        }
+
                         return Container(
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
@@ -68,6 +114,17 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                               ],
                             ),
                             borderRadius: BorderRadius.circular(28),
+                            border: Border.all(
+                              color: team.color.withOpacity(0.55),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: team.color.withOpacity(0.18),
+                                blurRadius: 28,
+                                spreadRadius: -4,
+                              ),
+                            ],
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(28),
@@ -126,75 +183,87 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.all(22),
+                                  padding: const EdgeInsets.all(24),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
                                       if (isCompact) ...[
-                                        Text(
-                                          team.rankLabel,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelLarge
-                                              ?.copyWith(color: Colors.white70),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withOpacity(
+                                              0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              color: Colors.white.withOpacity(
+                                                0.2,
+                                              ),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            team.rankLabel,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelLarge
+                                                ?.copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 12,
+                                                ),
+                                          ),
                                         ),
                                         const SizedBox(height: 12),
-                                        FilledButton.icon(
-                                          style: FilledButton.styleFrom(
-                                            backgroundColor: Colors.white
-                                                .withValues(alpha: 0.14),
-                                            foregroundColor: Colors.white,
-                                          ),
-                                          onPressed: () => favoriteController
-                                              .selectTeam(team),
-                                          icon: Icon(
-                                            isFavorite
-                                                ? Icons.favorite_rounded
-                                                : Icons.favorite_border_rounded,
-                                          ),
-                                          label: Text(
-                                            isFavorite ? '응원팀' : '응원팀 설정',
-                                          ),
+                                        SizedBox(
+                                          width: double.infinity,
+                                          child: buildFavoriteButton(),
                                         ),
                                       ] else
                                         Row(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              team.rankLabel,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .labelLarge
-                                                  ?.copyWith(
-                                                    color: Colors.white70,
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 4,
                                                   ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withOpacity(
+                                                  0.1,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                                border: Border.all(
+                                                  color: Colors.white
+                                                      .withOpacity(0.2),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                team.rankLabel,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .labelLarge
+                                                    ?.copyWith(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w900,
+                                                      fontSize: 12,
+                                                    ),
+                                              ),
                                             ),
                                             const Spacer(),
-                                            FilledButton.icon(
-                                              style: FilledButton.styleFrom(
-                                                backgroundColor: Colors.white
-                                                    .withValues(alpha: 0.14),
-                                                foregroundColor: Colors.white,
-                                              ),
-                                              onPressed: () =>
-                                                  favoriteController.selectTeam(
-                                                    team,
-                                                  ),
-                                              icon: Icon(
-                                                isFavorite
-                                                    ? Icons.favorite_rounded
-                                                    : Icons
-                                                          .favorite_border_rounded,
-                                              ),
-                                              label: Text(
-                                                isFavorite ? '응원팀' : '응원팀 설정',
-                                              ),
-                                            ),
+                                            buildFavoriteButton(),
                                           ],
                                         ),
-                                      const SizedBox(height: 18),
+                                      const SizedBox(height: 20),
                                       ConstrainedBox(
                                         constraints: const BoxConstraints(
                                           maxWidth: 420,
@@ -228,12 +297,13 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                                                         .withValues(
                                                           alpha: 0.88,
                                                         ),
+                                                    height: 1.3,
                                                   ),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      const SizedBox(height: 18),
+                                      const SizedBox(height: 20),
                                       Row(
                                         children: [
                                           Expanded(
@@ -251,13 +321,18 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                                           ),
                                         ],
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 20),
                                       Text(
                                         '최근 5경기 흐름',
                                         style: Theme.of(context)
                                             .textTheme
                                             .labelLarge
-                                            ?.copyWith(color: Colors.white70),
+                                            ?.copyWith(
+                                              color: Colors.white.withOpacity(
+                                                0.8,
+                                              ),
+                                              fontWeight: FontWeight.w800,
+                                            ),
                                       ),
                                       const SizedBox(height: 10),
                                       if (team.recentForm.isEmpty)
@@ -319,9 +394,9 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                           padding: const EdgeInsets.only(bottom: 12),
                           child: _PlayerRow(
                             player: player,
-                            onTap: () => Navigator.of(context).pushNamed(
-                              AppRouter.playerDetail,
-                              arguments: player,
+                            onTap: () => context.pushNamed(
+                              AppRouteNames.playerDetail,
+                              extra: player,
                             ),
                           ),
                         ),
@@ -337,7 +412,7 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
   }
 
   void _openMatchDetail(BuildContext context, String matchId) {
-    Navigator.of(context).pushNamed(AppRouter.matchDetail, arguments: matchId);
+    context.pushNamed(AppRouteNames.matchDetail, extra: matchId);
   }
 
   Future<_TeamDetailData> _loadDetail() async {
@@ -435,27 +510,104 @@ class _DetailMessage extends StatelessWidget {
   }
 }
 
-class _PlayerRow extends StatelessWidget {
+class _PlayerRow extends StatefulWidget {
   const _PlayerRow({required this.player, required this.onTap});
 
   final PlayerProfile player;
   final VoidCallback onTap;
 
   @override
+  State<_PlayerRow> createState() => _PlayerRowState();
+}
+
+class _PlayerRowState extends State<_PlayerRow> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      tileColor: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      leading: PlayerAvatar(
-        name: player.name,
-        profileImageUrl: player.profileImageUrl,
-        size: 40,
-        accentColor: player.teamColor,
+    final player = widget.player;
+    final teamColor = player.teamColor;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedScale(
+        scale: _isHovered ? 1.015 : 1.0,
+        duration: const Duration(milliseconds: 150),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          decoration: BoxDecoration(
+            color: _isHovered
+                ? AppColors.surfaceElevated.withOpacity(0.8)
+                : AppColors.surface.withOpacity(0.55),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(
+              color: _isHovered
+                  ? teamColor.withOpacity(0.4)
+                  : AppColors.glassBorder,
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _isHovered
+                    ? teamColor.withOpacity(0.12)
+                    : Colors.black.withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ListTile(
+            onTap: widget.onTap,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 18,
+              vertical: 6,
+            ),
+            leading: Stack(
+              children: [
+                PlayerAvatar(
+                  name: player.name,
+                  profileImageUrl: player.profileImageUrl,
+                  size: 44,
+                  accentColor: teamColor,
+                  borderRadius: 14,
+                ),
+                if (_isHovered)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: teamColor, width: 1.5),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            title: Text(
+              player.name,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
+            ),
+            subtitle: Text(
+              '${player.position}  |  시즌 ${player.seasonMatches}경기',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 14,
+              color: _isHovered ? teamColor : AppColors.textSecondary,
+            ),
+          ),
+        ),
       ),
-      title: Text(player.name),
-      subtitle: Text('${player.position}  |  시즌 ${player.seasonMatches}경기'),
-      trailing: const Icon(Icons.chevron_right_rounded),
     );
   }
 }

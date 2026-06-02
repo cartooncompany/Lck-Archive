@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/router/app_router.dart';
@@ -21,6 +23,55 @@ import '../../../matches/presentation/widgets/scheduled_match_tile.dart';
 import '../../../teams/presentation/widgets/team_list_card.dart';
 import '../widgets/favorite_team_card.dart';
 import '../widgets/headline_news_card.dart';
+
+/// 쫀득한 버튼 스케일 바운스 효과
+class _BounceAction extends StatefulWidget {
+  const _BounceAction({required this.child, required this.onTap, super.key});
+
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  State<_BounceAction> createState() => _BounceActionState();
+}
+
+class _BounceActionState extends State<_BounceAction>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(scale: _scale, child: widget.child),
+    );
+  }
+}
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -69,105 +120,232 @@ class _HomePageState extends State<HomePage> {
             data?.scheduledMatches ?? const <LckScheduledMatch>[];
         final scheduleError = data?.scheduleError;
 
-        return ListView(
-          padding: const EdgeInsets.only(top: 12, bottom: 120),
+        return Stack(
           children: [
-            ResponsivePageContainer(
-              maxWidth: 1220,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final useSplitLayout = constraints.maxWidth >= 1080;
+            // 응원팀 시그니처 색상을 반영한 은은한 구단 컬러 오라(Glow) 백그라운드
+            if (team != null)
+              Positioned(
+                top: -100,
+                right: -100,
+                child: IgnorePointer(
+                  child: Container(
+                    width: 420,
+                    height: 420,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          team.color.withValues(alpha: 0.16),
+                          team.color.withValues(alpha: 0.04),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppStrings.appName,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        AppStrings.appTagline,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 22),
-                      if (team != null)
-                        FavoriteTeamCard(
-                          team: team,
-                          onTap: () => _openTeamDetail(context, team),
-                        )
-                      else
-                        _FavoriteTeamEmptyCard(
-                          onTap: () => _showFavoriteTeamPicker(context),
-                        ),
-                      const SizedBox(height: AppSpacing.section),
-                      if (useSplitLayout)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 13,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _buildScheduleSection(
-                                    context: context,
-                                    snapshot: snapshot,
-                                    scheduledMatches: scheduledMatches,
-                                    scheduleError: scheduleError,
-                                  ),
-                                  const SizedBox(height: AppSpacing.section),
-                                  _buildStandingsSection(
-                                    context: context,
-                                    snapshot: snapshot,
-                                    standings: standings,
-                                    visibleStandings: visibleStandings,
-                                  ),
-                                ],
-                              ),
+            ListView(
+              padding: const EdgeInsets.only(top: 12, bottom: 120),
+              children: [
+                ResponsivePageContainer(
+                  maxWidth: 1220,
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final useSplitLayout = constraints.maxWidth >= 1080;
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeader(context, team),
+                          const SizedBox(height: 22),
+                          if (team != null)
+                            FavoriteTeamCard(
+                              team: team,
+                              onTap: () => _openTeamDetail(context, team),
+                            )
+                          else
+                            _FavoriteTeamEmptyCard(
+                              onTap: () => _showFavoriteTeamPicker(context),
                             ),
-                            const SizedBox(width: 24),
-                            Expanded(
-                              flex: 10,
-                              child: _buildNewsSection(
-                                context: context,
-                                snapshot: snapshot,
-                                featuredNews: featuredNews,
-                              ),
+                          const SizedBox(height: AppSpacing.section),
+                          if (useSplitLayout)
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 13,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildScheduleSection(
+                                        context: context,
+                                        snapshot: snapshot,
+                                        scheduledMatches: scheduledMatches,
+                                        scheduleError: scheduleError,
+                                      ),
+                                      const SizedBox(
+                                        height: AppSpacing.section,
+                                      ),
+                                      _buildStandingsSection(
+                                        context: context,
+                                        snapshot: snapshot,
+                                        standings: standings,
+                                        visibleStandings: visibleStandings,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 24),
+                                Expanded(
+                                  flex: 10,
+                                  child: _buildNewsSection(
+                                    context: context,
+                                    snapshot: snapshot,
+                                    featuredNews: featuredNews,
+                                  ),
+                                ),
+                              ],
+                            )
+                          else ...[
+                            _buildScheduleSection(
+                              context: context,
+                              snapshot: snapshot,
+                              scheduledMatches: scheduledMatches,
+                              scheduleError: scheduleError,
+                            ),
+                            const SizedBox(height: AppSpacing.section),
+                            _buildStandingsSection(
+                              context: context,
+                              snapshot: snapshot,
+                              standings: standings,
+                              visibleStandings: visibleStandings,
+                            ),
+                            const SizedBox(height: AppSpacing.section),
+                            _buildNewsSection(
+                              context: context,
+                              snapshot: snapshot,
+                              featuredNews: featuredNews,
                             ),
                           ],
-                        )
-                      else ...[
-                        _buildScheduleSection(
-                          context: context,
-                          snapshot: snapshot,
-                          scheduledMatches: scheduledMatches,
-                          scheduleError: scheduleError,
-                        ),
-                        const SizedBox(height: AppSpacing.section),
-                        _buildStandingsSection(
-                          context: context,
-                          snapshot: snapshot,
-                          standings: standings,
-                          visibleStandings: visibleStandings,
-                        ),
-                        const SizedBox(height: AppSpacing.section),
-                        _buildNewsSection(
-                          context: context,
-                          snapshot: snapshot,
-                          featuredNews: featuredNews,
-                        ),
-                      ],
-                    ],
-                  );
-                },
-              ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
         );
       },
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, TeamSummary? favoriteTeam) {
+    final textTheme = Theme.of(context).textTheme;
+    final now = DateTime.now();
+    final dateString = '${now.month}월 ${now.day}일 LCK 라이브 리포트';
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.surface.withValues(alpha: 0.5),
+                AppColors.surfaceElevated.withValues(alpha: 0.35),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: AppColors.glassBorder),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: AppColors.primaryGradient,
+                    ).createShader(bounds),
+                    child: Text(
+                      AppStrings.appName.toUpperCase(),
+                      style: textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.6,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  if (favoriteTeam != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: favoriteTeam.color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(
+                          color: favoriteTeam.color.withValues(alpha: 0.5),
+                          width: 1.2,
+                        ),
+                      ),
+                      child: Text(
+                        '${favoriteTeam.name} FAN',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: favoriteTeam.color,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 10,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                AppStrings.appTagline,
+                style: textTheme.bodyLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(height: 1, color: AppColors.divider),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.insights_rounded,
+                    size: 14,
+                    color: AppColors.accent,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    dateString,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -269,7 +447,7 @@ class _HomePageState extends State<HomePage> {
                 },
                 child: Text(
                   _showAllStandings ? '접기' : '더 보기',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             ),
@@ -387,7 +565,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openTeamDetail(BuildContext context, TeamSummary team) {
-    Navigator.of(context).pushNamed(AppRouter.teamDetail, arguments: team);
+    context.pushNamed(AppRouteNames.teamDetail, extra: team);
   }
 
   Future<void> _openNewsArticle(BuildContext context, NewsArticle article) {
@@ -480,11 +658,11 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openSchedulePage(BuildContext context) {
-    Navigator.of(context).pushNamed(AppRouter.matchesSchedule);
+    context.pushNamed(AppRouteNames.matchesSchedule);
   }
 
   void _openMatchDetail(BuildContext context, String matchId) {
-    Navigator.of(context).pushNamed(AppRouter.matchDetail, arguments: matchId);
+    context.pushNamed(AppRouteNames.matchDetail, extra: matchId);
   }
 }
 
@@ -511,37 +689,124 @@ class _FavoriteTeamEmptyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('응원팀', style: Theme.of(context).textTheme.labelLarge),
-          const SizedBox(height: 14),
-          Text(
-            '아직 선택하지 않았습니다.',
-            style: Theme.of(context).textTheme.headlineSmall,
+    final textTheme = Theme.of(context).textTheme;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.surface.withValues(alpha: 0.65),
+                AppColors.surfaceElevated.withValues(alpha: 0.45),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: AppColors.glassBorder, width: 1.2),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 24,
+                spreadRadius: -4,
+                offset: const Offset(0, 12),
+              ),
+              BoxShadow(
+                color: AppColors.accent.withValues(alpha: 0.03),
+                blurRadius: 40,
+                spreadRadius: 2,
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            '응원팀을 선택하면 홈 카드와 관련 뉴스가 개인화됩니다.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: Text(
+                  '응원팀',
+                  style: textTheme.labelLarge?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                '아직 선택하지 않았습니다.',
+                style: textTheme.headlineSmall?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '나만의 LCK 아카이브를 활성화하세요! 응원팀을 선택하면 전적 홈 분석 보드와 관련 주요 뉴스가 취향에 맞춰 개인화됩니다.',
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _BounceAction(
+                onTap: onTap,
+                child: Container(
+                  height: 48,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: AppColors.primaryGradient,
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: AppColors.neonGlow(
+                      color: AppColors.accent,
+                      blurRadius: 8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.shield_outlined,
+                        color: AppColors.background,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '응원팀 선택하기',
+                        style: TextStyle(
+                          color: AppColors.background,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 18),
-          FilledButton.tonalIcon(
-            onPressed: onTap,
-            icon: const Icon(Icons.shield_outlined),
-            label: const Text('응원팀 선택'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -560,39 +825,58 @@ class _EmptySectionMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            message,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+    final textTheme = Theme.of(context).textTheme;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.55),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.glassBorder),
           ),
-          if (actionLabel != null) ...[
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: onActionTap,
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.accent,
-                padding: EdgeInsets.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                minimumSize: Size.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                message,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.5,
+                  fontSize: 13.5,
+                ),
               ),
-              child: Text(
-                actionLabel!,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
-        ],
+              if (actionLabel != null && onActionTap != null) ...[
+                const SizedBox(height: 14),
+                _BounceAction(
+                  onTap: onActionTap!,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.glassBorder),
+                    ),
+                    child: Text(
+                      actionLabel!,
+                      style: TextStyle(
+                        color: AppColors.accent,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

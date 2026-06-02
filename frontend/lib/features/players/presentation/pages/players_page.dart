@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/router/app_router.dart';
@@ -119,7 +120,7 @@ class _PlayersPageState extends State<PlayersPage> {
   }
 
   void _openPlayer(BuildContext context, PlayerProfile player) {
-    Navigator.of(context).pushNamed(AppRouter.playerDetail, arguments: player);
+    context.pushNamed(AppRouteNames.playerDetail, extra: player);
   }
 }
 

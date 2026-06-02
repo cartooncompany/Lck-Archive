@@ -10,6 +10,7 @@ import '../../features/my_page/presentation/pages/my_page_page.dart';
 import '../../features/news/presentation/pages/news_page.dart';
 import '../../features/players/presentation/pages/players_page.dart';
 import '../../features/teams/presentation/pages/teams_page.dart';
+import '../models/team_summary.dart';
 import 'app_bottom_nav_bar.dart';
 import 'responsive_page_container.dart';
 import 'team_logo.dart';
@@ -23,7 +24,6 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   static const double _webNavigationBreakpoint = 960;
-  bool _isWebSidebarOpen = false;
 
   AppTab _currentTab = AppTab.home;
 
@@ -42,12 +42,6 @@ class _AppShellState extends State<AppShell> {
         currentTab: _currentTab,
         pages: _pages,
         onSelected: (tab) => setState(() => _currentTab = tab),
-        isSidebarOpen: _isWebSidebarOpen,
-        onToggleSidebar: () {
-          setState(() {
-            _isWebSidebarOpen = !_isWebSidebarOpen;
-          });
-        },
       );
     }
 
@@ -77,15 +71,11 @@ class _WebAppShell extends StatelessWidget {
     required this.currentTab,
     required this.pages,
     required this.onSelected,
-    required this.isSidebarOpen,
-    required this.onToggleSidebar,
   });
 
   final AppTab currentTab;
   final List<Widget> pages;
   final ValueChanged<AppTab> onSelected;
-  final bool isSidebarOpen;
-  final VoidCallback onToggleSidebar;
 
   @override
   Widget build(BuildContext context) {
@@ -100,231 +90,45 @@ class _WebAppShell extends StatelessWidget {
             final shellMargin = useExpandedMargins ? 24.0 : 16.0;
             final navigationWidth = useExpandedMargins ? 288.0 : 252.0;
 
-            return Stack(
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(shellMargin),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(28),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: AppColors.background,
-                        border: Border.all(color: AppColors.divider),
-                      ),
-                      child: Column(
-                        children: [
-                          _WebContentHeader(
-                            currentTab: currentTab,
-                            isSidebarOpen: isSidebarOpen,
-                            onToggleSidebar: onToggleSidebar,
-                          ),
-                          const Divider(height: 1),
-                          Expanded(
-                            child: IndexedStack(
-                              index: AppTab.values.indexOf(currentTab),
-                              children: pages,
-                            ),
-                          ),
-                        ],
-                      ),
+            return Padding(
+              padding: EdgeInsets.all(shellMargin),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: navigationWidth,
+                    child: _WebSidebar(
+                      currentTab: currentTab,
+                      favoriteTeam: favoriteTeam,
+                      onSelected: onSelected,
                     ),
                   ),
-                ),
-                Positioned(
-                  left: shellMargin,
-                  top: shellMargin,
-                  bottom: shellMargin,
-                  width: navigationWidth,
-                  child: IgnorePointer(
-                    ignoring: !isSidebarOpen,
-                    child: AnimatedSlide(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutCubic,
-                      offset: isSidebarOpen
-                          ? Offset.zero
-                          : const Offset(-1.08, 0),
-                      child: AnimatedOpacity(
-                        duration: const Duration(milliseconds: 180),
-                        opacity: isSidebarOpen ? 1 : 0,
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(color: AppColors.divider),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.24),
-                                blurRadius: 26,
-                                offset: const Offset(0, 16),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.surface.withValues(alpha: 0.4),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(color: AppColors.glassBorderMuted),
+                        ),
+                        child: Column(
+                          children: [
+                            _WebContentHeader(currentTab: currentTab),
+                            const Divider(height: 1),
+                            Expanded(
+                              child: IndexedStack(
+                                index: AppTab.values.indexOf(currentTab),
+                                children: pages,
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      AppStrings.appName,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.headlineSmall,
-                                    ),
-                                  ),
-                                  IconButton(
-                                    tooltip: '사이드바 닫기',
-                                    onPressed: onToggleSidebar,
-                                    icon: const Icon(Icons.menu_open_rounded),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                AppStrings.appTagline,
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(color: AppColors.textSecondary),
-                              ),
-                              const SizedBox(height: 24),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color:
-                                      (favoriteTeam?.color ??
-                                              AppColors.surfaceMuted)
-                                          .withValues(alpha: 0.12),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color:
-                                        (favoriteTeam?.color ??
-                                                AppColors.divider)
-                                            .withValues(alpha: 0.24),
-                                  ),
-                                ),
-                                child: favoriteTeam == null
-                                    ? Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '응원팀',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color:
-                                                      AppColors.textSecondary,
-                                                ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Text(
-                                            '아직 선택하지 않음',
-                                            style: Theme.of(
-                                              context,
-                                            ).textTheme.titleMedium,
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            '설정에서 응원팀을 선택하면 홈과 뉴스가 개인화됩니다.',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyMedium
-                                                ?.copyWith(
-                                                  color:
-                                                      AppColors.textSecondary,
-                                                ),
-                                          ),
-                                        ],
-                                      )
-                                    : Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            '응원팀',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodySmall
-                                                ?.copyWith(
-                                                  color:
-                                                      AppColors.textSecondary,
-                                                ),
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Row(
-                                            children: [
-                                              TeamLogo(
-                                                initials: favoriteTeam.initials,
-                                                logoUrl: favoriteTeam.logoUrl,
-                                                size: 40,
-                                                foregroundColor:
-                                                    favoriteTeam.color,
-                                                borderRadius: 14,
-                                              ),
-                                              const SizedBox(width: 12),
-                                              Expanded(
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      favoriteTeam.name,
-                                                      style: Theme.of(
-                                                        context,
-                                                      ).textTheme.titleMedium,
-                                                    ),
-                                                    const SizedBox(height: 4),
-                                                    Text(
-                                                      '${favoriteTeam.rankLabel}  |  ${favoriteTeam.seasonRecord}',
-                                                      style: Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium
-                                                          ?.copyWith(
-                                                            color: AppColors
-                                                                .textSecondary,
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                              ),
-                              const SizedBox(height: 24),
-                              Expanded(
-                                child: ListView.separated(
-                                  padding: EdgeInsets.zero,
-                                  itemCount: AppTab.values.length,
-                                  separatorBuilder: (_, _) =>
-                                      const SizedBox(height: 8),
-                                  itemBuilder: (context, index) {
-                                    final tab = AppTab.values[index];
-                                    return _WebNavItem(
-                                      tab: tab,
-                                      isSelected: tab == currentTab,
-                                      onTap: () => onSelected(tab),
-                                    );
-                                  },
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                'Web navigation',
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(color: AppColors.textSecondary),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),
@@ -333,44 +137,217 @@ class _WebAppShell extends StatelessWidget {
   }
 }
 
-class _WebContentHeader extends StatelessWidget {
-  const _WebContentHeader({
+class _WebSidebar extends StatelessWidget {
+  const _WebSidebar({
     required this.currentTab,
-    required this.isSidebarOpen,
-    required this.onToggleSidebar,
+    required this.favoriteTeam,
+    required this.onSelected,
   });
 
   final AppTab currentTab;
-  final bool isSidebarOpen;
-  final VoidCallback onToggleSidebar;
+  final TeamSummary? favoriteTeam;
+  final ValueChanged<AppTab> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final favoriteTeam = this.favoriteTeam;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.glassBorder),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: AppColors.primaryGradient,
+              ).createShader(bounds),
+              child: Text(
+                AppStrings.appName,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1.0,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              AppStrings.appTagline,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppColors.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 24),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: favoriteTeam != null
+                      ? [
+                          favoriteTeam.color.withValues(alpha: 0.15),
+                          favoriteTeam.color.withValues(alpha: 0.03),
+                        ]
+                      : AppColors.darkGlassGradient,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: (favoriteTeam?.color ?? AppColors.accent).withValues(
+                    alpha: favoriteTeam != null ? 0.35 : 0.12,
+                  ),
+                  width: favoriteTeam != null ? 1.2 : 1.0,
+                ),
+                boxShadow: favoriteTeam != null
+                    ? AppColors.neonGlow(
+                        color: favoriteTeam.color,
+                        blurRadius: 6,
+                      )
+                    : null,
+              ),
+              child: favoriteTeam == null
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'MY TEAM',
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontSize: 11,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '아직 선택하지 않음',
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '설정에서 응원팀을 선택하면 대시보드와 뉴스가 개인화됩니다.',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: AppColors.textMuted,
+                                fontSize: 12,
+                                height: 1.35,
+                              ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'MY TEAM',
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: favoriteTeam.color.withValues(
+                                  alpha: 0.8,
+                                ),
+                                fontSize: 11,
+                              ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            TeamLogo(
+                              initials: favoriteTeam.initials,
+                              logoUrl: favoriteTeam.logoUrl,
+                              size: 44,
+                              foregroundColor: favoriteTeam.color,
+                              borderRadius: 14,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    favoriteTeam.name,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w800),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '${favoriteTeam.rankLabel}  |  ${favoriteTeam.seasonRecord}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+            ),
+            const SizedBox(height: 24),
+            Expanded(
+              child: ListView.separated(
+                padding: EdgeInsets.zero,
+                itemCount: AppTab.values.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final tab = AppTab.values[index];
+                  return _WebNavItem(
+                    tab: tab,
+                    isSelected: tab == currentTab,
+                    onTap: () => onSelected(tab),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WebContentHeader extends StatelessWidget {
+  const _WebContentHeader({required this.currentTab});
+
+  final AppTab currentTab;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 18, 12),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
       child: Row(
         children: [
-          IconButton(
-            tooltip: isSidebarOpen ? '사이드바 닫기' : '사이드바 열기',
-            onPressed: onToggleSidebar,
-            icon: Icon(
-              isSidebarOpen ? Icons.menu_open_rounded : Icons.menu_rounded,
-            ),
-          ),
-          const SizedBox(width: 6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   currentTab.label,
-                  style: Theme.of(context).textTheme.titleMedium,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
-                  '메뉴 버튼으로 사이드바를 열고 닫을 수 있습니다.',
+                  AppStrings.appTagline,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
+                    fontSize: 12,
                   ),
                 ),
               ],
@@ -399,33 +376,64 @@ class _WebNavItem extends StatelessWidget {
         ? AppColors.textPrimary
         : AppColors.textSecondary;
 
-    return Material(
-      color: isSelected ? AppColors.surfaceMuted : Colors.transparent,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              Icon(tab.icon, color: foregroundColor),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  tab.label,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(color: foregroundColor),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+      decoration: BoxDecoration(
+        gradient: isSelected
+            ? const LinearGradient(
+                colors: [Color(0x1A2AD3FF), Color(0x055A7CFF)],
+              )
+            : null,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isSelected
+              ? AppColors.accent.withValues(alpha: 0.25)
+              : Colors.transparent,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                AnimatedScale(
+                  scale: isSelected ? 1.1 : 1.0,
+                  duration: const Duration(milliseconds: 150),
+                  child: Icon(
+                    tab.icon,
+                    color: isSelected ? AppColors.accent : foregroundColor,
+                    size: 20,
+                  ),
                 ),
-              ),
-              if (isSelected)
-                const Icon(
-                  Icons.arrow_forward_rounded,
-                  color: AppColors.textPrimary,
-                  size: 18,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    tab.label,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: isSelected
+                          ? AppColors.textPrimary
+                          : foregroundColor,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
                 ),
-            ],
+                if (isSelected)
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.accent,
+                    size: 18,
+                  ),
+              ],
+            ),
           ),
         ),
       ),

@@ -31,8 +31,19 @@ class PlayerAvatar extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: backgroundColor ?? accentColor.withValues(alpha: 0.16),
+        color: backgroundColor ?? accentColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.35),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: accentColor.withValues(alpha: 0.15),
+            blurRadius: 6,
+            spreadRadius: 0.5,
+          ),
+        ],
       ),
       clipBehavior: Clip.antiAlias,
       child: resolvedImageUrl != null

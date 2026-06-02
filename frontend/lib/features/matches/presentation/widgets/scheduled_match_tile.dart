@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
@@ -23,142 +24,242 @@ class ScheduledMatchTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final note = match.note;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.surface.withValues(alpha: 0.65),
+                AppColors.surfaceMuted.withValues(alpha: 0.45),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.glassBorderMuted, width: 1.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.15),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.schedule_rounded,
-                size: 18,
-                color: AppColors.warning,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  match.scheduledAt.toKoreanMonthDayTime(),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Text(
-                  '예정',
-                  style: TextStyle(
+              Row(
+                children: [
+                  const Icon(
+                    Icons.schedule_rounded,
+                    size: 16,
                     color: AppColors.warning,
-                    fontWeight: FontWeight.w800,
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      match.scheduledAt.toKoreanMonthDayTime(),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: AppColors.warning.withValues(alpha: 0.35),
+                        width: 1.0,
+                      ),
+                      boxShadow: AppColors.neonGlow(
+                        color: AppColors.warning,
+                        blurRadius: 4,
+                      ),
+                    ),
+                    child: const Text(
+                      '예정',
+                      style: TextStyle(
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          if (note.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Text(
-              note,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(child: _TeamSlot(team: match.homeTeam, alignEnd: false)),
-              Container(
-                width: 42,
-                height: 42,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceMuted,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.divider),
-                ),
-                child: Text(
-                  'VS',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              if (note.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Text(
+                  note,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w800,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
+              ],
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: _TeamSlot(team: match.homeTeam, alignEnd: false),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.surfaceElevated,
+                          AppColors.surfaceMuted,
+                        ],
+                      ),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.accent.withValues(alpha: 0.35),
+                        width: 1.2,
+                      ),
+                      boxShadow: AppColors.neonGlow(
+                        color: AppColors.accent,
+                        blurRadius: 6,
+                      ),
+                    ),
+                    child: Text(
+                      'VS',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppColors.accent,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                        fontSize: 13,
+                        shadows: [
+                          Shadow(
+                            color: AppColors.accent.withValues(alpha: 0.3),
+                            blurRadius: 6,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _TeamSlot(team: match.awayTeam, alignEnd: true),
+                  ),
+                ],
               ),
-              Expanded(child: _TeamSlot(team: match.awayTeam, alignEnd: true)),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Text(
+                    '승부 예측',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: predictedWinnerTeamId == null
+                          ? AppColors.surfaceMuted.withValues(alpha: 0.6)
+                          : AppColors.accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: predictedWinnerTeamId == null
+                            ? AppColors.divider
+                            : AppColors.accent.withValues(alpha: 0.25),
+                      ),
+                    ),
+                    child: Text(
+                      predictedWinnerTeamId == null ? '미선택' : '선택 완료',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: predictedWinnerTeamId == null
+                            ? AppColors.textMuted
+                            : AppColors.accent,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: _PredictionButton(
+                      team: match.homeTeam,
+                      isSelected: predictedWinnerTeamId == match.homeTeam.id,
+                      onTap: onPredictWinner == null
+                          ? null
+                          : () => onPredictWinner!(match.homeTeam.id),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _PredictionButton(
+                      team: match.awayTeam,
+                      isSelected: predictedWinnerTeamId == match.awayTeam.id,
+                      onTap: onPredictWinner == null
+                          ? null
+                          : () => onPredictWinner!(match.awayTeam.id),
+                    ),
+                  ),
+                ],
+              ),
+              if (onOpenDetail != null) ...[
+                const SizedBox(height: 14),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.textSecondary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      backgroundColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    onPressed: onOpenDetail,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '상세 보기',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(Icons.arrow_forward_ios_rounded, size: 11),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Text(
-                '승부 예측',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                predictedWinnerTeamId == null ? '미선택' : '선택 완료',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: predictedWinnerTeamId == null
-                      ? AppColors.textSecondary
-                      : AppColors.accent,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _PredictionButton(
-                  team: match.homeTeam,
-                  isSelected: predictedWinnerTeamId == match.homeTeam.id,
-                  onTap: onPredictWinner == null
-                      ? null
-                      : () => onPredictWinner!(match.homeTeam.id),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _PredictionButton(
-                  team: match.awayTeam,
-                  isSelected: predictedWinnerTeamId == match.awayTeam.id,
-                  onTap: onPredictWinner == null
-                      ? null
-                      : () => onPredictWinner!(match.awayTeam.id),
-                ),
-              ),
-            ],
-          ),
-          if (onOpenDetail != null) ...[
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: onOpenDetail,
-                icon: const Icon(Icons.chevron_right_rounded),
-                label: const Text('상세 보기'),
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
@@ -180,7 +281,7 @@ class _TeamSlot extends StatelessWidget {
       initials: team.shortName,
       logoUrl: team.logoUrl,
       size: 48,
-      backgroundColor: AppColors.surfaceElevated,
+      backgroundColor: AppColors.surfaceElevated.withValues(alpha: 0.6),
       borderColor: AppColors.divider,
       foregroundColor: AppColors.textPrimary,
       borderRadius: 16,
@@ -191,19 +292,21 @@ class _TeamSlot extends StatelessWidget {
         Text(
           team.shortName,
           textAlign: textAlign,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w900,
+            letterSpacing: -0.3,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
           team.name,
           textAlign: textAlign,
-          maxLines: 2,
+          maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ],
     );
@@ -219,7 +322,7 @@ class _TeamSlot extends StatelessWidget {
   }
 }
 
-class _PredictionButton extends StatelessWidget {
+class _PredictionButton extends StatefulWidget {
   const _PredictionButton({
     required this.team,
     required this.isSelected,
@@ -231,46 +334,96 @@ class _PredictionButton extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
+  State<_PredictionButton> createState() => _PredictionButtonState();
+}
+
+class _PredictionButtonState extends State<_PredictionButton> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isSelected
-          ? AppColors.accentStrong.withValues(alpha: 0.18)
-          : AppColors.surfaceElevated,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          decoration: BoxDecoration(
+    final activeColor = AppColors.accent;
+    final isSelected = widget.isSelected;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: activeColor.withValues(alpha: 0.16),
+                    blurRadius: 14,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          color: isSelected
+              ? activeColor.withValues(alpha: 0.14)
+              : AppColors.surfaceElevated.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: widget.onTap,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isSelected ? AppColors.accentStrong : AppColors.divider,
+            hoverColor: activeColor.withValues(alpha: 0.05),
+            splashColor: activeColor.withValues(alpha: 0.1),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected
+                      ? activeColor
+                      : (_isHovered
+                            ? AppColors.textSecondary.withValues(alpha: 0.4)
+                            : AppColors.glassBorderMuted),
+                  width: isSelected ? 1.5 : 1.0,
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        widget.team.shortName,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w900,
+                              color: isSelected
+                                  ? AppColors.textPrimary
+                                  : AppColors.textSecondary,
+                            ),
+                      ),
+                      if (isSelected)
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          size: 14,
+                          color: AppColors.accent,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isSelected ? '승리 예측됨' : '승리 선택',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: isSelected
+                          ? AppColors.accent
+                          : AppColors.textMuted,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                team.shortName,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: isSelected
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                isSelected ? '승리 예측 중' : '승리 선택',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: isSelected
-                      ? AppColors.accent
-                      : AppColors.textSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
           ),
         ),
       ),

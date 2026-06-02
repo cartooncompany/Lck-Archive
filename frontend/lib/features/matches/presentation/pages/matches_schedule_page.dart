@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/router/app_router.dart';
@@ -104,14 +106,14 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
                           color: AppColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
                       ...dayEntries.expand((entry) {
                         final sectionChildren = <Widget>[
                           _ScheduleDayHeader(
                             date: entry.key,
                             count: entry.value.length,
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
                         ];
 
                         sectionChildren.addAll(
@@ -133,7 +135,7 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
                             ),
                           ),
                         );
-                        sectionChildren.add(const SizedBox(height: 8));
+                        sectionChildren.add(const SizedBox(height: 12));
                         return sectionChildren;
                       }),
                     ],
@@ -223,7 +225,7 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
   }
 
   void _openMatchDetail(BuildContext context, String matchId) {
-    Navigator.of(context).pushNamed(AppRouter.matchDetail, arguments: matchId);
+    context.pushNamed(AppRouteNames.matchDetail, extra: matchId);
   }
 }
 
@@ -236,30 +238,77 @@ class _ScheduleDayHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final weekday = _weekdayLabel(date.weekday);
+    final isWeekend =
+        date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
+    final dayColor = isWeekend ? AppColors.danger : AppColors.accent;
 
-    return Row(
-      children: [
-        Text(
-          '${date.month}.${date.day} ($weekday)',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(width: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppColors.divider),
-          ),
-          child: Text(
-            '$count경기',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w700,
+    return Padding(
+      padding: const EdgeInsets.only(top: 8, bottom: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 6,
+            height: 24,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [dayColor, dayColor.withValues(alpha: 0.3)],
+              ),
+              borderRadius: BorderRadius.circular(3),
+              boxShadow: AppColors.neonGlow(color: dayColor, blurRadius: 4),
             ),
           ),
-        ),
-      ],
+          const SizedBox(width: 12),
+          Text(
+            '${date.month}.${date.day}',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '($weekday)',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: dayColor.withValues(alpha: 0.85),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.divider, Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: dayColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: dayColor.withValues(alpha: 0.3),
+                width: 1.0,
+              ),
+            ),
+            child: Text(
+              '$count Matches',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: dayColor,
+                fontWeight: FontWeight.w900,
+                fontSize: 10,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -291,25 +340,45 @@ class _ScheduleMessageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.divider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Text(
-            body,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.surface.withValues(alpha: 0.65),
+                AppColors.surfaceMuted.withValues(alpha: 0.45),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.glassBorderMuted),
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                body,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
+import '../../../../app/router/app_router.dart';
 import '../../../../shared/models/team_summary.dart';
 import '../../../favorite_team/presentation/bloc/favorite_team_controller.dart';
 import '../bloc/session_controller.dart';
@@ -50,8 +52,14 @@ class _SignupPageState extends State<SignupPage> {
 
     return AuthPageScaffold(
       hero: SignupHeroSection(
-        onBack: session.showLogin,
-        onGuest: session.continueAsGuest,
+        onBack: () {
+          session.showLogin();
+          context.go(AppRoutePaths.login);
+        },
+        onGuest: () {
+          session.continueAsGuest();
+          context.go(AppRoutePaths.home);
+        },
       ),
       panel: SignupFormPanel(
         formKey: _formKey,
@@ -69,7 +77,10 @@ class _SignupPageState extends State<SignupPage> {
         },
         onPickTeam: _pickTeam,
         onSubmit: _submit,
-        onShowLogin: session.showLogin,
+        onShowLogin: () {
+          session.showLogin();
+          context.go(AppRoutePaths.login);
+        },
       ),
     );
   }
@@ -131,6 +142,10 @@ class _SignupPageState extends State<SignupPage> {
 
     if (success) {
       await favoriteTeamController.selectTeam(selectedTeam);
+      if (!mounted) {
+        return;
+      }
+      context.go(AppRoutePaths.home);
       return;
     }
 

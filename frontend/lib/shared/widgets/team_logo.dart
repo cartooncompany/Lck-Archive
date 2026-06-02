@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../app/theme/app_colors.dart';
 import '../../core/network/media_url_resolver.dart';
 
 class TeamLogo extends StatelessWidget {
-  static const Color defaultBackgroundColor = Colors.black;
+  static const Color defaultBackgroundColor = AppColors.surface;
 
   const TeamLogo({
     required this.initials,
@@ -31,6 +32,8 @@ class TeamLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolvedLogoUrl = resolveMediaUrl(logoUrl);
+    final borderCol = borderColor ?? AppColors.glassBorderMuted;
+    final glowColor = foregroundColor ?? AppColors.accent;
 
     return Container(
       width: size,
@@ -39,7 +42,16 @@ class TeamLogo extends StatelessWidget {
       decoration: BoxDecoration(
         color: backgroundColor ?? defaultBackgroundColor,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: borderColor == null ? null : Border.all(color: borderColor!),
+        border: Border.all(color: borderCol, width: 1.2),
+        boxShadow: foregroundColor != null
+            ? [
+                BoxShadow(
+                  color: glowColor.withValues(alpha: 0.15),
+                  blurRadius: 6,
+                  spreadRadius: 0.5,
+                ),
+              ]
+            : null,
       ),
       clipBehavior: Clip.antiAlias,
       child: resolvedLogoUrl != null

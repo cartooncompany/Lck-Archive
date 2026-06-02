@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/router/app_router.dart';
@@ -93,7 +94,7 @@ class _TeamsPageState extends State<TeamsPage> {
   }
 
   void _openTeam(BuildContext context, TeamSummary team) {
-    Navigator.of(context).pushNamed(AppRouter.teamDetail, arguments: team);
+    context.pushNamed(AppRouteNames.teamDetail, extra: team);
   }
 }
 

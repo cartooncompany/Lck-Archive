@@ -19,35 +19,44 @@ final class AppTheme {
         .copyWith(
           headlineLarge: const TextStyle(
             fontSize: 32,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.8,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1.2,
+            height: 1.15,
           ),
           headlineSmall: const TextStyle(
             fontSize: 24,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.6,
+            height: 1.2,
           ),
           titleLarge: const TextStyle(
             fontSize: 20,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.4,
+            height: 1.25,
           ),
           titleMedium: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
+            letterSpacing: -0.2,
+            height: 1.3,
           ),
           bodyLarge: const TextStyle(
             fontSize: 15,
             height: 1.45,
             fontWeight: FontWeight.w500,
+            letterSpacing: -0.1,
           ),
           bodyMedium: const TextStyle(
             fontSize: 14,
             height: 1.45,
             fontWeight: FontWeight.w400,
+            color: AppColors.textSecondary,
           ),
           labelLarge: const TextStyle(
             fontSize: 13,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
           ),
         )
         .apply(
@@ -69,17 +78,18 @@ final class AppTheme {
         elevation: 0,
         centerTitle: false,
       ),
-      chipTheme: const ChipThemeData(
-        backgroundColor: AppColors.surfaceMuted,
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.surfaceElevated,
         selectedColor: AppColors.accentStrong,
-        disabledColor: AppColors.surfaceMuted,
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        labelStyle: TextStyle(
+        disabledColor: AppColors.surface,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        labelStyle: const TextStyle(
           color: AppColors.textPrimary,
           fontSize: 12,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
         ),
-        side: BorderSide.none,
+        side: const BorderSide(color: AppColors.divider, width: 1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
@@ -88,28 +98,29 @@ final class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        hintStyle: const TextStyle(color: AppColors.textSecondary),
+        hintStyle: const TextStyle(color: AppColors.textMuted),
         prefixIconColor: AppColors.textSecondary,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
+          horizontal: 18,
+          vertical: 16,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.divider),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.divider),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: AppColors.accent),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
         ),
       ),
       navigationBarTheme: const NavigationBarThemeData(
-        backgroundColor: AppColors.surface,
-        indicatorColor: AppColors.surfaceMuted,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        indicatorColor: Colors.transparent,
         iconTheme: WidgetStatePropertyAll(
           IconThemeData(color: AppColors.textSecondary),
         ),

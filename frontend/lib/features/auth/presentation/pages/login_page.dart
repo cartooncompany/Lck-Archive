@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/app_router.dart';
 import '../bloc/session_controller.dart';
 import '../widgets/auth_shell.dart';
 import '../widgets/login_sections.dart';
@@ -30,9 +32,18 @@ class _LoginPageState extends State<LoginPage> {
 
     return AuthPageScaffold(
       hero: LoginHeroSection(
-        onBack: session.showLanding,
-        onGuest: session.continueAsGuest,
-        onSignUp: session.showSignUp,
+        onBack: () {
+          session.showLanding();
+          context.go(AppRoutePaths.landing);
+        },
+        onGuest: () {
+          session.continueAsGuest();
+          context.go(AppRoutePaths.home);
+        },
+        onSignUp: () {
+          session.showSignUp();
+          context.go(AppRoutePaths.signup);
+        },
       ),
       panel: LoginFormPanel(
         formKey: _formKey,
@@ -47,8 +58,14 @@ class _LoginPageState extends State<LoginPage> {
           });
         },
         onSubmit: _submit,
-        onShowSignUp: session.showSignUp,
-        onGuest: session.continueAsGuest,
+        onShowSignUp: () {
+          session.showSignUp();
+          context.go(AppRoutePaths.signup);
+        },
+        onGuest: () {
+          session.continueAsGuest();
+          context.go(AppRoutePaths.home);
+        },
       ),
     );
   }
@@ -64,7 +81,12 @@ class _LoginPageState extends State<LoginPage> {
       password: _passwordController.text,
     );
 
-    if (success || !mounted) {
+    if (!mounted) {
+      return;
+    }
+
+    if (success) {
+      context.go(AppRoutePaths.home);
       return;
     }
 
