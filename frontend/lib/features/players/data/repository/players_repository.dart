@@ -6,22 +6,23 @@ import '../../../../core/error/app_failure.dart';
 import '../../../../core/storage/local_storage.dart';
 import '../../../../shared/models/player_profile.dart';
 import '../../../../shared/models/team_summary.dart';
-import '../../../teams/data/repository/teams_repository.dart';
+import '../../../teams/domain/repository/teams_repository_interface.dart';
+import '../../domain/repository/players_repository_interface.dart';
 import '../datasource/players_remote_data_source.dart';
 import '../dto/player_detail_dto.dart';
 import '../dto/player_summary_dto.dart';
 
-class PlayersRepository {
+class PlayersRepository implements IPlayersRepository {
   PlayersRepository({
     required PlayersRemoteDataSource remoteDataSource,
-    required TeamsRepository teamsRepository,
+    required ITeamsRepository teamsRepository,
     required LocalStorage localStorage,
   }) : _remoteDataSource = remoteDataSource,
        _teamsRepository = teamsRepository,
        _localStorage = localStorage;
 
   final PlayersRemoteDataSource _remoteDataSource;
-  final TeamsRepository _teamsRepository;
+  final ITeamsRepository _teamsRepository;
   final LocalStorage _localStorage;
   final Map<String, PlayerProfile> _playerCache = <String, PlayerProfile>{};
   Future<void>? _hydrateFuture;

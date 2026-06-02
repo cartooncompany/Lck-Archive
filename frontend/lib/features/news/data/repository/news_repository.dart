@@ -3,10 +3,11 @@ import 'dart:math' as math;
 import '../../../../core/network/paged_response.dart';
 import '../../../../core/network/pagination_meta.dart';
 import '../../../../shared/models/news_article.dart';
+import '../../domain/repository/news_repository_interface.dart';
 import '../datasource/news_remote_data_source.dart';
 import '../dto/news_item_dto.dart';
 
-class NewsRepository {
+class NewsRepository implements INewsRepository {
   static const int _remotePageLimit = 100;
 
   NewsRepository({required NewsRemoteDataSource remoteDataSource})
