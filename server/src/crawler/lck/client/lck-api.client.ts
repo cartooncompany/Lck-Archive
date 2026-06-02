@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import {
   LolesportsApiResponse,
   LolesportsSchedule,
@@ -17,6 +17,9 @@ const DEFAULT_LOCALE = 'ko-KR';
 const DEFAULT_LEAGUE_ID = '98767991310872058';
 const DEFAULT_TOURNAMENT_ID = '113503260417890076';
 const DEFAULT_SCHEDULE_PAGE_LIMIT = 12;
+const DEFAULT_REQUEST_TIMEOUT_MS = 10000;
+const DEFAULT_RETRY_ATTEMPTS = 3;
+const DEFAULT_RETRY_DELAY_MS = 500;
 const MISSING_API_KEY_MESSAGE =
   'LCK API key is not configured. Set GRID_API_KEY or LOLESPORTS_API_KEY in the runtime environment before running LCK sync.';
 
@@ -29,6 +32,9 @@ export class LckApiClient {
   private readonly leagueId: string;
   private readonly tournamentId: string;
   private readonly schedulePageLimit: number;
+  private readonly requestTimeoutMs: number;
+  private readonly retryAttempts: number;
+  private readonly retryDelayMs: number;
 
   constructor(private readonly configService: ConfigService) {
     const baseUrl =
@@ -51,10 +57,25 @@ export class LckApiClient {
       this.configService.get<string>('LCK_SCHEDULE_PAGE_LIMIT') ??
         DEFAULT_SCHEDULE_PAGE_LIMIT,
     );
+    this.requestTimeoutMs = this.parsePositiveInt(
+      this.configService.get<string>('LOLESPORTS_API_TIMEOUT_MS') ??
+        this.configService.get<string>('LCK_API_TIMEOUT_MS'),
+      DEFAULT_REQUEST_TIMEOUT_MS,
+    );
+    this.retryAttempts = this.parsePositiveInt(
+      this.configService.get<string>('LOLESPORTS_API_RETRY_ATTEMPTS') ??
+        this.configService.get<string>('LCK_API_RETRY_ATTEMPTS'),
+      DEFAULT_RETRY_ATTEMPTS,
+    );
+    this.retryDelayMs = this.parseNonNegativeInt(
+      this.configService.get<string>('LOLESPORTS_API_RETRY_DELAY_MS') ??
+        this.configService.get<string>('LCK_API_RETRY_DELAY_MS'),
+      DEFAULT_RETRY_DELAY_MS,
+    );
 
     this.axiosClient = axios.create({
       baseURL: baseUrl,
-      timeout: 10000,
+      timeout: this.requestTimeoutMs,
       headers: this.apiKey ? { 'x-api-key': this.apiKey } : undefined,
     });
 
@@ -92,8 +113,9 @@ export class LckApiClient {
       throw new Error(MISSING_API_KEY_MESSAGE);
     }
   }
+
   private async fetchStandings(): Promise<LolesportsStandingsEntry[]> {
-    const response = await this.axiosClient.get<
+    const response = await this.requestWithRetry<
       LolesportsApiResponse<LolesportsStandingsData>
     >('/getStandings', {
       params: {
@@ -135,7 +157,7 @@ export class LckApiClient {
   }
 
   private async fetchTeam(teamId: string): Promise<LolesportsTeamData> {
-    const response = await this.axiosClient.get<
+    const response = await this.requestWithRetry<
       LolesportsApiResponse<LolesportsTeamData>
     >('/getTeams', {
       params: {
@@ -150,7 +172,7 @@ export class LckApiClient {
   private async fetchSchedulePage(
     pageToken?: string,
   ): Promise<LolesportsSchedule> {
-    const response = await this.axiosClient.get<
+    const response = await this.requestWithRetry<
       LolesportsApiResponse<LolesportsScheduleData>
     >('/getSchedule', {
       params: {
@@ -161,6 +183,80 @@ export class LckApiClient {
     });
 
     return response.data.data.schedule;
+  }
+
+  private async requestWithRetry<T>(
+    url: string,
+    config: AxiosRequestConfig,
+  ): Promise<AxiosResponse<T>> {
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= this.retryAttempts; attempt += 1) {
+      try {
+        return await this.axiosClient.get<T>(url, config);
+      } catch (error) {
+        lastError = error;
+
+        if (!this.shouldRetry(error) || attempt >= this.retryAttempts) {
+          break;
+        }
+
+        const delayMs = this.retryDelayMs * 2 ** (attempt - 1);
+        this.logger.warn(
+          `LoL Esports API request failed, retrying. attempt=${attempt}/${this.retryAttempts}, nextDelayMs=${delayMs}, ${this.formatRequestError(error, url)}`,
+        );
+
+        await this.sleep(delayMs);
+      }
+    }
+
+    throw new Error(
+      `LoL Esports API request failed after ${this.retryAttempts} attempt(s): ${this.formatRequestError(lastError, url)}`,
+    );
+  }
+
+  private shouldRetry(error: unknown): boolean {
+    if (!axios.isAxiosError(error)) {
+      return false;
+    }
+
+    if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+      return true;
+    }
+
+    if (!error.response) {
+      return true;
+    }
+
+    const status = error.response.status;
+    return status === 429 || status >= 500;
+  }
+
+  private formatRequestError(error: unknown, fallbackUrl: string): string {
+    if (!axios.isAxiosError(error)) {
+      return error instanceof Error ? error.message : 'Unknown error';
+    }
+
+    const method = error.config?.method?.toUpperCase() ?? 'GET';
+    const url = error.config?.url ?? fallbackUrl;
+    const status = error.response?.status;
+    const code = error.code;
+    const parts = [
+      `${method} ${url}`,
+      status ? `status=${status}` : null,
+      code ? `code=${code}` : null,
+      error.message,
+    ].filter(Boolean);
+
+    return parts.join(', ');
+  }
+
+  private sleep(delayMs: number): Promise<void> {
+    if (delayMs <= 0) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => setTimeout(resolve, delayMs));
   }
 
   private async collectSchedulePages(
@@ -234,5 +330,21 @@ export class LckApiClient {
     teams: LolesportsTeamDetails[],
   ): LolesportsTeamDetails[] {
     return [...new Map(teams.map((team) => [team.id, team])).values()];
+  }
+
+  private parsePositiveInt(
+    value: string | undefined,
+    fallback: number,
+  ): number {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+  }
+
+  private parseNonNegativeInt(
+    value: string | undefined,
+    fallback: number,
+  ): number {
+    const parsed = Number(value);
+    return Number.isInteger(parsed) && parsed >= 0 ? parsed : fallback;
   }
 }
