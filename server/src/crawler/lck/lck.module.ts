@@ -8,6 +8,7 @@ import { LckMapper } from './mapper/lck.mapper';
 import { GridLckParser } from './parser/grid-lck.parser';
 import { LckParser } from './parser/lck.parser';
 import { LckSnapshotService } from './services/lck-snapshot.service';
+import { LckSyncPersisterService } from './services/lck-sync-persister.service';
 
 @Module({
   imports: [DatabaseModule],
@@ -19,6 +20,7 @@ import { LckSnapshotService } from './services/lck-snapshot.service';
     LckParser,
     LckMapper,
     LckSnapshotService,
+    LckSyncPersisterService,
     LckSyncJob,
   ],
   exports: [LckSyncJob],
