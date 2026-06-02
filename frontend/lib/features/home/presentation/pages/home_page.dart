@@ -10,6 +10,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../core/constants/app_spacing.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/error/app_failure.dart';
+import '../../../../features/auth/presentation/bloc/session_controller.dart';
 import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import '../../../../features/favorite_team/presentation/widgets/favorite_team_picker_sheet.dart';
 import '../../../../shared/models/lck_scheduled_match.dart';
@@ -100,6 +101,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isGuest = SessionScope.maybeOf(context)?.isGuest ?? false;
     final favoriteTeam = FavoriteTeamScope.of(context).favoriteTeam;
     if (_loadedTeamId != favoriteTeam?.id || _homeFuture == null) {
       _loadedTeamId = favoriteTeam?.id;
@@ -159,16 +161,18 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildHeader(context, team),
-                          const SizedBox(height: 22),
-                          if (team != null)
-                            FavoriteTeamCard(
-                              team: team,
-                              onTap: () => _openTeamDetail(context, team),
-                            )
-                          else
-                            _FavoriteTeamEmptyCard(
-                              onTap: () => _showFavoriteTeamPicker(context),
-                            ),
+                          if (!isGuest) ...[
+                            const SizedBox(height: 22),
+                            if (team != null)
+                              FavoriteTeamCard(
+                                team: team,
+                                onTap: () => _openTeamDetail(context, team),
+                              )
+                            else
+                              _FavoriteTeamEmptyCard(
+                                onTap: () => _showFavoriteTeamPicker(context),
+                              ),
+                          ],
                           const SizedBox(height: AppSpacing.section),
                           if (useSplitLayout)
                             Row(
