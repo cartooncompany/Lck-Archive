@@ -11,7 +11,9 @@ import { PlayerRecord, PlayersRepository } from './players.repository';
 
 @Injectable()
 export class PlayersService {
-  constructor(private readonly playersRepository: PlayersRepository) {}
+  constructor(
+    private readonly playersRepository: PlayersRepository,
+  ) {}
 
   async getPlayers(query: GetPlayersQueryDto): Promise<PlayerListResponseDto> {
     const [players, total] = await Promise.all([

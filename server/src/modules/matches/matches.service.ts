@@ -7,7 +7,9 @@ import { MatchesRepository } from './matches.repository';
 
 @Injectable()
 export class MatchesService {
-  constructor(private readonly matchesRepository: MatchesRepository) {}
+  constructor(
+    private readonly matchesRepository: MatchesRepository,
+  ) {}
 
   async getMatches(query: GetMatchesQueryDto): Promise<MatchListResponseDto> {
     const [matches, total] = await Promise.all([
@@ -28,6 +30,8 @@ export class MatchesService {
       throw new NotFoundException(`Match not found: ${id}`);
     }
 
-    return this.matchesRepository.toDetailDto(match);
+    return {
+      ...this.matchesRepository.toDetailDto(match),
+    };
   }
 }

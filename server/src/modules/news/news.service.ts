@@ -10,7 +10,9 @@ import {
 
 @Injectable()
 export class NewsService {
-  constructor(private readonly newsRepository: NewsRepository) {}
+  constructor(
+    private readonly newsRepository: NewsRepository,
+  ) {}
 
   async getNews(query: GetNewsQueryDto): Promise<NewsListResponseDto> {
     const [articles, total] = await Promise.all([
