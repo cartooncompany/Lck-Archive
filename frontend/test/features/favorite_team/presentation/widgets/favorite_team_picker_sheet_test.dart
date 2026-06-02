@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:frontend/app/app_dependencies.dart';
 import 'package:frontend/app/app_dependencies_scope.dart';
 import 'package:frontend/app/router/app_router.dart';
@@ -7,6 +8,7 @@ import 'package:frontend/app/theme/app_theme.dart';
 import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
 import 'package:frontend/features/auth/data/repository/auth_repository.dart';
 import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
+import 'package:frontend/features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
 import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import 'package:frontend/features/matches/data/datasource/matches_remote_data_source.dart';
 import 'package:frontend/features/matches/data/repository/matches_repository.dart';
@@ -27,19 +29,25 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.binding.setSurfaceSize(const Size(390, 640));
 
-    final controller = FavoriteTeamController(initialTeam: sampleFavoriteTeam);
     final apiClient = SampleLckApiClient();
     final localStorage = MemoryLocalStorage();
+    final teamsRepository = TeamsRepository(
+      remoteDataSource: TeamsRemoteDataSource(apiClient),
+      localStorage: localStorage,
+    );
+    final toggleFavoriteTeamUseCase = ToggleFavoriteTeamUseCase(
+      teamsRepository,
+    );
+    final controller = FavoriteTeamController(
+      initialTeam: sampleFavoriteTeam,
+      toggleFavoriteTeamUseCase: toggleFavoriteTeamUseCase,
+    );
     final authRepository = AuthRepository(
       remoteDataSource: AuthRemoteDataSource(apiClient),
       localStorage: localStorage,
     );
     final sessionController = SessionController(authRepository: authRepository)
       ..continueAsGuest();
-    final teamsRepository = TeamsRepository(
-      remoteDataSource: TeamsRemoteDataSource(apiClient),
-      localStorage: localStorage,
-    );
     final dependencies = AppDependencies(
       apiClient: apiClient,
       localStorage: localStorage,
@@ -60,6 +68,22 @@ void main() {
     addTearDown(controller.dispose);
     addTearDown(sessionController.dispose);
 
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: AppRoutePaths.landing,
+          name: AppRouteNames.landing,
+          builder: (_, _) => const MyPagePage(),
+        ),
+        GoRoute(
+          path: AppRoutePaths.settings,
+          name: AppRouteNames.settings,
+          builder: (_, _) => const SettingsPage(),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
     await tester.pumpWidget(
       AppDependenciesScope(
         dependencies: dependencies,
@@ -67,10 +91,9 @@ void main() {
           controller: controller,
           child: SessionScope(
             controller: sessionController,
-            child: MaterialApp(
+            child: MaterialApp.router(
               theme: AppTheme.dark(),
-              routes: {AppRouter.settings: (_) => const SettingsPage()},
-              home: const MyPagePage(),
+              routerConfig: router,
             ),
           ),
         ),

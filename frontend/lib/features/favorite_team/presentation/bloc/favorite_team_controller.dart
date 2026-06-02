@@ -3,16 +3,17 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../../../../shared/models/team_summary.dart';
+import '../../domain/usecases/toggle_favorite_team_usecase.dart';
 
 class FavoriteTeamController extends ChangeNotifier {
   FavoriteTeamController({
     TeamSummary? initialTeam,
-    Future<void> Function(TeamSummary team)? onChanged,
+    required ToggleFavoriteTeamUseCase toggleFavoriteTeamUseCase,
   }) : _favoriteTeam = initialTeam,
-       _onChanged = onChanged;
+       _toggleFavoriteTeamUseCase = toggleFavoriteTeamUseCase;
 
   TeamSummary? _favoriteTeam;
-  final Future<void> Function(TeamSummary team)? _onChanged;
+  final ToggleFavoriteTeamUseCase _toggleFavoriteTeamUseCase;
 
   TeamSummary? get favoriteTeam => _favoriteTeam;
 
@@ -23,9 +24,10 @@ class FavoriteTeamController extends ChangeNotifier {
 
     _favoriteTeam = team;
     notifyListeners();
-    final onChanged = _onChanged;
-    if (onChanged != null) {
-      unawaited(onChanged(team));
+    try {
+      await _toggleFavoriteTeamUseCase(team);
+    } catch (_) {
+      // 에러 롤백 혹은 로깅 정책 처리 가능
     }
   }
 }

@@ -6,11 +6,12 @@ import '../../../../core/error/app_failure.dart';
 import '../../../../core/storage/local_storage.dart';
 import '../../../../shared/models/lck_match_result.dart';
 import '../../../../shared/models/team_summary.dart';
+import '../../domain/repository/teams_repository_interface.dart';
 import '../datasource/teams_remote_data_source.dart';
 import '../dto/team_match_dto.dart';
 import '../dto/team_summary_dto.dart';
 
-class TeamsRepository {
+class TeamsRepository implements ITeamsRepository {
   TeamsRepository({
     required TeamsRemoteDataSource remoteDataSource,
     required LocalStorage localStorage,

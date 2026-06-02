@@ -4,6 +4,7 @@ import 'package:frontend/app/app_dependencies_scope.dart';
 import 'package:frontend/app/app_dependencies.dart';
 import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
 import 'package:frontend/features/auth/data/repository/auth_repository.dart';
+import 'package:frontend/features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
 import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import 'package:frontend/features/matches/data/datasource/matches_remote_data_source.dart';
 import 'package:frontend/features/matches/data/repository/matches_repository.dart';
@@ -47,6 +48,7 @@ void main() {
       );
       final controller = FavoriteTeamController(
         initialTeam: sampleFavoriteTeam,
+        toggleFavoriteTeamUseCase: ToggleFavoriteTeamUseCase(teamsRepository),
       );
       addTearDown(controller.dispose);
 

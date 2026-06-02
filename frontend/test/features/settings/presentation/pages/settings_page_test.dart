@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:frontend/app/router/app_router.dart';
 import 'package:frontend/app/theme/app_theme.dart';
 import 'package:frontend/core/error/app_failure.dart';
 import 'package:frontend/core/network/api_client.dart';
@@ -7,8 +9,11 @@ import 'package:frontend/core/storage/local_storage.dart';
 import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
 import 'package:frontend/features/auth/data/repository/auth_repository.dart';
 import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
+import 'package:frontend/features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
 import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import 'package:frontend/features/settings/presentation/pages/settings_page.dart';
+import 'package:frontend/features/teams/domain/repository/teams_repository_interface.dart';
+import 'package:frontend/shared/models/team_summary.dart';
 import '../../../../test_helpers/sample_lck_test_data.dart';
 
 void main() {
@@ -71,6 +76,7 @@ Future<_SettingsPageHarness> _pumpSettingsPage(
 }) async {
   final favoriteTeamController = FavoriteTeamController(
     initialTeam: sampleFavoriteTeam,
+    toggleFavoriteTeamUseCase: _FakeToggleFavoriteTeamUseCase(),
   );
   final resolvedApiClient = apiClient ?? _FakeApiClient();
   final authRepository = AuthRepository(
@@ -92,12 +98,31 @@ Future<_SettingsPageHarness> _pumpSettingsPage(
     sessionController.continueAsGuest();
   }
 
+  final router = GoRouter(
+    initialLocation: AppRoutePaths.settings,
+    routes: [
+      GoRoute(
+        path: AppRoutePaths.landing,
+        builder: (_, _) => const Scaffold(body: Text('랜딩')),
+      ),
+      GoRoute(
+        path: AppRoutePaths.login,
+        builder: (_, _) => const Scaffold(body: Text('로그인')),
+      ),
+      GoRoute(
+        path: AppRoutePaths.settings,
+        builder: (_, _) => const SettingsPage(),
+      ),
+    ],
+  );
+  addTearDown(router.dispose);
+
   await tester.pumpWidget(
     FavoriteTeamScope(
       controller: favoriteTeamController,
       child: SessionScope(
         controller: sessionController,
-        child: MaterialApp(theme: AppTheme.dark(), home: const SettingsPage()),
+        child: MaterialApp.router(theme: AppTheme.dark(), routerConfig: router),
       ),
     ),
   );
@@ -209,4 +234,12 @@ class _SettingsPageHarness {
   const _SettingsPageHarness({required this.sessionController});
 
   final SessionController sessionController;
+}
+
+class _FakeToggleFavoriteTeamUseCase implements ToggleFavoriteTeamUseCase {
+  @override
+  ITeamsRepository get teamsRepository => throw UnimplementedError();
+
+  @override
+  Future<void> call(TeamSummary team) async {}
 }

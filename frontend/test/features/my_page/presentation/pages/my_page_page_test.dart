@@ -6,8 +6,11 @@ import 'package:frontend/core/storage/local_storage.dart';
 import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
 import 'package:frontend/features/auth/data/repository/auth_repository.dart';
 import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
+import 'package:frontend/features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
 import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import 'package:frontend/features/my_page/presentation/pages/my_page_page.dart';
+import 'package:frontend/features/teams/domain/repository/teams_repository_interface.dart';
+import 'package:frontend/shared/models/team_summary.dart';
 import '../../../../test_helpers/sample_lck_test_data.dart';
 
 void main() {
@@ -19,6 +22,7 @@ void main() {
 
     final favoriteTeamController = FavoriteTeamController(
       initialTeam: sampleFavoriteTeam,
+      toggleFavoriteTeamUseCase: _FakeToggleFavoriteTeamUseCase(),
     );
     final authRepository = AuthRepository(
       remoteDataSource: AuthRemoteDataSource(_NoopApiClient()),
@@ -110,4 +114,12 @@ class _MemoryLocalStorage implements LocalStorage {
   Future<void> writeString(String key, String value) async {
     _values[key] = value;
   }
+}
+
+class _FakeToggleFavoriteTeamUseCase implements ToggleFavoriteTeamUseCase {
+  @override
+  ITeamsRepository get teamsRepository => throw UnimplementedError();
+
+  @override
+  Future<void> call(TeamSummary team) async {}
 }
