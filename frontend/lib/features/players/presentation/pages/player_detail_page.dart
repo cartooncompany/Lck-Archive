@@ -416,9 +416,16 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
   }
 
   List<_PlayerMetric> _buildMetrics(PlayerProfile player) {
-    final metrics = <_PlayerMetric>[
-      _PlayerMetric(label: '시즌 경기 수', value: '${player.seasonMatches}'),
-    ];
+    final metrics = <_PlayerMetric>[];
+
+    if (player.stats != null && player.stats!.gamesPlayed > 0) {
+      metrics.add(_PlayerMetric(label: '출전 세트 수', value: '${player.stats!.gamesPlayed}'));
+      metrics.add(_PlayerMetric(label: '평균 KDA', value: '${player.stats!.avgKda}'));
+      metrics.add(_PlayerMetric(label: '통산 킬 / 데스 / 어시', value: '${player.stats!.totalKills} / ${player.stats!.totalDeaths} / ${player.stats!.totalAssists}'));
+      metrics.add(_PlayerMetric(label: '평균 K / D / A', value: '${player.stats!.avgKills} / ${player.stats!.avgDeaths} / ${player.stats!.avgAssists}'));
+    } else {
+      metrics.add(_PlayerMetric(label: '시즌 경기 수', value: '${player.seasonMatches}'));
+    }
 
     if (player.realName != null && player.realName!.trim().isNotEmpty) {
       metrics.add(_PlayerMetric(label: '실명', value: player.realName!));
@@ -432,7 +439,7 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
       );
     }
 
-    if (metrics.length == 1 && player.keyStats.isNotEmpty) {
+    if (metrics.isEmpty && player.keyStats.isNotEmpty) {
       metrics.addAll(
         player.keyStats.entries.map(
           (entry) => _PlayerMetric(label: entry.key, value: entry.value),
@@ -440,7 +447,7 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
       );
     }
 
-    if (metrics.length == 1) {
+    if (metrics.isEmpty) {
       metrics.add(_PlayerMetric(label: '소속 팀', value: player.teamName));
       metrics.add(_PlayerMetric(label: '포지션', value: player.position));
     }

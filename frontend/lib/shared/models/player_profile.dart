@@ -1,5 +1,27 @@
 import 'package:flutter/material.dart';
 
+class PlayerStats {
+  const PlayerStats({
+    required this.gamesPlayed,
+    required this.totalKills,
+    required this.totalDeaths,
+    required this.totalAssists,
+    required this.avgKills,
+    required this.avgDeaths,
+    required this.avgAssists,
+    required this.avgKda,
+  });
+
+  final int gamesPlayed;
+  final int totalKills;
+  final int totalDeaths;
+  final int totalAssists;
+  final double avgKills;
+  final double avgDeaths;
+  final double avgAssists;
+  final double avgKda;
+}
+
 class PlayerProfile {
   const PlayerProfile({
     required this.id,
@@ -16,6 +38,7 @@ class PlayerProfile {
     this.realName,
     this.nationality,
     this.birthDate,
+    this.stats,
   });
 
   final String id;
@@ -32,6 +55,7 @@ class PlayerProfile {
   final String? realName;
   final String? nationality;
   final DateTime? birthDate;
+  final PlayerStats? stats;
 
   PlayerProfile copyWith({
     String? id,
@@ -48,6 +72,7 @@ class PlayerProfile {
     String? realName,
     String? nationality,
     DateTime? birthDate,
+    PlayerStats? stats,
   }) {
     return PlayerProfile(
       id: id ?? this.id,
@@ -64,6 +89,7 @@ class PlayerProfile {
       realName: realName ?? this.realName,
       nationality: nationality ?? this.nationality,
       birthDate: birthDate ?? this.birthDate,
+      stats: stats ?? this.stats,
     );
   }
 }

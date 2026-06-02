@@ -169,6 +169,18 @@ class PlayersRepository implements IPlayersRepository {
       realName: dto.realName,
       nationality: dto.nationality,
       birthDate: dto.birthDate,
+      stats: dto.stats != null
+          ? PlayerStats(
+              gamesPlayed: dto.stats!.gamesPlayed,
+              totalKills: dto.stats!.totalKills,
+              totalDeaths: dto.stats!.totalDeaths,
+              totalAssists: dto.stats!.totalAssists,
+              avgKills: dto.stats!.avgKills,
+              avgDeaths: dto.stats!.avgDeaths,
+              avgAssists: dto.stats!.avgAssists,
+              avgKda: dto.stats!.avgKda,
+            )
+          : null,
     );
   }
 
@@ -328,6 +340,18 @@ class PlayersRepository implements IPlayersRepository {
       'realName': player.realName,
       'nationality': player.nationality,
       'birthDate': player.birthDate?.toIso8601String(),
+      'stats': player.stats != null
+          ? <String, dynamic>{
+              'gamesPlayed': player.stats!.gamesPlayed,
+              'totalKills': player.stats!.totalKills,
+              'totalDeaths': player.stats!.totalDeaths,
+              'totalAssists': player.stats!.totalAssists,
+              'avgKills': player.stats!.avgKills,
+              'avgDeaths': player.stats!.avgDeaths,
+              'avgAssists': player.stats!.avgAssists,
+              'avgKda': player.stats!.avgKda,
+            }
+          : null,
     };
   }
 
@@ -355,6 +379,21 @@ class PlayersRepository implements IPlayersRepository {
             )
             .toList(growable: false);
 
+    final statsRaw = json['stats'];
+    PlayerStats? stats;
+    if (statsRaw is Map<String, dynamic>) {
+      stats = PlayerStats(
+        gamesPlayed: statsRaw['gamesPlayed'] as int? ?? 0,
+        totalKills: statsRaw['totalKills'] as int? ?? 0,
+        totalDeaths: statsRaw['totalDeaths'] as int? ?? 0,
+        totalAssists: statsRaw['totalAssists'] as int? ?? 0,
+        avgKills: (statsRaw['avgKills'] as num?)?.toDouble() ?? 0.0,
+        avgDeaths: (statsRaw['avgDeaths'] as num?)?.toDouble() ?? 0.0,
+        avgAssists: (statsRaw['avgAssists'] as num?)?.toDouble() ?? 0.0,
+        avgKda: (statsRaw['avgKda'] as num?)?.toDouble() ?? 0.0,
+      );
+    }
+
     return PlayerProfile(
       id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
@@ -372,6 +411,7 @@ class PlayersRepository implements IPlayersRepository {
       birthDate: json['birthDate'] == null
           ? null
           : DateTime.tryParse(json['birthDate'].toString()),
+      stats: stats,
     );
   }
 }
