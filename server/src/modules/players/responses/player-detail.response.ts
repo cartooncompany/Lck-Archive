@@ -1,5 +1,31 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PlayerSummaryResponseDto } from './player-summary.response';
+
+export class PlayerStatsResponseDto {
+  @ApiProperty({ example: 42, description: '총 출전 세트 수' })
+  gamesPlayed: number;
+
+  @ApiProperty({ example: 150, description: '통산 총 킬' })
+  totalKills: number;
+
+  @ApiProperty({ example: 80, description: '통산 총 데스' })
+  totalDeaths: number;
+
+  @ApiProperty({ example: 220, description: '통산 총 어시스트' })
+  totalAssists: number;
+
+  @ApiProperty({ example: 3.57, description: '평균 킬수 (세트당)' })
+  avgKills: number;
+
+  @ApiProperty({ example: 1.9, description: '평균 데스수 (세트당)' })
+  avgDeaths: number;
+
+  @ApiProperty({ example: 5.24, description: '평균 어시스트수 (세트당)' })
+  avgAssists: number;
+
+  @ApiProperty({ example: 4.63, description: '평균 KDA ratio' })
+  avgKda: number;
+}
 
 export class PlayerDetailResponseDto extends PlayerSummaryResponseDto {
   @ApiPropertyOptional({
@@ -23,4 +49,10 @@ export class PlayerDetailResponseDto extends PlayerSummaryResponseDto {
     description: '생년월일',
   })
   birthDate: Date | null;
+
+  @ApiProperty({
+    type: PlayerStatsResponseDto,
+    description: '선수 통산/평균 통계 기록',
+  })
+  stats: PlayerStatsResponseDto;
 }

@@ -28,7 +28,10 @@ export class PlayersService {
   }
 
   async getPlayerById(id: string): Promise<PlayerDetailResponseDto> {
-    const player = await this.playersRepository.findById(id);
+    const [player, stats] = await Promise.all([
+      this.playersRepository.findById(id),
+      this.playersRepository.getPlayerStats(id),
+    ]);
 
     if (!player) {
       throw new NotFoundException(`Player not found: ${id}`);
@@ -39,6 +42,7 @@ export class PlayersService {
       realName: player.realName,
       nationality: player.nationality,
       birthDate: player.birthDate,
+      stats,
     };
   }
 

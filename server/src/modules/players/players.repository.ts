@@ -47,6 +47,51 @@ export class PlayersRepository {
     });
   }
 
+  async getPlayerStats(playerId: string) {
+    const stats = await this.prisma.matchGamePlayerStat.aggregate({
+      where: {
+        playerId,
+      },
+      _sum: {
+        kills: true,
+        deaths: true,
+        assists: true,
+      },
+      _avg: {
+        kills: true,
+        deaths: true,
+        assists: true,
+      },
+      _count: {
+        id: true,
+      },
+    });
+
+    const gamesPlayed = stats._count.id;
+    const totalKills = stats._sum.kills ?? 0;
+    const totalDeaths = stats._sum.deaths ?? 0;
+    const totalAssists = stats._sum.assists ?? 0;
+
+    const avgKills = stats._avg.kills ? Number(stats._avg.kills.toFixed(2)) : 0;
+    const avgDeaths = stats._avg.deaths ? Number(stats._avg.deaths.toFixed(2)) : 0;
+    const avgAssists = stats._avg.assists ? Number(stats._avg.assists.toFixed(2)) : 0;
+
+    const avgKda = totalDeaths > 0
+      ? Number(((totalKills + totalAssists) / totalDeaths).toFixed(2))
+      : Number((totalKills + totalAssists).toFixed(2));
+
+    return {
+      gamesPlayed,
+      totalKills,
+      totalDeaths,
+      totalAssists,
+      avgKills,
+      avgDeaths,
+      avgAssists,
+      avgKda,
+    };
+  }
+
   private buildWhere(query: GetPlayersQueryDto): Prisma.PlayerWhereInput {
     return {
       teamId: query.teamId,
