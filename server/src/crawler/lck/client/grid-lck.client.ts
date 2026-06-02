@@ -63,10 +63,10 @@ export class GridLckClient {
       DEFAULT_GRID_API_URL;
 
     this.centralDataUrl =
-      this.configService.get<string>('GRID_CENTRAL_DATA_URL')?.trim() ??
+      this.configService.get<string>('GRID_CENTRAL_DATA_URL')?.trim() ||
       `${gridApiBaseUrl}/central-data/graphql`;
     this.seriesStateUrl =
-      this.configService.get<string>('GRID_SERIES_STATE_URL')?.trim() ??
+      this.configService.get<string>('GRID_SERIES_STATE_URL')?.trim() ||
       `${gridApiBaseUrl}/live-data-feed/series-state/graphql`;
     this.apiKey = this.configService.get<string>('GRID_API_KEY')?.trim();
     this.titleId =
