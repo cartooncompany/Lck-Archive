@@ -25,7 +25,6 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
   Timer? _searchDebounce;
 
   List<NewsArticle> _articles = const <NewsArticle>[];
-  _NewsSourceFilter _selectedSource = _NewsSourceFilter.all;
   _NewsSortOrder _sortOrder = _NewsSortOrder.desc;
   String _keyword = '';
   String? _errorMessage;
@@ -66,9 +65,7 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
   }
 
   bool get _hasActiveFilters {
-    return _keyword.isNotEmpty ||
-        _selectedSource != _NewsSourceFilter.all ||
-        _sortOrder != _NewsSortOrder.desc;
+    return _keyword.isNotEmpty || _sortOrder != _NewsSortOrder.desc;
   }
 
   @override
@@ -153,7 +150,7 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
       final response = await dependencies.newsRepository.getNews(
         page: nextPage,
         limit: _pageSize,
-        source: _selectedSource.apiValue,
+        source: null,
         keyword: _keyword,
         sortOrder: _sortOrder.apiValue,
       );
@@ -220,18 +217,6 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
     });
   }
 
-  void _updateSource(_NewsSourceFilter filter) {
-    if (_selectedSource == filter) {
-      return;
-    }
-    _searchDebounce?.cancel();
-    setState(() {
-      _selectedSource = filter;
-      _keyword = _searchController.text.trim();
-    });
-    unawaited(_fetchNews(reset: true, force: true));
-  }
-
   void _updateSortOrder(_NewsSortOrder sortOrder) {
     if (_sortOrder == sortOrder) {
       return;
@@ -263,7 +248,6 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
     _searchController.clear();
     setState(() {
       _keyword = '';
-      _selectedSource = _NewsSourceFilter.all;
       _sortOrder = _NewsSortOrder.desc;
     });
     unawaited(_fetchNews(reset: true, force: true));
@@ -390,11 +374,6 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
                     : '$_totalItems건',
               ),
               _NewsMetricPill(
-                icon: Icons.hub_rounded,
-                label: '소스',
-                value: _selectedSource.label,
-              ),
-              _NewsMetricPill(
                 icon: Icons.swap_vert_rounded,
                 label: '정렬',
                 value: _sortOrder.label,
@@ -505,28 +484,10 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
                     icon: Icons.search_rounded,
                     label: _keyword,
                   ),
-                if (_selectedSource != _NewsSourceFilter.all)
-                  _ActiveFilterPill(
-                    icon: Icons.hub_rounded,
-                    label: _selectedSource.label,
-                  ),
               ],
             ),
           ],
           const SizedBox(height: 16),
-          _FilterSection(
-            title: '소스',
-            children: _NewsSourceFilter.values
-                .map(
-                  (filter) => _ChoiceFilterChip(
-                    label: filter.label,
-                    selected: _selectedSource == filter,
-                    onSelected: () => _updateSource(filter),
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 12),
           _FilterSection(
             title: '정렬',
             children: _NewsSortOrder.values
@@ -640,7 +601,7 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
       return _NewsStatusCard(
         title: '조건에 맞는 뉴스가 없습니다',
         message: _hasActiveFilters
-            ? '검색어를 줄이거나 소스를 전체로 바꿔 보세요.'
+            ? '검색어를 줄이거나 필터를 초기화해 보세요.'
             : '데이터가 비어 있다면 백엔드에서 수동 동기화를 먼저 요청해 주세요.',
         icon: Icons.filter_alt_off_rounded,
         actionLabel: _hasActiveFilters ? '필터 초기화' : null,
@@ -753,17 +714,6 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
       ],
     );
   }
-}
-
-enum _NewsSourceFilter {
-  all(label: '전체', apiValue: null),
-  lolEsports(label: 'LoL Esports', apiValue: 'LOLESPORTS'),
-  naverEsports(label: '네이버 e스포츠', apiValue: 'NAVER_ESPORTS');
-
-  const _NewsSourceFilter({required this.label, required this.apiValue});
-
-  final String label;
-  final String? apiValue;
 }
 
 enum _NewsSortOrder {
