@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../../database/prisma.service';
 import { LckMapper } from '../mapper/lck.mapper';
-import { RawLckTeamPayload, RawLckPlayerPayload, RawLckMatchPayload } from '../types/lck-source.types';
+import {
+  RawLckTeamPayload,
+  RawLckPlayerPayload,
+  RawLckMatchPayload,
+} from '../types/lck-source.types';
 
 @Injectable()
 export class LckSyncPersisterService {
@@ -26,7 +30,9 @@ export class LckSyncPersisterService {
     });
 
     const elapsed = Date.now() - startTime;
-    this.logger.log(`Teams persistence completed. Count=${teams.length}, Time=${elapsed}ms`);
+    this.logger.log(
+      `Teams persistence completed. Count=${teams.length}, Time=${elapsed}ms`,
+    );
     return teamIdMap;
   }
 
@@ -52,7 +58,9 @@ export class LckSyncPersisterService {
     });
 
     const elapsed = Date.now() - startTime;
-    this.logger.log(`Players persistence completed. Count=${players.length}, Time=${elapsed}ms`);
+    this.logger.log(
+      `Players persistence completed. Count=${players.length}, Time=${elapsed}ms`,
+    );
     return playerIdMap;
   }
 
@@ -68,11 +76,19 @@ export class LckSyncPersisterService {
       select: {
         externalId: true,
         status: true,
+        _count: {
+          select: {
+            games: true,
+          },
+        },
       },
     });
-    const existingMatchMap = new Map<string, string>();
+    const existingMatchMap = new Map<string, { status: string; gameCount: number }>();
     for (const m of existingMatches) {
-      existingMatchMap.set(m.externalId, m.status);
+      existingMatchMap.set(m.externalId, {
+        status: m.status,
+        gameCount: m._count.games,
+      });
     }
 
     let skippedMatches = 0;
@@ -90,9 +106,14 @@ export class LckSyncPersisterService {
         continue;
       }
 
-      // Diffing Check: 이미 COMPLETED로 완결된 경기는 API에서 동기화할 필요가 없으므로 생략
-      const existingStatus = existingMatchMap.get(match.externalId);
-      if (existingStatus === 'COMPLETED' && match.status === 'COMPLETED') {
+      // Diffing Check: 이미 COMPLETED로 완결된 경기이고 세트 데이터까지 존재하면 동기화 생략
+      const existing = existingMatchMap.get(match.externalId);
+      if (
+        existing &&
+        existing.status === 'COMPLETED' &&
+        match.status === 'COMPLETED' &&
+        existing.gameCount > 0
+      ) {
         skippedMatches++;
         continue;
       }
@@ -308,15 +329,22 @@ export class LckSyncPersisterService {
         });
 
         syncedMatches++;
-        this.logger.debug(`Match synced in transaction: id=${match.externalId}, elapsed=${Date.now() - matchStartTime}ms`);
+        this.logger.debug(
+          `Match synced in transaction: id=${match.externalId}, elapsed=${Date.now() - matchStartTime}ms`,
+        );
       } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        this.logger.error(`Match transaction failed: match=${match.externalId}, error=${message}`);
+        const message =
+          error instanceof Error ? error.message : 'Unknown error';
+        this.logger.error(
+          `Match transaction failed: match=${match.externalId}, error=${message}`,
+        );
       }
     }
 
     const elapsed = Date.now() - startTime;
-    this.logger.log(`Matches persistence completed. Synced=${syncedMatches}, Skipped=${skippedMatches}, Time=${elapsed}ms`);
+    this.logger.log(
+      `Matches persistence completed. Synced=${syncedMatches}, Skipped=${skippedMatches}, Time=${elapsed}ms`,
+    );
     return { syncedMatches, skippedMatches };
   }
 }

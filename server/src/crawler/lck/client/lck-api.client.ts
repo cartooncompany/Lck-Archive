@@ -43,16 +43,19 @@ export class LckApiClient {
       this.configService.get<string>('LCK_API_BASE_URL') ??
       DEFAULT_BASE_URL;
 
+    const lolesportsApiKey = this.configService
+      .get<string>('LOLESPORTS_API_KEY')
+      ?.trim();
     const gridApiKey = this.configService.get<string>('GRID_API_KEY')?.trim();
-    const lolesportsApiKey = this.configService.get<string>('LOLESPORTS_API_KEY')?.trim();
 
     // Check if the configured key is a valid actual key (not empty, and not the default placeholder)
-    const isValidKey = (key?: string) => key && key !== '' && key !== 'YOUR_GRID_API_KEY';
+    const isValidKey = (key?: string) =>
+      key && key !== '' && key !== 'YOUR_GRID_API_KEY';
 
-    if (isValidKey(gridApiKey)) {
-      this.apiKey = gridApiKey;
-    } else if (isValidKey(lolesportsApiKey)) {
+    if (isValidKey(lolesportsApiKey)) {
       this.apiKey = lolesportsApiKey;
+    } else if (isValidKey(gridApiKey)) {
+      this.apiKey = gridApiKey;
     } else {
       this.apiKey = undefined;
     }
@@ -85,16 +88,18 @@ export class LckApiClient {
     );
 
     const headers: Record<string, string> = {
-      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      'Accept': 'application/json, text/plain, */*',
+      'User-Agent':
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+      Accept: 'application/json, text/plain, */*',
       'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-      'Sec-Ch-Ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
+      'Sec-Ch-Ua':
+        '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"',
       'Sec-Ch-Ua-Mobile': '?0',
       'Sec-Ch-Ua-Platform': '"macOS"',
       'Sec-Fetch-Dest': 'empty',
       'Sec-Fetch-Mode': 'cors',
       'Sec-Fetch-Site': 'same-site',
-      'Referer': 'https://lolesports.com/',
+      Referer: 'https://lolesports.com/',
     };
 
     if (this.apiKey) {
@@ -112,7 +117,9 @@ export class LckApiClient {
         'GRID base URL is configured. The current LCK client still expects LoL Esports persisted endpoints (/getStandings, /getSchedule, /getTeams), so a dedicated GRID adapter is still required for central-data/graphql or file-download APIs.',
       );
     }
-    this.logger.log(`LckApiClient initialized. API Key prefix: ${this.apiKey ? this.apiKey.substring(0, 4) + '...' : 'undefined'}`);
+    this.logger.log(
+      `LckApiClient initialized. API Key prefix: ${this.apiKey ? this.apiKey.substring(0, 4) + '...' : 'undefined'}`,
+    );
   }
 
   async fetchSnapshot(): Promise<LolesportsSnapshotPayload> {

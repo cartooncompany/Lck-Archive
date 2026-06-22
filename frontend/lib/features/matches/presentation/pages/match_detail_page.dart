@@ -38,7 +38,8 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
       body: FutureBuilder<LckMatchDetail>(
         future: _matchFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting &&
+          if ((snapshot.connectionState == ConnectionState.waiting ||
+                  snapshot.connectionState == ConnectionState.none) &&
               !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -84,11 +85,16 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
                     const SectionHeader(title: '세트별 데이터'),
                     const SizedBox(height: 12),
                     if (match.games.isEmpty)
-                      const AppStatusCard(
-                        title: '세트 데이터가 없습니다.',
-                        message:
-                            'GRID Series State에서 세트별 상세 정보가 수집되면 이 영역에 표시됩니다.',
-                        icon: Icons.analytics_outlined,
+                      AppStatusCard(
+                        title: match.status == 'SCHEDULED'
+                            ? '경기 예정 상태입니다.'
+                            : '세트 데이터가 없습니다.',
+                        message: match.status == 'SCHEDULED'
+                            ? '아직 치러지지 않은 경기입니다. 경기가 시작되면 상세 데이터가 수집됩니다.'
+                            : 'GRID Series State에서 세트별 상세 정보가 수집되면 이 영역에 표시됩니다.',
+                        icon: match.status == 'SCHEDULED'
+                            ? Icons.schedule_rounded
+                            : Icons.analytics_outlined,
                       )
                     else
                       ...match.games.map(
