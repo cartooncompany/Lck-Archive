@@ -81,7 +81,7 @@ class _AppStatusCardState extends State<AppStatusCard> {
         return Transform.scale(
           scale: 0.95 + (0.05 * value),
           child: Opacity(
-            opacity: value,
+            opacity: value.clamp(0.0, 1.0),
             child: child,
           ),
         );
