@@ -64,10 +64,53 @@ class FavoriteTeamPickerSheet extends StatelessWidget {
 
                     return ListView.separated(
                       shrinkWrap: true,
-                      itemCount: teams.length,
+                      itemCount: teams.length + 1,
                       separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
-                        final team = teams[index];
+                        if (index == 0) {
+                          return ListTile(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            tileColor: AppColors.surface,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 10,
+                            ),
+                            onTap: () async {
+                              await controller.selectTeam(null);
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                              }
+                            },
+                            leading: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: const BoxDecoration(
+                                color: AppColors.surfaceElevated,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.block_rounded,
+                                color: AppColors.textSecondary,
+                                size: 20,
+                              ),
+                            ),
+                            title: const Text(
+                              '응원 팀 없음',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                            subtitle: const Text('응원팀 없이 중립 상태로 앱을 탐색합니다.'),
+                            trailing: controller.favoriteTeam == null
+                                ? const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.accent,
+                                  )
+                                : null,
+                          );
+                        }
+
+                        final team = teams[index - 1];
                         return _FavoriteTeamTile(
                           team: team,
                           isSelected: team.id == controller.favoriteTeam?.id,

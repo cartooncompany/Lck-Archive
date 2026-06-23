@@ -73,12 +73,17 @@ export class PlayersRepository {
     const totalAssists = stats._sum.assists ?? 0;
 
     const avgKills = stats._avg.kills ? Number(stats._avg.kills.toFixed(2)) : 0;
-    const avgDeaths = stats._avg.deaths ? Number(stats._avg.deaths.toFixed(2)) : 0;
-    const avgAssists = stats._avg.assists ? Number(stats._avg.assists.toFixed(2)) : 0;
+    const avgDeaths = stats._avg.deaths
+      ? Number(stats._avg.deaths.toFixed(2))
+      : 0;
+    const avgAssists = stats._avg.assists
+      ? Number(stats._avg.assists.toFixed(2))
+      : 0;
 
-    const avgKda = totalDeaths > 0
-      ? Number(((totalKills + totalAssists) / totalDeaths).toFixed(2))
-      : Number((totalKills + totalAssists).toFixed(2));
+    const avgKda =
+      totalDeaths > 0
+        ? Number(((totalKills + totalAssists) / totalDeaths).toFixed(2))
+        : Number((totalKills + totalAssists).toFixed(2));
 
     return {
       gamesPlayed,
@@ -90,6 +95,62 @@ export class PlayersRepository {
       avgAssists,
       avgKda,
     };
+  }
+
+  async getRecentAppearances(playerId: string, limit = 5) {
+    const statsList = await this.prisma.matchGamePlayerStat.findMany({
+      where: { playerId },
+      include: {
+        matchGame: {
+          include: {
+            match: {
+              include: {
+                homeTeam: true,
+                awayTeam: true,
+              },
+            },
+          },
+        },
+        team: true,
+      },
+      orderBy: {
+        matchGame: {
+          match: {
+            scheduledAt: 'desc',
+          },
+        },
+      },
+      take: limit,
+    });
+
+    return statsList.map((stat) => {
+      const match = stat.matchGame.match;
+      const myTeam = stat.team;
+      const isHome = match.homeTeamId === myTeam.id;
+      const opponent = isHome ? match.awayTeam : match.homeTeam;
+      
+      const isWin = stat.matchGame.winnerTeamId === myTeam.id;
+      
+      const kills = stat.kills ?? 0;
+      const deaths = stat.deaths ?? 0;
+      const assists = stat.assists ?? 0;
+      const champ = stat.characterName ?? '미상';
+      const performance = `${kills} / ${deaths} / ${assists} (${champ})`;
+
+      return {
+        playedAt: match.scheduledAt,
+        opponent: opponent.name,
+        result: isWin ? '승' : '패',
+        performance,
+      };
+    });
+  }
+
+  async updateAiSummary(id: string, aiSummary: string) {
+    return this.prisma.player.update({
+      where: { id },
+      data: { aiSummary },
+    });
   }
 
   private buildWhere(query: GetPlayersQueryDto): Prisma.PlayerWhereInput {

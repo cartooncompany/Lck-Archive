@@ -215,4 +215,11 @@ export class MatchDetailResponseDto extends MatchSummaryResponseDto {
     description: '세트별 상세 정보',
   })
   games: MatchGameResponseDto[];
+
+  @ApiPropertyOptional({
+    example: '# AI 경기 분석 요약\n\n이번 경기는...',
+    nullable: true,
+    description: 'AI로 생성된 경기 분석 요약 리포트 (Markdown 포맷)',
+  })
+  aiSummary: string | null;
 }

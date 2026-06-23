@@ -17,8 +17,8 @@ class FavoriteTeamController extends ChangeNotifier {
 
   TeamSummary? get favoriteTeam => _favoriteTeam;
 
-  Future<void> selectTeam(TeamSummary team) async {
-    if (_favoriteTeam?.id == team.id) {
+  Future<void> selectTeam(TeamSummary? team) async {
+    if (_favoriteTeam?.id == team?.id) {
       return;
     }
 

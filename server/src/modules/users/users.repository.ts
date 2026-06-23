@@ -18,7 +18,7 @@ export interface CreateUserInput {
   nickname: string;
   email: string;
   passwordHash: string;
-  favoriteTeamId: string;
+  favoriteTeamId?: string | null;
 }
 
 @Injectable()
@@ -52,7 +52,10 @@ export class UsersRepository {
     return user as UserEntity | null;
   }
 
-  async favoriteTeamExists(teamId: string): Promise<boolean> {
+  async favoriteTeamExists(teamId?: string | null): Promise<boolean> {
+    if (!teamId) {
+      return true;
+    }
     const count = await this.prisma.team.count({
       where: { id: teamId },
     });

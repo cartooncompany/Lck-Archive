@@ -75,7 +75,9 @@ export class LckSyncJob {
       this.logger.log('Starting data persistence mapping...');
 
       // 1. Teams 저장
-      const teamIdMap = await this.lckSyncPersister.persistTeams(parsedSnapshot.teams);
+      const teamIdMap = await this.lckSyncPersister.persistTeams(
+        parsedSnapshot.teams,
+      );
 
       // 2. Players 저장
       const playerIdMap = await this.lckSyncPersister.persistPlayers(
@@ -96,7 +98,9 @@ export class LckSyncJob {
         parsedSnapshot.matches.length;
 
       const elapsed = Date.now() - jobStartTime;
-      this.logger.log(`LCK sync job orchestrator completed successfully. Elapsed=${elapsed}ms`);
+      this.logger.log(
+        `LCK sync job orchestrator completed successfully. Elapsed=${elapsed}ms`,
+      );
 
       await this.prisma.syncJobLog.update({
         where: { id: log.id },

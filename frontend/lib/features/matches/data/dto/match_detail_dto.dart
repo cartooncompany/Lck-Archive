@@ -161,10 +161,13 @@ class MatchDetailDto extends TeamMatchDto {
     required super.awayTeam,
     required super.score,
     required super.winner,
+    super.aiWinnerTeamId,
+    super.aiPrediction,
     required this.matchNumber,
     required this.vodUrl,
     required this.participants,
     required this.games,
+    this.aiSummary,
   });
 
   factory MatchDetailDto.fromJson(Map<String, dynamic> json) {
@@ -185,6 +188,8 @@ class MatchDetailDto extends TeamMatchDto {
       winner: json['winner'] is Map<String, dynamic>
           ? TeamMatchTeamDto.fromJson(json['winner'] as Map<String, dynamic>)
           : null,
+      aiWinnerTeamId: json['aiWinnerTeamId'] as String?,
+      aiPrediction: json['aiPrediction'] as String?,
       matchNumber: json['matchNumber'] as String?,
       vodUrl: json['vodUrl'] as String?,
       participants:
@@ -196,6 +201,7 @@ class MatchDetailDto extends TeamMatchDto {
           .whereType<Map<String, dynamic>>()
           .map(MatchGameDto.fromJson)
           .toList(growable: false),
+      aiSummary: json['aiSummary'] as String?,
     );
   }
 
@@ -203,4 +209,5 @@ class MatchDetailDto extends TeamMatchDto {
   final String? vodUrl;
   final List<MatchParticipantDto> participants;
   final List<MatchGameDto> games;
+  final String? aiSummary;
 }

@@ -8,11 +8,13 @@ import {
   PlayerSummaryResponseDto,
 } from './responses/player-summary.response';
 import { PlayerRecord, PlayersRepository } from './players.repository';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class PlayersService {
   constructor(
     private readonly playersRepository: PlayersRepository,
+    private readonly aiService: AiService,
   ) {}
 
   async getPlayers(query: GetPlayersQueryDto): Promise<PlayerListResponseDto> {
@@ -28,9 +30,10 @@ export class PlayersService {
   }
 
   async getPlayerById(id: string): Promise<PlayerDetailResponseDto> {
-    const [player, stats] = await Promise.all([
+    const [player, stats, recentAppearances] = await Promise.all([
       this.playersRepository.findById(id),
       this.playersRepository.getPlayerStats(id),
+      this.playersRepository.getRecentAppearances(id),
     ]);
 
     if (!player) {
@@ -43,7 +46,37 @@ export class PlayersService {
       nationality: player.nationality,
       birthDate: player.birthDate,
       stats,
+      recentAppearances,
+      aiSummary: player.aiSummary,
     };
+  }
+
+  async generatePlayerAiSummary(id: string): Promise<{ summary: string }> {
+    const player = await this.playersRepository.findById(id);
+    if (!player) {
+      throw new NotFoundException(`Player not found: ${id}`);
+    }
+
+    const [stats, recentAppearances] = await Promise.all([
+      this.playersRepository.getPlayerStats(id),
+      this.playersRepository.getRecentAppearances(id),
+    ]);
+
+    const playerDetailForAi = {
+      ...this.toPlayerSummary(player),
+      realName: player.realName,
+      nationality: player.nationality,
+      birthDate: player.birthDate,
+      stats,
+      recentAppearances,
+    };
+
+    const summary = await this.aiService.generatePlayerSummary(
+      playerDetailForAi,
+    );
+    await this.playersRepository.updateAiSummary(id, summary);
+
+    return { summary };
   }
 
   private toPlayerSummary(player: PlayerRecord): PlayerSummaryResponseDto {

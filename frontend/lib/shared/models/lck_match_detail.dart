@@ -23,6 +23,9 @@ class LckMatchDetail {
     required this.vodUrl,
     required this.participants,
     required this.games,
+    this.aiSummary,
+    this.aiWinnerTeamId,
+    this.aiPrediction,
   });
 
   final String id;
@@ -39,6 +42,9 @@ class LckMatchDetail {
   final String? vodUrl;
   final List<LckMatchParticipant> participants;
   final List<LckMatchGame> games;
+  final String? aiSummary;
+  final String? aiWinnerTeamId;
+  final String? aiPrediction;
 
   String get note {
     return [

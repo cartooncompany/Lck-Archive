@@ -9,4 +9,5 @@ abstract class IPlayersRepository {
   });
   Future<PlayerProfile> getPlayer(String id);
   Future<PlayerProfile?> findPlayerByTag(String tag);
+  Future<String> requestPlayerAiSummary(String id);
 }

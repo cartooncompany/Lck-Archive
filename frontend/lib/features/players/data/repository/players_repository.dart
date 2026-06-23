@@ -139,6 +139,21 @@ class PlayersRepository implements IPlayersRepository {
     return null;
   }
 
+  @override
+  Future<String> requestPlayerAiSummary(String id) async {
+    try {
+      final summary = await _remoteDataSource.requestPlayerAiSummary(id);
+      final cachedPlayer = _playerCache[id];
+      if (cachedPlayer != null) {
+        _playerCache[id] = cachedPlayer.copyWith(aiSummary: summary);
+        await _persistCache();
+      }
+      return summary;
+    } catch (_) {
+      throw const AppFailure('AI 분석 보고서를 생성하는 데 실패했습니다.');
+    }
+  }
+
   void _rememberPlayers(List<PlayerProfile> players) {
     for (final player in players) {
       _playerCache[player.id] = player;
@@ -169,6 +184,17 @@ class PlayersRepository implements IPlayersRepository {
       realName: dto.realName,
       nationality: dto.nationality,
       birthDate: dto.birthDate,
+      aiSummary: dto.aiSummary,
+      recentAppearances: dto.recentAppearances
+          .map(
+            (e) => PlayerMatchAppearance(
+              playedAt: e.playedAt,
+              opponent: e.opponent,
+              result: e.result,
+              performance: e.performance,
+            ),
+          )
+          .toList(),
       stats: dto.stats != null
           ? PlayerStats(
               gamesPlayed: dto.stats!.gamesPlayed,
@@ -340,6 +366,7 @@ class PlayersRepository implements IPlayersRepository {
       'realName': player.realName,
       'nationality': player.nationality,
       'birthDate': player.birthDate?.toIso8601String(),
+      'aiSummary': player.aiSummary,
       'stats': player.stats != null
           ? <String, dynamic>{
               'gamesPlayed': player.stats!.gamesPlayed,
@@ -412,6 +439,7 @@ class PlayersRepository implements IPlayersRepository {
           ? null
           : DateTime.tryParse(json['birthDate'].toString()),
       stats: stats,
+      aiSummary: json['aiSummary']?.toString(),
     );
   }
 }

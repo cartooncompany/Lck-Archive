@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
@@ -23,6 +24,7 @@ class PlayerDetailPage extends StatefulWidget {
 
 class _PlayerDetailPageState extends State<PlayerDetailPage> {
   Future<PlayerProfile>? _playerFuture;
+  bool _isGeneratingAiSummary = false;
 
   @override
   void didChangeDependencies() {
@@ -405,6 +407,8 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                           ),
                         );
                       }),
+                    const SizedBox(height: AppSpacing.section),
+                    _buildAiSummarySection(context, player),
                   ],
                 ),
               ),
@@ -480,6 +484,168 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
     }
 
     context.pushNamed(AppRouteNames.teamDetail, extra: team);
+  }
+
+  Widget _buildAiSummarySection(BuildContext context, PlayerProfile player) {
+    final aiSummary = player.aiSummary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(
+              Icons.auto_awesome_rounded,
+              color: player.teamColor,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'AI 선수 분석 리포트',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated.withOpacity(0.55),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: player.teamColor.withOpacity(0.3),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: player.teamColor.withOpacity(0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: _isGeneratingAiSummary
+              ? const Column(
+                  children: [
+                    SizedBox(height: 24),
+                    CircularProgressIndicator(),
+                    SizedBox(height: 16),
+                    Text(
+                      'Gemini AI가 시즌 지표와 최근 경기를 기반으로\n스카우팅 리포트를 작성하고 있습니다...',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                  ],
+                )
+              : aiSummary == null || aiSummary.trim().isEmpty
+                  ? Column(
+                      children: [
+                        const Icon(
+                          Icons.insights_rounded,
+                          color: AppColors.textSecondary,
+                          size: 40,
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          '아직 생성된 AI 리포트가 없습니다.\n아래 버튼을 눌러 스카우팅 리포트를 생성해 보세요!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: player.teamColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: RoundedRectangleBorder().borderRadius,
+                              ),
+                            ),
+                            onPressed: () => _generateAiSummary(context, player.id),
+                            icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+                            label: const Text(
+                              'AI 분석 요약 리포트 생성',
+                              style: TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : Theme(
+                      data: Theme.of(context).copyWith(
+                        textTheme: Theme.of(context).textTheme.copyWith(
+                              bodyMedium: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 14,
+                                height: 1.6,
+                              ),
+                            ),
+                      ),
+                      child: MarkdownBody(
+                        data: aiSummary,
+                        styleSheet: MarkdownStyleSheet(
+                          p: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            height: 1.6,
+                          ),
+                          h3: TextStyle(
+                            color: player.teamColor,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            height: 1.8,
+                          ),
+                          listBullet: const TextStyle(
+                            color: Colors.white,
+                          ),
+                          blockSpacing: 12,
+                        ),
+                      ),
+                    ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _generateAiSummary(BuildContext context, String playerId) async {
+    setState(() {
+      _isGeneratingAiSummary = true;
+    });
+
+    try {
+      final repository = AppDependenciesScope.of(context).playersRepository;
+      await repository.requestPlayerAiSummary(playerId);
+      setState(() {
+        _playerFuture = repository.getPlayer(playerId);
+      });
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('AI 리포트 생성 중 오류가 발생했습니다: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGeneratingAiSummary = false;
+        });
+      }
+    }
   }
 }
 

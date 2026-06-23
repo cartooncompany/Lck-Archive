@@ -39,6 +39,7 @@ class PlayerProfile {
     this.nationality,
     this.birthDate,
     this.stats,
+    this.aiSummary,
   });
 
   final String id;
@@ -56,6 +57,7 @@ class PlayerProfile {
   final String? nationality;
   final DateTime? birthDate;
   final PlayerStats? stats;
+  final String? aiSummary;
 
   PlayerProfile copyWith({
     String? id,
@@ -73,6 +75,7 @@ class PlayerProfile {
     String? nationality,
     DateTime? birthDate,
     PlayerStats? stats,
+    String? aiSummary,
   }) {
     return PlayerProfile(
       id: id ?? this.id,
@@ -90,6 +93,7 @@ class PlayerProfile {
       nationality: nationality ?? this.nationality,
       birthDate: birthDate ?? this.birthDate,
       stats: stats ?? this.stats,
+      aiSummary: aiSummary ?? this.aiSummary,
     );
   }
 }

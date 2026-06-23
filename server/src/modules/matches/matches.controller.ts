@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -14,8 +14,12 @@ import {
   ValidationErrorResponseDto,
 } from '../../common/responses/error-response.dto';
 import { GetMatchesQueryDto } from './dto/get-matches.query.dto';
+import { GetRecentMatchesQueryDto } from './dto/get-recent-matches.query.dto';
 import { MatchDetailResponseDto } from './responses/match-detail.response';
-import { MatchListResponseDto } from './responses/match-summary.response';
+import {
+  MatchListResponseDto,
+  MatchSummaryResponseDto,
+} from './responses/match-summary.response';
 import { MatchesService } from './matches.service';
 
 @ApiTags('Matches')
@@ -47,6 +51,25 @@ export class MatchesController {
     return this.matchesService.getMatches(query);
   }
 
+  @Get('recent-results')
+  @ApiOperation({
+    summary: '최근 경기 결과 조회',
+    description: '최근에 완료된(COMPLETED) 경기 결과 목록을 조회합니다.',
+  })
+  @ApiOkResponse({
+    type: [MatchSummaryResponseDto],
+    description: '최근 경기 결과 목록',
+  })
+  @ApiBadRequestResponse({
+    description: '쿼리 파라미터 검증에 실패했습니다.',
+    type: ValidationErrorResponseDto,
+  })
+  getRecentResults(
+    @Query() query: GetRecentMatchesQueryDto,
+  ): Promise<MatchSummaryResponseDto[]> {
+    return this.matchesService.getRecentResults(query);
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: '경기 상세 조회',
@@ -68,5 +91,84 @@ export class MatchesController {
   })
   getMatchById(@Param('id') id: string): Promise<MatchDetailResponseDto> {
     return this.matchesService.getMatchById(id);
+  }
+
+  @Post(':id/ai-summary')
+  @ApiOperation({
+    summary: '경기 AI 요약 생성 및 업데이트',
+    description:
+      '완료된 경기의 통계 및 밴픽 데이터를 바탕으로 AI 경기 요약 리포트를 생성해 저장합니다.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'AI 요약을 생성할 경기 id (상태가 COMPLETED여야 합니다)',
+    example: 'clx123match',
+  })
+  @ApiOkResponse({
+    schema: {
+      type: 'object',
+      properties: {
+        aiSummary: {
+          type: 'string',
+          description: '생성된 AI 경기 요약 리포트 (Markdown 포맷)',
+        },
+      },
+    },
+    description: 'AI 경기 요약 리포트 생성 성공',
+  })
+  @ApiBadRequestResponse({
+    description: '경기가 아직 완료되지 않았거나 처리할 수 없습니다.',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: '해당 id의 경기를 찾을 수 없습니다.',
+    type: ErrorResponseDto,
+  })
+  async generateAiSummary(
+    @Param('id') id: string,
+  ): Promise<{ aiSummary: string }> {
+    const summary = await this.matchesService.generateAiSummary(id);
+    return { aiSummary: summary };
+  }
+
+  @Post(':id/ai-prediction')
+  @ApiOperation({
+    summary: '경기 AI 승부 예측 생성 및 업데이트',
+    description:
+      '예정된 경기의 양 팀 시즌 통계 데이터를 바탕으로 AI 경기 승부 예측 리포트와 우승 예상 팀을 설정합니다.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'AI 승부 예측을 생성할 경기 id (상태가 SCHEDULED여야 합니다)',
+    example: 'clx123match',
+  })
+  @ApiOkResponse({
+    schema: {
+      type: 'object',
+      properties: {
+        aiWinnerTeamId: {
+          type: 'string',
+          description: 'AI가 예측한 승리 팀 ID',
+        },
+        aiPrediction: {
+          type: 'string',
+          description: '예측 상세 내용 (JSON 포맷 문자열)',
+        },
+      },
+    },
+    description: 'AI 경기 승부 예측 생성 성공',
+  })
+  @ApiBadRequestResponse({
+    description: '경기가 이미 완료되었거나 처리할 수 없습니다.',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: '해당 id의 경기를 찾을 수 없습니다.',
+    type: ErrorResponseDto,
+  })
+  async generateAiPrediction(
+    @Param('id') id: string,
+  ): Promise<{ aiWinnerTeamId: string; aiPrediction: string }> {
+    return this.matchesService.generateAiPrediction(id);
   }
 }

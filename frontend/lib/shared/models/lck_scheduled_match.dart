@@ -21,6 +21,8 @@ class LckScheduledMatch {
     required this.status,
     required this.homeTeam,
     required this.awayTeam,
+    this.aiWinnerTeamId,
+    this.aiPrediction,
   });
 
   final String id;
@@ -30,6 +32,8 @@ class LckScheduledMatch {
   final String status;
   final LckScheduledTeam homeTeam;
   final LckScheduledTeam awayTeam;
+  final String? aiWinnerTeamId;
+  final String? aiPrediction;
 
   String get note {
     return [

@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class SignUpDto {
   @ApiProperty({
@@ -26,11 +26,12 @@ export class SignUpDto {
   @MinLength(8)
   password: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'clx123team',
-    description: '현재 응원 중인 팀 id',
+    description: '현재 응원 중인 팀 id (선택 사항)',
+    nullable: true,
   })
   @IsString()
-  @IsNotEmpty()
-  favoriteTeamId: string;
+  @IsOptional()
+  favoriteTeamId?: string | null;
 }

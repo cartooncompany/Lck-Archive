@@ -6,7 +6,7 @@ class ToggleFavoriteTeamUseCase {
 
   final ITeamsRepository teamsRepository;
 
-  Future<void> call(TeamSummary team) async {
-    await teamsRepository.saveFavoriteTeamId(team.id);
+  Future<void> call(TeamSummary? team) async {
+    await teamsRepository.saveFavoriteTeamId(team?.id);
   }
 }

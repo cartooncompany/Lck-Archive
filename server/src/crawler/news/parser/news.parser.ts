@@ -88,7 +88,9 @@ export class NewsParser {
       const image = match.groups?.image;
       const publishedAtText = this.normalizeText(match.groups?.publishedAtText);
       const title = this.normalizeText(match.groups?.title);
-      const summary = this.toNullable(this.normalizeText(match.groups?.summary));
+      const summary = this.toNullable(
+        this.normalizeText(match.groups?.summary),
+      );
 
       if (!path || !title) {
         continue;
@@ -179,9 +181,12 @@ export class NewsParser {
       .trim()
       .toLowerCase();
 
-    const tokens = normalized.split(' ').filter(Boolean).filter((token) => {
-      return token !== 'de';
-    });
+    const tokens = normalized
+      .split(' ')
+      .filter(Boolean)
+      .filter((token) => {
+        return token !== 'de';
+      });
     const yearToken = tokens.find((token) => /^\d{4}$/.test(token));
     const dayToken = tokens.find((token) => /^\d{1,2}$/.test(token));
     const monthToken = tokens.find((token) => MONTH_INDEX_BY_TOKEN.has(token));
@@ -259,9 +264,7 @@ export class NewsParser {
     return value.length > 0 ? value : null;
   }
 
-  private deduplicate(
-    articles: ScrapedNewsArticle[],
-  ): ScrapedNewsArticle[] {
+  private deduplicate(articles: ScrapedNewsArticle[]): ScrapedNewsArticle[] {
     return [
       ...new Map(
         articles.map((article) => [

@@ -55,6 +55,9 @@ class TeamsRepository implements ITeamsRepository {
     );
 
     if (savedFavoriteTeamId != null && savedFavoriteTeamId.trim().isNotEmpty) {
+      if (savedFavoriteTeamId == 'NONE') {
+        return null;
+      }
       final cachedTeam = _teamCache[savedFavoriteTeamId];
       if (cachedTeam != null) {
         return cachedTeam;
@@ -86,8 +89,8 @@ class TeamsRepository implements ITeamsRepository {
     return teams.first;
   }
 
-  Future<void> saveFavoriteTeamId(String teamId) async {
-    await _localStorage.writeString(_favoriteTeamStorageKey, teamId);
+  Future<void> saveFavoriteTeamId(String? teamId) async {
+    await _localStorage.writeString(_favoriteTeamStorageKey, teamId ?? 'NONE');
   }
 
   Future<TeamSummary> getTeam(String id) async {

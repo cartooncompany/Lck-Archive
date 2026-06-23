@@ -1,12 +1,14 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/extensions/date_extensions.dart';
 import '../../../../shared/models/lck_scheduled_match.dart';
 import '../../../../shared/widgets/team_logo.dart';
 
-class ScheduledMatchTile extends StatelessWidget {
+class ScheduledMatchTile extends StatefulWidget {
   const ScheduledMatchTile({
     required this.match,
     this.predictedWinnerTeamId,
@@ -21,8 +23,185 @@ class ScheduledMatchTile extends StatelessWidget {
   final VoidCallback? onOpenDetail;
 
   @override
+  State<ScheduledMatchTile> createState() => _ScheduledMatchTileState();
+}
+
+class _ScheduledMatchTileState extends State<ScheduledMatchTile> {
+  bool _isLoadingPrediction = false;
+  late LckScheduledMatch _currentMatch;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentMatch = widget.match;
+  }
+
+  @override
+  void didUpdateWidget(covariant ScheduledMatchTile oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.match != widget.match) {
+      _currentMatch = widget.match;
+    }
+  }
+
+  Future<void> _generateAiPrediction() async {
+    setState(() {
+      _isLoadingPrediction = true;
+    });
+
+    try {
+      final repository = AppDependenciesScope.of(context).matchesRepository;
+      await repository.requestMatchAiPrediction(_currentMatch.id);
+      
+      final updatedMatch = await repository.getMatchDetail(_currentMatch.id);
+      if (mounted) {
+        setState(() {
+          _currentMatch = LckScheduledMatch(
+            id: updatedMatch.id,
+            scheduledAt: updatedMatch.scheduledAt,
+            split: updatedMatch.split,
+            stage: updatedMatch.stage,
+            status: updatedMatch.status,
+            homeTeam: updatedMatch.homeTeam,
+            awayTeam: updatedMatch.awayTeam,
+            aiWinnerTeamId: updatedMatch.aiWinnerTeamId,
+            aiPrediction: updatedMatch.aiPrediction,
+          );
+        });
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('AI 예측 생성 중 오류가 발생했습니다: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingPrediction = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildAiPredictionSection(BuildContext context) {
+    if (_isLoadingPrediction) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: AppColors.accent.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.accent.withOpacity(0.2)),
+        ),
+        child: const Column(
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Gemini AI가 경기 데이터를 바탕으로 분석 중...',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final aiPrediction = _currentMatch.aiPrediction;
+    if (aiPrediction == null || aiPrediction.trim().isEmpty) {
+      return SizedBox(
+        width: double.infinity,
+        child: TextButton.icon(
+          style: TextButton.styleFrom(
+            backgroundColor: AppColors.surfaceElevated.withOpacity(0.4),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: AppColors.glassBorderMuted),
+            ),
+          ),
+          onPressed: _generateAiPrediction,
+          icon: const Icon(Icons.auto_awesome_rounded, size: 14, color: AppColors.accent),
+          label: const Text(
+            'AI 승부 예측 분석 받기',
+            style: TextStyle(
+              color: AppColors.accent,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      );
+    }
+
+    Map<String, dynamic>? aiPredictionMap;
+    try {
+      aiPredictionMap = jsonDecode(aiPrediction) as Map<String, dynamic>;
+    } catch (_) {}
+
+    if (aiPredictionMap == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.accent.withOpacity(0.25),
+          width: 1.0,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.auto_awesome_rounded,
+                size: 14,
+                color: AppColors.accent,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'AI 예측: ${aiPredictionMap['winnerTeamName']} 승리 (${aiPredictionMap['probability']}%)',
+                style: const TextStyle(
+                  color: AppColors.accent,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            aiPredictionMap['reason'] ?? '',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+              fontSize: 11,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final note = match.note;
+    final note = _currentMatch.note;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
@@ -62,7 +241,7 @@ class ScheduledMatchTile extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      match.scheduledAt.toKoreanMonthDayTime(),
+                      _currentMatch.scheduledAt.toKoreanMonthDayTime(),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w800,
@@ -111,7 +290,7 @@ class ScheduledMatchTile extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: _TeamSlot(team: match.homeTeam, alignEnd: false),
+                    child: _TeamSlot(team: _currentMatch.homeTeam, alignEnd: false),
                   ),
                   const SizedBox(width: 8),
                   Container(
@@ -155,7 +334,7 @@ class ScheduledMatchTile extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _TeamSlot(team: match.awayTeam, alignEnd: true),
+                    child: _TeamSlot(team: _currentMatch.awayTeam, alignEnd: true),
                   ),
                 ],
               ),
@@ -176,20 +355,20 @@ class ScheduledMatchTile extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: predictedWinnerTeamId == null
+                      color: widget.predictedWinnerTeamId == null
                           ? AppColors.surfaceMuted.withValues(alpha: 0.6)
                           : AppColors.accent.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                        color: predictedWinnerTeamId == null
+                        color: widget.predictedWinnerTeamId == null
                             ? AppColors.divider
                             : AppColors.accent.withValues(alpha: 0.25),
                       ),
                     ),
                     child: Text(
-                      predictedWinnerTeamId == null ? '미선택' : '선택 완료',
+                      widget.predictedWinnerTeamId == null ? '미선택' : '선택 완료',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: predictedWinnerTeamId == null
+                        color: widget.predictedWinnerTeamId == null
                             ? AppColors.textMuted
                             : AppColors.accent,
                         fontWeight: FontWeight.w900,
@@ -204,26 +383,28 @@ class ScheduledMatchTile extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _PredictionButton(
-                      team: match.homeTeam,
-                      isSelected: predictedWinnerTeamId == match.homeTeam.id,
-                      onTap: onPredictWinner == null
+                      team: _currentMatch.homeTeam,
+                      isSelected: widget.predictedWinnerTeamId == _currentMatch.homeTeam.id,
+                      onTap: widget.onPredictWinner == null
                           ? null
-                          : () => onPredictWinner!(match.homeTeam.id),
+                          : () => widget.onPredictWinner!(_currentMatch.homeTeam.id),
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _PredictionButton(
-                      team: match.awayTeam,
-                      isSelected: predictedWinnerTeamId == match.awayTeam.id,
-                      onTap: onPredictWinner == null
+                      team: _currentMatch.awayTeam,
+                      isSelected: widget.predictedWinnerTeamId == _currentMatch.awayTeam.id,
+                      onTap: widget.onPredictWinner == null
                           ? null
-                          : () => onPredictWinner!(match.awayTeam.id),
+                          : () => widget.onPredictWinner!(_currentMatch.awayTeam.id),
                     ),
                   ),
                 ],
               ),
-              if (onOpenDetail != null) ...[
+              const SizedBox(height: 12),
+              _buildAiPredictionSection(context),
+              if (widget.onOpenDetail != null) ...[
                 const SizedBox(height: 14),
                 Align(
                   alignment: Alignment.centerRight,
@@ -239,7 +420,7 @@ class ScheduledMatchTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: onOpenDetail,
+                    onPressed: widget.onOpenDetail,
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [

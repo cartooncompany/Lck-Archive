@@ -77,7 +77,9 @@ export class NewsSyncJob {
       });
 
       const existingSet = new Set(existingArticles.map((ea) => ea.externalId));
-      const newArticles = articles.filter((a) => !existingSet.has(a.externalId));
+      const newArticles = articles.filter(
+        (a) => !existingSet.has(a.externalId),
+      );
 
       if (newArticles.length > 0) {
         await this.prisma.newsArticle.createMany({
@@ -93,7 +95,9 @@ export class NewsSyncJob {
             publishedAtText: article.publishedAtText,
           })),
         });
-        this.logger.log(`News sync optimized: Saved ${newArticles.length} new articles.`);
+        this.logger.log(
+          `News sync optimized: Saved ${newArticles.length} new articles.`,
+        );
       } else {
         this.logger.log('News sync optimized: No new articles to save.');
       }

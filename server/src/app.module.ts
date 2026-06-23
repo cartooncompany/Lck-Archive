@@ -12,6 +12,7 @@ import { PlayersModule } from './modules/players/players.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { UsersModule } from './modules/users/users.module';
 import { SyncSchedulerModule } from './scheduler/scheduler.module';
+import { AiModule } from './modules/ai/ai.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { SyncSchedulerModule } from './scheduler/scheduler.module';
     NewsModule,
     CrawlerModule,
     SyncSchedulerModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],

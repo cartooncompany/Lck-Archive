@@ -27,6 +27,20 @@ export class PlayerStatsResponseDto {
   avgKda: number;
 }
 
+export class PlayerMatchAppearanceResponseDto {
+  @ApiProperty({ example: '2026-06-23T00:00:00.000Z', description: '경기 일시' })
+  playedAt: Date;
+
+  @ApiProperty({ example: 'Gen.G Esports', description: '상대 팀명' })
+  opponent: string;
+
+  @ApiProperty({ example: '승', description: '경기 결과 (승/패)' })
+  result: string;
+
+  @ApiProperty({ example: '3 / 1 / 8 (Azir)', description: '선수 개인 성적' })
+  performance: string;
+}
+
 export class PlayerDetailResponseDto extends PlayerSummaryResponseDto {
   @ApiPropertyOptional({
     example: 'Lee Sang-hyeok',
@@ -55,4 +69,18 @@ export class PlayerDetailResponseDto extends PlayerSummaryResponseDto {
     description: '선수 통산/평균 통계 기록',
   })
   stats: PlayerStatsResponseDto;
+
+  @ApiProperty({
+    type: [PlayerMatchAppearanceResponseDto],
+    description: '선수 최근 경기 출전 기록',
+  })
+  recentAppearances: PlayerMatchAppearanceResponseDto[];
+
+  @ApiPropertyOptional({
+    example: '### 플레이스타일 분석\n...',
+    nullable: true,
+    description: 'AI 분석 요약 리포트 (Markdown)',
+  })
+  aiSummary: string | null;
 }
+

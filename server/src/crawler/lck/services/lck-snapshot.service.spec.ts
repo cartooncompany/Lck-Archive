@@ -50,7 +50,9 @@ describe('LckSnapshotService', () => {
     } as unknown as LckParser;
     const gridClient = {
       hasApiKey: jest.fn().mockReturnValue(true),
-      fetchSnapshot: jest.fn().mockRejectedValue(new Error('permission denied')),
+      fetchSnapshot: jest
+        .fn()
+        .mockRejectedValue(new Error('permission denied')),
     } as unknown as GridLckClient;
     const service = new LckSnapshotService(
       new ConfigService({}),

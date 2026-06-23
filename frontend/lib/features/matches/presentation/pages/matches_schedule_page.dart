@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -41,7 +40,7 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('1주 경기 일정')),
+      appBar: AppBar(title: const Text('이번 주 경기 일정')),
       body: RefreshIndicator(
         onRefresh: _refreshSchedule,
         child: FutureBuilder<List<LckScheduledMatch>>(
@@ -82,7 +81,7 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
                   ResponsivePageContainer(
                     maxWidth: 1040,
                     child: AppStatusCard(
-                      title: '1주 안에 예정된 경기가 없습니다.',
+                      title: '이번 주에 예정된 경기가 없습니다.',
                       message: '새 일정이 등록되면 이 화면에 요일별로 정리됩니다.',
                       icon: Icons.calendar_today_rounded,
                     ),
@@ -107,7 +106,7 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
                       const SectionHeader(title: '요일별 경기 일정'),
                       const SizedBox(height: 8),
                       Text(
-                        '오늘부터 1주 동안 열리는 경기를 날짜별로 모아서 볼 수 있습니다.',
+                        '이번 주에 열리는 경기를 날짜별로 모아서 볼 수 있습니다.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -157,16 +156,20 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
 
   Future<List<LckScheduledMatch>> _loadSchedule() async {
     final now = DateTime.now();
-    final rangeEnd = now.add(const Duration(days: 7));
+    final startOfWeek = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+    final endOfWeek = DateTime(now.year, now.month, now.day, 23, 59, 59)
+        .add(Duration(days: 7 - now.weekday));
+
     final dependencies = AppDependenciesScope.of(context);
     final matches = await dependencies.matchesRepository.getScheduledMatches(
-      from: now.toUtc(),
-      to: rangeEnd.toUtc(),
+      from: startOfWeek.toUtc(),
+      to: endOfWeek.toUtc(),
     );
 
     return matches.where((match) {
       final scheduledAt = match.scheduledAt.toLocal();
-      return !scheduledAt.isBefore(now) && !scheduledAt.isAfter(rangeEnd);
+      return !scheduledAt.isBefore(startOfWeek) && !scheduledAt.isAfter(endOfWeek);
     }).toList();
   }
 

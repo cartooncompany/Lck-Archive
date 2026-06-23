@@ -11,6 +11,7 @@ class MatchesRepository implements IMatchesRepository {
 
   final MatchesRemoteDataSource _remoteDataSource;
 
+  @override
   Future<List<LckScheduledMatch>> getScheduledMatches({
     required DateTime from,
     DateTime? to,
@@ -22,13 +23,31 @@ class MatchesRepository implements IMatchesRepository {
     return response.items.map(_mapScheduledMatch).toList();
   }
 
+  @override
+  Future<List<LckMatchDetail>> getRecentResults({int limit = 5}) async {
+    final dtos = await _remoteDataSource.getRecentResults(limit: limit);
+    return dtos.map(_mapTeamMatchToDetail).toList();
+  }
+
+  @override
   Future<void> requestLckSync() {
     return _remoteDataSource.requestLckSync();
   }
 
+  @override
   Future<LckMatchDetail> getMatchDetail(String id) async {
     final dto = await _remoteDataSource.getMatchDetail(id);
     return _mapMatchDetail(dto);
+  }
+
+  @override
+  Future<String> requestMatchAiSummary(String id) {
+    return _remoteDataSource.requestMatchAiSummary(id);
+  }
+
+  @override
+  Future<Map<String, dynamic>> requestMatchAiPrediction(String id) {
+    return _remoteDataSource.requestMatchAiPrediction(id);
   }
 
   LckScheduledMatch _mapScheduledMatch(TeamMatchDto dto) {
@@ -40,6 +59,8 @@ class MatchesRepository implements IMatchesRepository {
       status: dto.status,
       homeTeam: _mapTeam(dto.homeTeam),
       awayTeam: _mapTeam(dto.awayTeam),
+      aiWinnerTeamId: dto.aiWinnerTeamId,
+      aiPrediction: dto.aiPrediction,
     );
   }
 
@@ -68,6 +89,9 @@ class MatchesRepository implements IMatchesRepository {
       vodUrl: dto.vodUrl,
       participants: dto.participants.map(_mapParticipant).toList(),
       games: dto.games.map(_mapGame).toList(),
+      aiSummary: dto.aiSummary,
+      aiWinnerTeamId: dto.aiWinnerTeamId,
+      aiPrediction: dto.aiPrediction,
     );
   }
 
@@ -120,6 +144,27 @@ class MatchesRepository implements IMatchesRepository {
       drafterType: dto.drafterType,
       draftableType: dto.draftableType,
       draftableName: dto.draftableName,
+    );
+  }
+
+  LckMatchDetail _mapTeamMatchToDetail(TeamMatchDto dto) {
+    return LckMatchDetail(
+      id: dto.id,
+      scheduledAt: dto.scheduledAt,
+      seasonYear: dto.seasonYear,
+      split: dto.split,
+      stage: dto.stage,
+      status: dto.status,
+      homeTeam: _mapTeam(dto.homeTeam),
+      awayTeam: _mapTeam(dto.awayTeam),
+      score: LckMatchScore(home: dto.score.home, away: dto.score.away),
+      winner: dto.winner == null ? null : _mapTeam(dto.winner!),
+      matchNumber: null,
+      vodUrl: null,
+      participants: const [],
+      games: const [],
+      aiWinnerTeamId: dto.aiWinnerTeamId,
+      aiPrediction: dto.aiPrediction,
     );
   }
 }

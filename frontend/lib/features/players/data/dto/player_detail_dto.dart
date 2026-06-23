@@ -35,6 +35,29 @@ class PlayerStatsDto {
   final double avgKda;
 }
 
+class PlayerMatchAppearanceDto {
+  const PlayerMatchAppearanceDto({
+    required this.playedAt,
+    required this.opponent,
+    required this.result,
+    required this.performance,
+  });
+
+  factory PlayerMatchAppearanceDto.fromJson(Map<String, dynamic> json) {
+    return PlayerMatchAppearanceDto(
+      playedAt: DateTime.parse(json['playedAt'] as String),
+      opponent: json['opponent'] as String? ?? '',
+      result: json['result'] as String? ?? '',
+      performance: json['performance'] as String? ?? '',
+    );
+  }
+
+  final DateTime playedAt;
+  final String opponent;
+  final String result;
+  final String performance;
+}
+
 class PlayerDetailDto extends PlayerSummaryDto {
   const PlayerDetailDto({
     required super.id,
@@ -47,6 +70,8 @@ class PlayerDetailDto extends PlayerSummaryDto {
     required this.nationality,
     required this.birthDate,
     required this.stats,
+    required this.recentAppearances,
+    required this.aiSummary,
   });
 
   factory PlayerDetailDto.fromJson(Map<String, dynamic> json) {
@@ -67,6 +92,12 @@ class PlayerDetailDto extends PlayerSummaryDto {
       stats: json['stats'] is Map<String, dynamic>
           ? PlayerStatsDto.fromJson(json['stats'] as Map<String, dynamic>)
           : null,
+      recentAppearances: json['recentAppearances'] is List
+          ? (json['recentAppearances'] as List)
+              .map((e) => PlayerMatchAppearanceDto.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : const <PlayerMatchAppearanceDto>[],
+      aiSummary: json['aiSummary'] as String?,
     );
   }
 
@@ -74,4 +105,7 @@ class PlayerDetailDto extends PlayerSummaryDto {
   final String? nationality;
   final DateTime? birthDate;
   final PlayerStatsDto? stats;
+  final List<PlayerMatchAppearanceDto> recentAppearances;
+  final String? aiSummary;
 }
+

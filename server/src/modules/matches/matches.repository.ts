@@ -131,6 +131,19 @@ export class MatchesRepository {
     return matches.map((match) => this.toSummaryDto(match));
   }
 
+  async findRecentResults(limit: number): Promise<MatchSummaryResponseDto[]> {
+    const matches = await this.prisma.match.findMany({
+      where: {
+        status: MatchStatus.COMPLETED,
+      },
+      include: matchSummaryInclude,
+      orderBy: { scheduledAt: 'desc' },
+      take: limit,
+    });
+
+    return matches.map((match) => this.toSummaryDto(match));
+  }
+
   toSummaryDto(match: MatchSummaryRecord): MatchSummaryResponseDto {
     return {
       id: match.id,
@@ -146,6 +159,8 @@ export class MatchesRepository {
         away: match.awayScore,
       },
       winner: match.winnerTeam ? this.toTeamReference(match.winnerTeam) : null,
+      aiWinnerTeamId: match.aiWinnerTeamId,
+      aiPrediction: match.aiPrediction,
     };
   }
 
@@ -158,7 +173,26 @@ export class MatchesRepository {
         this.toParticipantDto(participation),
       ),
       games: match.games.map((game) => this.toGameDto(game)),
+      aiSummary: match.aiSummary,
     };
+  }
+
+  async updateAiSummary(id: string, aiSummary: string): Promise<void> {
+    await this.prisma.match.update({
+      where: { id },
+      data: { aiSummary },
+    });
+  }
+
+  async updateAiPrediction(
+    id: string,
+    aiWinnerTeamId: string,
+    aiPrediction: string,
+  ): Promise<void> {
+    await this.prisma.match.update({
+      where: { id },
+      data: { aiWinnerTeamId, aiPrediction },
+    });
   }
 
   private toTeamReference(team: {

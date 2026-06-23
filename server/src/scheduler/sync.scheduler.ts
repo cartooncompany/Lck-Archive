@@ -53,7 +53,9 @@ export class SyncScheduler {
     this.logger.log('Starting scheduled News sync...');
     try {
       const result = await this.newsSyncJob.sync();
-      this.logger.log(`News sync finished successfully. articles=${result.newsArticles}`);
+      this.logger.log(
+        `News sync finished successfully. articles=${result.newsArticles}`,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`News sync scheduled task failed: ${message}`);

@@ -50,7 +50,7 @@ export class TeamsService {
     return {
       ...this.toTeamSummary(team),
       recentForm: recentMatches.map((match) =>
-      this.getRecentFormResult(match, id),
+        this.getRecentFormResult(match, id),
       ),
     };
   }

@@ -47,6 +47,8 @@ class TeamMatchDto {
     required this.awayTeam,
     required this.score,
     required this.winner,
+    this.aiWinnerTeamId,
+    this.aiPrediction,
   });
 
   factory TeamMatchDto.fromJson(Map<String, dynamic> json) {
@@ -67,6 +69,8 @@ class TeamMatchDto {
       winner: json['winner'] is Map<String, dynamic>
           ? TeamMatchTeamDto.fromJson(json['winner'] as Map<String, dynamic>)
           : null,
+      aiWinnerTeamId: json['aiWinnerTeamId'] as String?,
+      aiPrediction: json['aiPrediction'] as String?,
     );
   }
 
@@ -80,4 +84,6 @@ class TeamMatchDto {
   final TeamMatchTeamDto awayTeam;
   final TeamMatchScoreDto score;
   final TeamMatchTeamDto? winner;
+  final String? aiWinnerTeamId;
+  final String? aiPrediction;
 }

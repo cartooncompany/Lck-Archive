@@ -119,7 +119,7 @@ describe('LckApiClient', () => {
     ).toHaveLength(3);
   });
 
-  it('prefers GRID_API_KEY when both env names are present', () => {
+  it('prefers LOLESPORTS_API_KEY when both env names are present', () => {
     const client = new LckApiClient(
       new ConfigService({
         GRID_API_KEY: 'grid-key',
@@ -133,7 +133,7 @@ describe('LckApiClient', () => {
           axiosClient: { defaults: { headers: { 'x-api-key': string } } };
         }
       ).axiosClient.defaults.headers['x-api-key'],
-    ).toBe('grid-key');
+    ).toBe('legacy-key');
   });
 });
 

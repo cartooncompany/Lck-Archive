@@ -64,12 +64,12 @@ model User {
   nickname         String
   email            String   @unique
   passwordHash     String
-  favoriteTeamId   String
+  favoriteTeamId   String?
   refreshTokenHash String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  favoriteTeam Team @relation("FavoriteTeam", fields: [favoriteTeamId], references: [id])
+  favoriteTeam Team? @relation("FavoriteTeam", fields: [favoriteTeamId], references: [id])
 
   @@index([favoriteTeamId])
 }
@@ -85,6 +85,7 @@ model Player {
   nationality      String?
   birthDate        DateTime?
   recentMatchCount Int            @default(0)
+  aiSummary        String?
   externalSource   String         @default("LCK")
   externalId       String
   createdAt        DateTime       @default(now())
@@ -115,6 +116,9 @@ model Match {
   winnerTeamId   String?
   status         MatchStatus @default(SCHEDULED)
   vodUrl         String?
+  aiSummary      String?
+  aiWinnerTeamId String?
+  aiPrediction   String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 

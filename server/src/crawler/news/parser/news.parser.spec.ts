@@ -66,7 +66,8 @@ describe('NewsParser', () => {
       summary:
         '2025년과 함께 리그 오브 레전드 이스포츠에 찾아올 신나는 변화를 말씀드립니다.',
       thumbnailUrl: 'https://example.com/lolesports.jpg?foo=1&bar=2',
-      articleUrl: 'https://lolesports.com/article/example-article/blt1234567890',
+      articleUrl:
+        'https://lolesports.com/article/example-article/blt1234567890',
       publisher: 'LoL Esports',
       publishedAt: new Date('2024-06-11T00:00:00.000Z'),
       publishedAtText: '11. Juni 2024',
