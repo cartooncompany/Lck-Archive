@@ -13,14 +13,17 @@ import '../../../../core/error/app_failure.dart';
 import '../../../../features/auth/presentation/bloc/session_controller.dart';
 import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 import '../../../../features/favorite_team/presentation/widgets/favorite_team_picker_sheet.dart';
+import '../../../../shared/models/lck_match_detail.dart';
 import '../../../../shared/models/lck_scheduled_match.dart';
 import '../../../../shared/models/news_article.dart';
+import '../../../matches/presentation/widgets/completed_match_tile.dart';
 import '../../../../shared/models/team_summary.dart';
 import '../../../../shared/utils/news_article_launcher.dart';
 import '../../../../shared/widgets/responsive_page_container.dart';
 import '../../../../shared/widgets/section_header.dart';
 import '../../../matches/presentation/utils/match_prediction_storage.dart';
 import '../../../matches/presentation/widgets/scheduled_match_tile.dart';
+import '../../../../shared/widgets/login_require_dialog.dart';
 import '../../../teams/presentation/widgets/team_list_card.dart';
 import '../widgets/favorite_team_card.dart';
 import '../widgets/headline_news_card.dart';
@@ -161,18 +164,22 @@ class _HomePageState extends State<HomePage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildHeader(context, team),
-                          if (!isGuest) ...[
-                            const SizedBox(height: 22),
-                            if (team != null)
-                              FavoriteTeamCard(
-                                team: team,
-                                onTap: () => _openTeamDetail(context, team),
-                              )
-                            else
-                              _FavoriteTeamEmptyCard(
-                                onTap: () => _showFavoriteTeamPicker(context),
-                              ),
-                          ],
+                          const SizedBox(height: 22),
+                          if (team != null)
+                            FavoriteTeamCard(
+                              team: team,
+                              onTap: () => _openTeamDetail(context, team),
+                            )
+                          else
+                            _FavoriteTeamEmptyCard(
+                              onTap: () {
+                                if (isGuest) {
+                                  LoginRequireDialog.show(context);
+                                } else {
+                                  _showFavoriteTeamPicker(context);
+                                }
+                              },
+                            ),
                           const SizedBox(height: AppSpacing.section),
                           if (useSplitLayout)
                             Row(
@@ -184,6 +191,15 @@ class _HomePageState extends State<HomePage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
+                                      _buildRecentResultsSection(
+                                        context: context,
+                                        snapshot: snapshot,
+                                        recentResults: data?.recentResults ?? const [],
+                                        recentResultsError: data?.recentResultsError,
+                                      ),
+                                      const SizedBox(
+                                        height: AppSpacing.section,
+                                      ),
                                       _buildScheduleSection(
                                         context: context,
                                         snapshot: snapshot,
@@ -214,6 +230,13 @@ class _HomePageState extends State<HomePage> {
                               ],
                             )
                           else ...[
+                            _buildRecentResultsSection(
+                              context: context,
+                              snapshot: snapshot,
+                              recentResults: data?.recentResults ?? const [],
+                              recentResultsError: data?.recentResultsError,
+                            ),
+                            const SizedBox(height: AppSpacing.section),
                             _buildScheduleSection(
                               context: context,
                               snapshot: snapshot,
@@ -350,6 +373,50 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRecentResultsSection({
+    required BuildContext context,
+    required AsyncSnapshot<_HomePageData> snapshot,
+    required List<LckMatchDetail> recentResults,
+    required String? recentResultsError,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          title: '최근 경기 결과',
+        ),
+        const SizedBox(height: 14),
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            recentResults.isEmpty &&
+            recentResultsError == null)
+          const SizedBox(
+            height: 120,
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (recentResults.isEmpty && recentResultsError != null)
+          _EmptySectionMessage(
+            message: recentResultsError,
+            actionLabel: '다시 시도',
+            onActionTap: () => _refreshHomeData(context),
+          )
+        else if (recentResults.isEmpty)
+          const _EmptySectionMessage(
+            message: '표시할 최근 경기 결과가 없습니다.',
+          )
+        else
+          ...recentResults.map(
+            (match) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: CompletedMatchTile(
+                match: match,
+                onOpenDetail: () => _openMatchDetail(context, match.id),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -509,8 +576,20 @@ class _HomePageState extends State<HomePage> {
             shortName: favoriteTeam.initials,
             limit: 3,
           );
+
+    final now = DateTime.now();
+    final startOfWeek = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1));
+    final endOfWeek = DateTime(now.year, now.month, now.day, 23, 59, 59)
+        .add(Duration(days: 7 - now.weekday));
+
     final scheduledMatchesFuture = dependencies.matchesRepository
-        .getScheduledMatches(from: DateTime.now().toUtc());
+        .getScheduledMatches(
+          from: startOfWeek.toUtc(),
+          to: endOfWeek.toUtc(),
+        );
+
+    final recentResultsFuture = dependencies.matchesRepository.getRecentResults(limit: 3);
 
     TeamSummary? team = favoriteTeam;
     if (favoriteTeam != null) {
@@ -551,12 +630,25 @@ class _HomePageState extends State<HomePage> {
       scheduleError = '경기 일정을 불러오지 못했습니다.';
     }
 
+    List<LckMatchDetail> recentResults = const [];
+    String? recentResultsError;
+
+    try {
+      recentResults = await recentResultsFuture;
+    } on AppFailure catch (error) {
+      recentResultsError = error.message;
+    } catch (_) {
+      recentResultsError = '최근 경기 결과를 불러오지 못했습니다.';
+    }
+
     return _HomePageData(
       team: team,
       standings: standings,
       featuredNews: featuredNews,
       scheduledMatches: scheduledMatches,
       scheduleError: scheduleError,
+      recentResults: recentResults,
+      recentResultsError: recentResultsError,
     );
   }
 
@@ -677,6 +769,8 @@ class _HomePageData {
     required this.featuredNews,
     required this.scheduledMatches,
     required this.scheduleError,
+    required this.recentResults,
+    required this.recentResultsError,
   });
 
   final TeamSummary? team;
@@ -684,6 +778,8 @@ class _HomePageData {
   final List<NewsArticle> featuredNews;
   final List<LckScheduledMatch> scheduledMatches;
   final String? scheduleError;
+  final List<LckMatchDetail> recentResults;
+  final String? recentResultsError;
 }
 
 class _FavoriteTeamEmptyCard extends StatelessWidget {

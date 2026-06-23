@@ -9,6 +9,7 @@ import '../../../../features/favorite_team/presentation/bloc/favorite_team_contr
 import '../../../../features/favorite_team/presentation/widgets/favorite_team_picker_sheet.dart';
 import '../../../../shared/widgets/responsive_page_container.dart';
 import '../../../../shared/widgets/team_logo.dart';
+import '../../../../shared/widgets/login_require_dialog.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -138,7 +139,13 @@ class _SettingsContent extends StatelessWidget {
                                 : '현재 ${favoriteTeam.name} 선택됨',
                           ),
                           trailing: const Icon(Icons.chevron_right_rounded),
-                          onTap: () => _showPicker(context),
+                          onTap: () {
+                            if (session.isGuest) {
+                              LoginRequireDialog.show(context);
+                            } else {
+                              _showPicker(context);
+                            }
+                          },
                         ),
                         const Divider(height: 1, color: AppColors.divider),
                         _HoverSettingsTile(
