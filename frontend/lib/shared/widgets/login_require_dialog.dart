@@ -27,7 +27,7 @@ class LoginRequireDialog extends StatelessWidget {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
             child: Container(
-              maxWidth: 360,
+              constraints: const BoxConstraints(maxWidth: 360),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: AppColors.surface.withValues(alpha: 0.85),
