@@ -23,12 +23,25 @@ export class AuthTokenService {
   private readonly refreshSecret: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.accessSecret =
-      this.configService.get<string>('JWT_ACCESS_SECRET') ??
-      'local-access-secret';
-    this.refreshSecret =
-      this.configService.get<string>('JWT_REFRESH_SECRET') ??
-      'local-refresh-secret';
+    const accessSecret = this.configService.get<string>('JWT_ACCESS_SECRET');
+    const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+    const nodeEnv = this.configService.get<string>('NODE_ENV') ?? 'development';
+
+    if (nodeEnv === 'production') {
+      if (!accessSecret || accessSecret === 'local-access-secret') {
+        throw new Error(
+          'FATAL: JWT_ACCESS_SECRET is insecure or not provided in production mode!',
+        );
+      }
+      if (!refreshSecret || refreshSecret === 'local-refresh-secret') {
+        throw new Error(
+          'FATAL: JWT_REFRESH_SECRET is insecure or not provided in production mode!',
+        );
+      }
+    }
+
+    this.accessSecret = accessSecret ?? 'local-access-secret';
+    this.refreshSecret = refreshSecret ?? 'local-refresh-secret';
   }
 
   issueAccessToken(user: { id: string; email: string }): IssuedToken {

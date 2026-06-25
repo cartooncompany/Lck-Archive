@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CrawlerModule } from './crawler/crawler.module';
@@ -26,6 +28,12 @@ import { AiModule } from './modules/ai/ai.module';
       isGlobal: true,
       ttl: 5 * 60 * 1000, // 기본 5분 캐시 타임아웃
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100,
+      },
+    ]),
     DatabaseModule,
     AuthModule,
     UsersModule,
@@ -38,6 +46,12 @@ import { AiModule } from './modules/ai/ai.module';
     AiModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
