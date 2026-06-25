@@ -23,399 +23,467 @@ class PlayerDetailPage extends StatefulWidget {
 }
 
 class _PlayerDetailPageState extends State<PlayerDetailPage> {
-  Future<PlayerProfile>? _playerFuture;
-  bool _isGeneratingAiSummary = false;
+  PlayerProfile? _player;
+  bool _isLoading = false;
+  String? _error;
+
+  bool _isLoadingAiSummary = false;
+  String? _aiSummary;
+  String? _aiSummaryError;
+
+  @override
+  void initState() {
+    super.initState();
+    _player = widget.player;
+    _aiSummary = widget.player.aiSummary;
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _playerFuture ??= _shouldFetchPlayerDetail(widget.player)
-        ? AppDependenciesScope.of(
-            context,
-          ).playersRepository.getPlayer(widget.player.id)
-        : Future<PlayerProfile>.value(widget.player);
+    if (_player == null || _shouldFetchPlayerDetail(_player!)) {
+      _fetchPlayerDetail();
+    } else {
+      _checkAndFetchAiSummary();
+    }
+  }
+
+  Future<void> _fetchPlayerDetail() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final repository = AppDependenciesScope.of(context).playersRepository;
+      final player = await repository.getPlayer(widget.player.id);
+      if (mounted) {
+        setState(() {
+          _player = player;
+          _aiSummary = player.aiSummary;
+          _isLoading = false;
+        });
+        _checkAndFetchAiSummary();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+        });
+      }
+    }
+  }
+
+  void _checkAndFetchAiSummary() {
+    final player = _player;
+    if (player == null) return;
+    if (_aiSummary != null && _aiSummary!.trim().isNotEmpty) return;
+    if (_isLoadingAiSummary) return;
+
+    _fetchAiSummary(player.id);
+  }
+
+  Future<void> _fetchAiSummary(String playerId) async {
+    setState(() {
+      _isLoadingAiSummary = true;
+      _aiSummaryError = null;
+    });
+
+    try {
+      final repository = AppDependenciesScope.of(context).playersRepository;
+      final summary = await repository.requestPlayerAiSummary(playerId);
+      if (mounted) {
+        setState(() {
+          _aiSummary = summary;
+          _isLoadingAiSummary = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingAiSummary = false;
+          _aiSummaryError = e.toString();
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<PlayerProfile>(
-      future: _playerFuture,
-      initialData: widget.player,
-      builder: (context, snapshot) {
-        final player = snapshot.data ?? widget.player;
-        final metrics = _buildMetrics(player);
+    final player = _player ?? widget.player;
+    final metrics = _buildMetrics(player);
 
-        return Scaffold(
-          appBar: AppBar(title: Text(player.name)),
-          body: ListView(
-            padding: const EdgeInsets.only(top: 8, bottom: 32),
-            children: [
-              ResponsivePageContainer(
-                maxWidth: 1040,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (snapshot.hasError) ...[
-                      AppStatusCard(
-                        title: '상세 기록을 가져오지 못했습니다.',
-                        message: snapshot.error?.toString() ?? '통계 데이터를 최신화하는 중 오류가 발생했습니다.',
-                        icon: Icons.sync_problem_rounded,
-                        actionLabel: '상세 기록 다시 불러오기',
-                        dense: true,
-                        onActionTap: () => setState(() {
-                          _playerFuture = AppDependenciesScope.of(context)
-                              .playersRepository.getPlayer(widget.player.id);
-                        }),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final isCompact = constraints.maxWidth < 640;
+    return Scaffold(
+      appBar: AppBar(title: Text(player.name)),
+      body: ListView(
+        padding: const EdgeInsets.only(top: 8, bottom: 32),
+        children: [
+          ResponsivePageContainer(
+            maxWidth: 1040,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_error != null) ...[
+                  AppStatusCard(
+                    title: '상세 기록을 가져오지 못했습니다.',
+                    message: _error ?? '통계 데이터를 최신화하는 중 오류가 발생했습니다.',
+                    icon: Icons.sync_problem_rounded,
+                    actionLabel: '상세 기록 다시 불러오기',
+                    dense: true,
+                    onActionTap: _fetchPlayerDetail,
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isCompact = constraints.maxWidth < 640;
 
-                        Widget buildTeamButton() {
-                          return MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            child: OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                  color: player.teamColor.withOpacity(0.6),
-                                  width: 1.2,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                  vertical: 12,
-                                ),
-                                foregroundColor: Colors.white,
-                                backgroundColor: player.teamColor.withOpacity(
-                                  0.08,
-                                ),
-                              ),
-                              onPressed: () => _openTeam(context, player),
-                              icon: Icon(
-                                Icons.shield_rounded,
-                                size: 16,
-                                color: player.teamColor,
-                              ),
-                              label: Text(
-                                '소속 팀 보기',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: -0.5,
-                                  color: player.teamColor,
-                                ),
-                              ),
+                    Widget buildTeamButton() {
+                      return MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: player.teamColor.withOpacity(0.6),
+                              width: 1.2,
                             ),
-                          );
-                        }
-
-                        return Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceElevated.withOpacity(0.6),
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(
-                              color: player.teamColor.withOpacity(0.35),
-                              width: 1.5,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: player.teamColor.withOpacity(0.12),
-                                blurRadius: 24,
-                                spreadRadius: -4,
-                              ),
-                            ],
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 18,
+                              vertical: 12,
+                            ),
+                            foregroundColor: Colors.white,
+                            backgroundColor: player.teamColor.withOpacity(
+                              0.08,
+                            ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (isCompact) ...[
-                                Row(
-                                  children: [
-                                    PlayerAvatar(
-                                      name: player.name,
-                                      profileImageUrl: player.profileImageUrl,
-                                      size: 80,
-                                      accentColor: player.teamColor,
-                                      borderRadius: 24,
-                                      textStyle: TextStyle(
-                                        color: player.teamColor,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 30,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 18),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            player.name,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .headlineSmall
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w900,
-                                                  letterSpacing: -1.0,
-                                                ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            '${player.teamName}  |  ${player.position}',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyLarge
-                                                ?.copyWith(
-                                                  color:
-                                                      AppColors.textSecondary,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: buildTeamButton(),
-                                ),
-                              ] else
-                                Row(
-                                  children: [
-                                    PlayerAvatar(
-                                      name: player.name,
-                                      profileImageUrl: player.profileImageUrl,
-                                      size: 84,
-                                      accentColor: player.teamColor,
-                                      borderRadius: 26,
-                                      textStyle: TextStyle(
-                                        color: player.teamColor,
-                                        fontWeight: FontWeight.w900,
-                                        fontSize: 32,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 20),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            player.name,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .headlineSmall
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w900,
-                                                  letterSpacing: -1.0,
-                                                ),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          Text(
-                                            '${player.teamName}  |  ${player.position}',
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .bodyLarge
-                                                ?.copyWith(
-                                                  color:
-                                                      AppColors.textSecondary,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                          ),
-                                          const SizedBox(height: 12),
-                                          buildTeamButton(),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              const SizedBox(height: 20),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.05),
+                          onPressed: () => _openTeam(context, player),
+                          icon: Icon(
+                            Icons.shield_rounded,
+                            size: 16,
+                            color: player.teamColor,
+                          ),
+                          label: Text(
+                            '소속 팀 보기',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
+                              color: player.teamColor,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+
+                    return Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceElevated.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: player.teamColor.withOpacity(0.35),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: player.teamColor.withOpacity(0.12),
+                            blurRadius: 24,
+                            spreadRadius: -4,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (isCompact) ...[
+                            Row(
+                              children: [
+                                PlayerAvatar(
+                                  name: player.name,
+                                  profileImageUrl: player.profileImageUrl,
+                                  size: 80,
+                                  accentColor: player.teamColor,
+                                  borderRadius: 24,
+                                  textStyle: TextStyle(
+                                    color: player.teamColor,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 30,
                                   ),
                                 ),
-                                child: Text(
-                                  player.headline,
-                                  style: Theme.of(context).textTheme.bodyMedium
-                                      ?.copyWith(
-                                        color: AppColors.textSecondary,
-                                        height: 1.4,
+                                const SizedBox(width: 18),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        player.name,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: -1.0,
+                                            ),
                                       ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${player.teamName}  |  ${player.position}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.copyWith(
+                                              color:
+                                                  AppColors.textSecondary,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: buildTeamButton(),
+                            ),
+                          ] else
+                            Row(
+                              children: [
+                                PlayerAvatar(
+                                  name: player.name,
+                                  profileImageUrl: player.profileImageUrl,
+                                  size: 84,
+                                  accentColor: player.teamColor,
+                                  borderRadius: 26,
+                                  textStyle: TextStyle(
+                                    color: player.teamColor,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 32,
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        player.name,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w900,
+                                              letterSpacing: -1.0,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        '${player.teamName}  |  ${player.position}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.copyWith(
+                                              color:
+                                                  AppColors.textSecondary,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      buildTeamButton(),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          const SizedBox(height: 20),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.05),
                               ),
-                            ],
+                            ),
+                            child: Text(
+                              player.headline,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: AppColors.textSecondary,
+                                    height: 1.4,
+                                  ),
+                            ),
                           ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.section),
-                    Text(
-                      '시즌 기록',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 14),
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final crossAxisCount = constraints.maxWidth >= 900
-                            ? 3
-                            : constraints.maxWidth >= 560
-                            ? 2
-                            : 1;
-                        final aspectRatio = crossAxisCount == 1
-                            ? 3.4
-                            : crossAxisCount == 2
-                            ? 1.35
-                            : 1.45;
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSpacing.section),
+                Text(
+                  '시즌 기록',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 14),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final crossAxisCount = constraints.maxWidth >= 900
+                        ? 3
+                        : constraints.maxWidth >= 560
+                        ? 2
+                        : 1;
+                    final aspectRatio = crossAxisCount == 1
+                        ? 3.4
+                        : crossAxisCount == 2
+                        ? 1.35
+                        : 1.45;
 
-                        return GridView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: metrics.length,
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                crossAxisSpacing: 12,
-                                mainAxisSpacing: 12,
-                                childAspectRatio: aspectRatio,
-                              ),
-                          itemBuilder: (context, index) {
-                            final metric = metrics[index];
-                            return _StatCard(
-                              label: metric.label,
-                              value: metric.value,
-                              accentColor: player.teamColor,
-                            );
-                          },
+                    return GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      itemCount: metrics.length,
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: aspectRatio,
+                          ),
+                      itemBuilder: (context, index) {
+                        final metric = metrics[index];
+                        return _StatCard(
+                          label: metric.label,
+                          value: metric.value,
+                          accentColor: player.teamColor,
                         );
                       },
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSpacing.section),
+                Text(
+                  '최근 경기 출전 정보',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 14),
+                if (player.recentAppearances.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceElevated.withOpacity(0.55),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: AppColors.glassBorder),
                     ),
-                    const SizedBox(height: AppSpacing.section),
-                    Text(
-                      '최근 경기 출전 정보',
-                      style: Theme.of(context).textTheme.titleLarge,
+                    child: Text(
+                      '현재 API에는 선수별 최근 출전 기록이 없어 기본 정보만 표시합니다.',
+                      style: Theme.of(context).textTheme.bodyMedium
+                          ?.copyWith(color: AppColors.textSecondary),
                     ),
-                    const SizedBox(height: 14),
-                    if (player.recentAppearances.isEmpty)
-                      Container(
+                  )
+                else
+                  ...player.recentAppearances.map((appearance) {
+                    final isWin = appearance.result.trim() == '승';
+                    final neonColor = isWin
+                        ? const Color(0xFF2AD3FF)
+                        : const Color(0xFFFF5A5A);
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: Container(
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceElevated.withOpacity(0.5),
+                          color: AppColors.surface.withOpacity(0.55),
                           borderRadius: BorderRadius.circular(22),
-                          border: Border.all(color: AppColors.glassBorder),
-                        ),
-                        child: Text(
-                          '현재 API에는 선수별 최근 출전 기록이 없어 기본 정보만 표시합니다.',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: AppColors.textSecondary),
-                        ),
-                      )
-                    else
-                      ...player.recentAppearances.map((appearance) {
-                        final isWin = appearance.result.trim() == '승';
-                        final neonColor = isWin
-                            ? const Color(0xFF2AD3FF)
-                            : const Color(0xFFFF5A5A);
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: Container(
-                            padding: const EdgeInsets.all(18),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface.withOpacity(0.55),
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(
-                                color: neonColor.withOpacity(0.4),
-                                width: 1.2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: neonColor.withOpacity(0.06),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
+                          border: Border.all(
+                            color: neonColor.withOpacity(0.4),
+                            width: 1.2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: neonColor.withOpacity(0.06),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      appearance.playedAt.toKoreanDate(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodySmall
-                                          ?.copyWith(
-                                            color: AppColors.textSecondary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                    const Spacer(),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: neonColor.withOpacity(0.12),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: neonColor.withOpacity(0.4),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        appearance.result,
-                                        style: TextStyle(
-                                          color: neonColor,
-                                          fontWeight: FontWeight.w900,
-                                          fontSize: 12,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
                                 Text(
-                                  'vs ${appearance.opponent}',
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w800),
-                                ),
-                                const SizedBox(height: 6),
-                                Text(
-                                  appearance.performance,
-                                  style: Theme.of(context).textTheme.bodyMedium
+                                  appearance.playedAt.toKoreanDate(),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
                                       ?.copyWith(
                                         color: AppColors.textSecondary,
+                                        fontWeight: FontWeight.w600,
                                       ),
+                                ),
+                                const Spacer(),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: neonColor.withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: neonColor.withOpacity(0.4),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    appearance.result,
+                                    style: TextStyle(
+                                      color: neonColor,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 12,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
-                        );
-                      }),
-                    const SizedBox(height: AppSpacing.section),
-                    _buildAiSummarySection(context, player),
-                  ],
-                ),
-              ),
-            ],
+                            const SizedBox(height: 12),
+                            Text(
+                              'vs ${appearance.opponent}',
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              appearance.performance,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                if ((_aiSummary != null && _aiSummary!.trim().isNotEmpty) ||
+                    _isLoadingAiSummary ||
+                    _aiSummaryError != null) ...[
+                  const SizedBox(height: AppSpacing.section),
+                  _buildAiSummarySection(context, player),
+                ],
+              ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -487,8 +555,6 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
   }
 
   Widget _buildAiSummarySection(BuildContext context, PlayerProfile player) {
-    final aiSummary = player.aiSummary;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -525,14 +591,16 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
               ),
             ],
           ),
-          child: _isGeneratingAiSummary
-              ? const Column(
+          child: _isLoadingAiSummary
+              ? Column(
                   children: [
-                    SizedBox(height: 24),
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text(
-                      'Gemini AI가 시즌 지표와 최근 경기를 기반으로\n스카우팅 리포트를 작성하고 있습니다...',
+                    const SizedBox(height: 24),
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(player.teamColor),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Archive Assistant가 시즌 성적과 최근 경기 데이터를 바탕으로\n선수 맞춤형 스카우팅 리포트를 작성하고 있어요...',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: AppColors.textSecondary,
@@ -540,20 +608,20 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                         height: 1.4,
                       ),
                     ),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
                   ],
                 )
-              : aiSummary == null || aiSummary.trim().isEmpty
+              : _aiSummaryError != null
                   ? Column(
                       children: [
                         const Icon(
-                          Icons.insights_rounded,
-                          color: AppColors.textSecondary,
+                          Icons.warning_amber_rounded,
+                          color: Colors.redAccent,
                           size: 40,
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          '아직 생성된 AI 리포트가 없습니다.\n아래 버튼을 눌러 스카우팅 리포트를 생성해 보세요!',
+                          'AI 스카우팅 리포트를 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.textSecondary,
@@ -569,14 +637,11 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                               backgroundColor: player.teamColor,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: RoundedRectangleBorder().borderRadius,
-                              ),
                             ),
-                            onPressed: () => _generateAiSummary(context, player.id),
-                            icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+                            onPressed: _checkAndFetchAiSummary,
+                            icon: const Icon(Icons.refresh_rounded, size: 16),
                             label: const Text(
-                              'AI 분석 요약 리포트 생성',
+                              '다시 시도',
                               style: TextStyle(fontWeight: FontWeight.w800),
                             ),
                           ),
@@ -594,7 +659,7 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                             ),
                       ),
                       child: MarkdownBody(
-                        data: aiSummary,
+                        data: _aiSummary ?? '',
                         styleSheet: MarkdownStyleSheet(
                           p: const TextStyle(
                             color: Colors.white,
@@ -617,35 +682,6 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
         ),
       ],
     );
-  }
-
-  Future<void> _generateAiSummary(BuildContext context, String playerId) async {
-    setState(() {
-      _isGeneratingAiSummary = true;
-    });
-
-    try {
-      final repository = AppDependenciesScope.of(context).playersRepository;
-      await repository.requestPlayerAiSummary(playerId);
-      setState(() {
-        _playerFuture = repository.getPlayer(playerId);
-      });
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('AI 리포트 생성 중 오류가 발생했습니다: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGeneratingAiSummary = false;
-        });
-      }
-    }
   }
 }
 

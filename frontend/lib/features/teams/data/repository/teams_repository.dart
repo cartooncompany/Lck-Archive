@@ -68,25 +68,13 @@ class TeamsRepository implements ITeamsRepository {
         await saveFavoriteTeamId(savedTeam.id);
         return savedTeam;
       } catch (_) {
-        // Fall through to default selection.
+        // Fall through to default NONE.
       }
     }
 
-    final teams = await getTeams();
-    if (teams.isEmpty) {
-      return null;
-    }
-
-    for (final team in teams) {
-      if (team.initials.toUpperCase() == 'T1' ||
-          team.name.toUpperCase() == 'T1') {
-        await saveFavoriteTeamId(team.id);
-        return team;
-      }
-    }
-
-    await saveFavoriteTeamId(teams.first.id);
-    return teams.first;
+    // Default to 'NONE' (no favorite team) for first launch.
+    await saveFavoriteTeamId('NONE');
+    return null;
   }
 
   Future<void> saveFavoriteTeamId(String? teamId) async {

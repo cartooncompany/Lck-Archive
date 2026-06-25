@@ -173,19 +173,6 @@ class LandingHeroSection extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          const _FadeInSlideUp(
-            delay: Duration(milliseconds: 400),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                AuthFeaturePill(label: '팀 분석 정보'),
-                AuthFeaturePill(label: '선수 상세 기록'),
-                AuthFeaturePill(label: '실시간 일정'),
-              ],
-            ),
-          ),
           const SizedBox(height: 32),
           _FadeInSlideUp(
             delay: const Duration(milliseconds: 500),

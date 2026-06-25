@@ -116,12 +116,14 @@ class LoginHeroSection extends StatelessWidget {
     required this.onBack,
     required this.onGuest,
     required this.onSignUp,
+    this.showBackButton = true,
     super.key,
   });
 
   final VoidCallback onBack;
   final VoidCallback onGuest;
   final VoidCallback onSignUp;
+  final bool showBackButton;
 
   @override
   Widget build(BuildContext context) {
@@ -132,19 +134,21 @@ class LoginHeroSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 뒤로가기 버튼 리디자인
-          TextButton.icon(
-            onPressed: onBack,
-            style: TextButton.styleFrom(
-              foregroundColor: AppColors.textSecondary,
-              padding: EdgeInsets.zero,
+          if (showBackButton) ...[
+            TextButton.icon(
+              onPressed: onBack,
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.textSecondary,
+                padding: EdgeInsets.zero,
+              ),
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
+              label: const Text(
+                '랜딩으로 돌아가기',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
-            icon: const Icon(Icons.arrow_back_rounded, size: 20),
-            label: const Text(
-              '랜딩으로 돌아가기',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ),
-          const SizedBox(height: 18),
+            const SizedBox(height: 18),
+          ],
           AuthGlassPanel(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -14,8 +14,8 @@ class MyPagePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final favoriteTeam = FavoriteTeamScope.of(context).favoriteTeam;
     final session = SessionScope.of(context);
+    final favoriteTeam = session.isGuest ? null : FavoriteTeamScope.of(context).favoriteTeam;
     final nickname = session.userNickname ?? '게스트 사용자';
     final email = session.userEmail ?? '로그인하지 않음';
 
@@ -272,14 +272,12 @@ class MyPagePage extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: AppColors.danger.withValues(
-                                    alpha: 0.05,
+                                  color: AppColors.surfaceElevated.withValues(
+                                    alpha: 0.3,
                                   ),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: AppColors.danger.withValues(
-                                      alpha: 0.28,
-                                    ),
+                                    color: AppColors.glassBorderMuted,
                                     width: 1.2,
                                   ),
                                 ),
@@ -292,14 +290,12 @@ class MyPagePage extends StatelessWidget {
                                         color: AppColors.surfaceElevated,
                                         borderRadius: BorderRadius.circular(16),
                                         border: Border.all(
-                                          color: AppColors.danger.withValues(
-                                            alpha: 0.2,
-                                          ),
+                                          color: AppColors.divider,
                                         ),
                                       ),
                                       child: const Icon(
                                         Icons.shield_outlined,
-                                        color: AppColors.danger,
+                                        color: AppColors.textSecondary,
                                       ),
                                     ),
                                     const SizedBox(width: 16),
@@ -321,12 +317,12 @@ class MyPagePage extends StatelessWidget {
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
-                                            '아직 선택하지 않음',
+                                            '응원 팀 없음',
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .titleMedium
                                                 ?.copyWith(
-                                                  color: AppColors.danger,
+                                                  color: AppColors.textSecondary,
                                                   fontWeight: FontWeight.w800,
                                                 ),
                                           ),
@@ -354,7 +350,7 @@ class MyPagePage extends StatelessWidget {
                                   child: ElevatedButton.icon(
                                     onPressed: () {
                                       session.showLogin();
-                                      context.go(AppRoutePaths.login);
+                                      context.go(AppRoutePaths.login, extra: 'fromSettings');
                                     },
                                     icon: const Icon(
                                       Icons.login_rounded,

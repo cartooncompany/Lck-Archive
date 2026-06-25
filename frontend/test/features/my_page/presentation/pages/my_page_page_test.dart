@@ -121,5 +121,5 @@ class _FakeToggleFavoriteTeamUseCase implements ToggleFavoriteTeamUseCase {
   ITeamsRepository get teamsRepository => throw UnimplementedError();
 
   @override
-  Future<void> call(TeamSummary team) async {}
+  Future<void> call(TeamSummary? team) async {}
 }

@@ -73,7 +73,7 @@ class _ScheduledMatchTileState extends State<ScheduledMatchTile> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('AI 예측 생성 중 오류가 발생했습니다: $e'),
+            content: Text('AI 예측 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -106,7 +106,7 @@ class _ScheduledMatchTileState extends State<ScheduledMatchTile> {
             ),
             SizedBox(height: 8),
             Text(
-              'Gemini AI가 경기 데이터를 바탕으로 분석 중...',
+              'Archive Assistant가 최근 경기 통계 데이터를 기반으로 분석하고 있어요...',
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 11,
@@ -134,7 +134,7 @@ class _ScheduledMatchTileState extends State<ScheduledMatchTile> {
           onPressed: _generateAiPrediction,
           icon: const Icon(Icons.auto_awesome_rounded, size: 14, color: AppColors.accent),
           label: const Text(
-            'AI 승부 예측 분석 받기',
+            'AI 승부 예측 리포트 확인하기',
             style: TextStyle(
               color: AppColors.accent,
               fontWeight: FontWeight.w800,
@@ -176,7 +176,7 @@ class _ScheduledMatchTileState extends State<ScheduledMatchTile> {
               ),
               const SizedBox(width: 6),
               Text(
-                'AI 예측: ${aiPredictionMap['winnerTeamName']} 승리 (${aiPredictionMap['probability']}%)',
+                'AI 예측: ${aiPredictionMap['winnerTeamName']} 우세 (${aiPredictionMap['probability']}% 확률)',
                 style: const TextStyle(
                   color: AppColors.accent,
                   fontWeight: FontWeight.w900,
@@ -366,7 +366,7 @@ class _ScheduledMatchTileState extends State<ScheduledMatchTile> {
                       ),
                     ),
                     child: Text(
-                      widget.predictedWinnerTeamId == null ? '미선택' : '선택 완료',
+                      widget.predictedWinnerTeamId == null ? '예측 미수행' : '예측 완료',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: widget.predictedWinnerTeamId == null
                             ? AppColors.textMuted
@@ -594,7 +594,7 @@ class _PredictionButtonState extends State<_PredictionButton> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    isSelected ? '승리 예측됨' : '승리 선택',
+                    isSelected ? '나의 승리 예측' : '승리 예측하기',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: isSelected
                           ? AppColors.accent

@@ -153,11 +153,6 @@ class _SignupPageState extends State<SignupPage> {
       return;
     }
 
-    final errorMessage = session.errorMessage;
-    if (errorMessage != null && errorMessage.isNotEmpty) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(errorMessage)));
-    }
+
   }
 }

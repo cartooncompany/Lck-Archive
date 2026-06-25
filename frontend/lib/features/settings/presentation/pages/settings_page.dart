@@ -9,7 +9,6 @@ import '../../../../features/favorite_team/presentation/bloc/favorite_team_contr
 import '../../../../features/favorite_team/presentation/widgets/favorite_team_picker_sheet.dart';
 import '../../../../shared/widgets/responsive_page_container.dart';
 import '../../../../shared/widgets/team_logo.dart';
-import '../../../../shared/widgets/login_require_dialog.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
@@ -63,8 +62,8 @@ class _SettingsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final favoriteTeam = FavoriteTeamScope.of(context).favoriteTeam;
     final session = SessionScope.of(context);
+    final favoriteTeam = session.isGuest ? null : FavoriteTeamScope.of(context).favoriteTeam;
 
     return ListView(
       padding: const EdgeInsets.only(top: 24, bottom: 120),
@@ -131,20 +130,14 @@ class _SettingsContent extends StatelessWidget {
                           title: const Text('응원팀 변경'),
                           subtitle: Text(
                             favoriteTeam == null
-                                ? session.isSignedIn
-                                      ? '아직 선택한 응원팀이 없습니다. 선택 후 앱 로컬 개인화 기준이 적용됩니다.'
-                                      : '아직 선택한 응원팀이 없습니다.'
+                                ? '응원 팀 없음'
                                 : session.isSignedIn
                                 ? '현재 ${favoriteTeam.name} 선택됨 · 앱 로컬 개인화 기준'
                                 : '현재 ${favoriteTeam.name} 선택됨',
                           ),
                           trailing: const Icon(Icons.chevron_right_rounded),
                           onTap: () {
-                            if (session.isGuest) {
-                              LoginRequireDialog.show(context);
-                            } else {
-                              _showPicker(context);
-                            }
+                            _showPicker(context);
                           },
                         ),
                         const Divider(height: 1, color: AppColors.divider),
@@ -298,13 +291,77 @@ class _SettingsContent extends StatelessWidget {
 
   void _moveToLogin(BuildContext context, SessionController session) {
     session.showLogin();
-    context.go(AppRoutePaths.login);
+    context.go(AppRoutePaths.login, extra: 'fromSettings');
   }
 
   Future<void> _deleteAccount(
     BuildContext context,
     SessionController session,
   ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: AppColors.surfaceElevated,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: AppColors.danger.withValues(alpha: 0.3)),
+          ),
+          title: Row(
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: AppColors.danger,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '회원 탈퇴',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            '정말로 탈퇴하시겠습니까?\n탈퇴 시 모든 정보가 복구 불가능하게 삭제됩니다.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text(
+                '취소',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.danger,
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text(
+                '탈퇴',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) {
+      return;
+    }
+
     final messenger = ScaffoldMessenger.of(context);
     final success = await session.deleteAccount();
     if (!context.mounted) {

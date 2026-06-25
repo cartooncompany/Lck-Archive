@@ -94,7 +94,11 @@ final class AppRouter {
         GoRoute(
           path: AppRoutePaths.login,
           name: AppRouteNames.login,
-          builder: (context, state) => const LoginPage(),
+          builder: (context, state) {
+            final fromSettings = state.extra == 'fromSettings' ||
+                state.uri.queryParameters['fromSettings'] == 'true';
+            return LoginPage(fromSettings: fromSettings);
+          },
         ),
         GoRoute(
           path: AppRoutePaths.signup,

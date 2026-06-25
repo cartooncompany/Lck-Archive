@@ -9,8 +9,8 @@ class DioApiClient implements ApiClient {
     : _dio = Dio(
         BaseOptions(
           baseUrl: baseUrl,
-          connectTimeout: const Duration(seconds: 3),
-          receiveTimeout: const Duration(seconds: 3),
+          connectTimeout: const Duration(seconds: 60),
+          receiveTimeout: const Duration(seconds: 60),
           responseType: ResponseType.json,
         ),
       ) {
@@ -205,21 +205,73 @@ class DioApiClient implements ApiClient {
 
   String _messageFromDio(DioException error) {
     final data = error.response?.data;
+    String? rawMessage;
+    
     if (data is Map<String, dynamic>) {
       final message = data['message'];
       if (message is String && message.trim().isNotEmpty) {
-        return message;
-      }
-      if (message is List) {
+        rawMessage = message;
+      } else if (message is List) {
         final joined = message.map((item) => item.toString()).join(', ').trim();
         if (joined.isNotEmpty) {
-          return joined;
+          rawMessage = joined;
         }
       }
     }
 
-    return error.message?.trim().isNotEmpty == true
-        ? error.message!.trim()
-        : 'API 요청에 실패했습니다.';
+    if (rawMessage == null || rawMessage.isEmpty) {
+      rawMessage = error.message?.trim().isNotEmpty == true
+          ? error.message!.trim()
+          : 'API 요청에 실패했습니다.';
+    }
+
+    return _translateErrorMessage(rawMessage);
+  }
+
+  String _translateErrorMessage(String rawMessage) {
+    final message = rawMessage.trim().toLowerCase();
+    
+    if (message.contains('invalid email or password') || 
+        message.contains('invalid credentials') ||
+        message.contains('password is incorrect') ||
+        message.contains('email is incorrect')) {
+      return '이메일 또는 비밀번호가 올바르지 않습니다. 다시 확인해 주세요.';
+    }
+    if (message.contains('email already in use') || 
+        message.contains('email already exists')) {
+      return '이미 등록된 이메일 주소입니다. 다른 이메일을 사용해 주세요.';
+    }
+    if (message.contains('nickname already in use') || 
+        message.contains('nickname already exists')) {
+      return '이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해 주세요.';
+    }
+    if (message.contains('weak password') || 
+        message.contains('password is too weak')) {
+      return '비밀번호가 다소 안전하지 않습니다. 8자 이상의 안전한 비밀번호를 설정해 주세요.';
+    }
+    if (message.contains('invalid email format') || 
+        message.contains('email must be an email')) {
+      return '올바른 이메일 형식이 아닙니다. 이메일 주소를 다시 확인해 주세요.';
+    }
+    if (message.contains('unauthorized') || 
+        message.contains('session expired') || 
+        message.contains('forbidden') ||
+        message.contains('invalid token')) {
+      return '인증 정보가 만료되었습니다. 다시 로그인해 주세요.';
+    }
+    if (message.contains('user not found') || 
+        message.contains('player not found') ||
+        message.contains('match not found') ||
+        message.contains('team not found')) {
+      return '찾으시는 정보를 확인할 수 없습니다. 다시 시도하거나 관리자에게 문의해 주세요.';
+    }
+    if (message.contains('network') || 
+        message.contains('connection') || 
+        message.contains('timeout') ||
+        message.contains('host')) {
+      return '네트워크 연결이 불안정합니다. 인터넷 연결 상태를 확인 후 다시 시도해 주세요.';
+    }
+
+    return rawMessage;
   }
 }

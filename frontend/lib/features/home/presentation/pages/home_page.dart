@@ -105,7 +105,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final isGuest = SessionScope.maybeOf(context)?.isGuest ?? false;
-    final favoriteTeam = FavoriteTeamScope.of(context).favoriteTeam;
+    final favoriteTeam = isGuest ? null : FavoriteTeamScope.of(context).favoriteTeam;
     if (_loadedTeamId != favoriteTeam?.id || _homeFuture == null) {
       _loadedTeamId = favoriteTeam?.id;
       _homeFuture = _loadHomeData(context, favoriteTeam);

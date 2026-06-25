@@ -243,6 +243,7 @@ class PlayersRepository implements IPlayersRepository {
       case 'ALL':
         return null;
       case 'JGL':
+      case 'JUG':
         return 'JUNGLE';
       case 'SUP':
         return 'SUPPORT';
@@ -254,7 +255,9 @@ class PlayersRepository implements IPlayersRepository {
   String _displayPosition(String position) {
     switch (position.toUpperCase()) {
       case 'JUNGLE':
-        return 'JGL';
+      case 'JGL':
+      case 'JUG':
+        return 'JUG';
       case 'SUPPORT':
         return 'SUP';
       default:

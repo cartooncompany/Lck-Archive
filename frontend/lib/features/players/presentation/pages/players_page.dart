@@ -21,7 +21,7 @@ class _PlayersPageState extends State<PlayersPage> {
   static const List<String> _positions = [
     'ALL',
     'TOP',
-    'JGL',
+    'JUG',
     'MID',
     'ADC',
     'SUP',
@@ -127,11 +127,40 @@ class _PlayersPageState extends State<PlayersPage> {
     );
   }
 
-  Future<List<PlayerProfile>> _loadPlayers() {
-    return AppDependenciesScope.of(context).playersRepository.getPlayers(
+  int _positionOrder(String position) {
+    switch (position.toUpperCase()) {
+      case 'TOP':
+        return 1;
+      case 'JUNGLE':
+      case 'JGL':
+      case 'JUG':
+        return 2;
+      case 'MID':
+      case 'MIDDLE':
+        return 3;
+      case 'ADC':
+      case 'BOTTOM':
+        return 4;
+      case 'SUPPORT':
+      case 'SUP':
+        return 5;
+      default:
+        return 6;
+    }
+  }
+
+  Future<List<PlayerProfile>> _loadPlayers() async {
+    final players = await AppDependenciesScope.of(context).playersRepository.getPlayers(
       keyword: _query,
       position: _selectedPosition,
     );
+
+    return List<PlayerProfile>.from(players)
+      ..sort((a, b) {
+        final teamCompare = a.teamName.compareTo(b.teamName);
+        if (teamCompare != 0) return teamCompare;
+        return _positionOrder(a.position).compareTo(_positionOrder(b.position));
+      });
   }
 
   void _openPlayer(BuildContext context, PlayerProfile player) {

@@ -101,45 +101,6 @@ class AuthSectionBadge extends StatelessWidget {
   }
 }
 
-class AuthFeaturePill extends StatelessWidget {
-  const AuthFeaturePill({required this.label, super.key});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AuthUiColors.heroSurfaceStrong,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AuthUiColors.heroLine),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: const BoxDecoration(
-              color: AuthUiColors.heroMuted,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: AuthUiColors.heroText,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class AuthMetricCard extends StatelessWidget {
   const AuthMetricCard({

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { TeamReferenceResponseDto } from '../../common/responses/team-reference.response';
 import { buildPaginationMeta } from '../../common/utils/pagination.util';
 import { GetPlayersQueryDto } from './dto/get-players.query.dto';
@@ -12,6 +12,8 @@ import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class PlayersService {
+  private readonly logger = new Logger(PlayersService.name);
+
   constructor(
     private readonly playersRepository: PlayersRepository,
     private readonly aiService: AiService,

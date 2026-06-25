@@ -30,10 +30,11 @@ class _PlayerListTileState extends State<PlayerListTile> {
         icon = Icons.shield_outlined;
         break;
       case 'JGL':
+      case 'JUG':
       case 'JUNGLE':
         badgeColor = const Color(0xFF4EAD5B);
         icon = Icons.forest_outlined;
-        label = 'JGL';
+        label = 'JUG';
         break;
       case 'MID':
         badgeColor = const Color(0xFFFFD32A);

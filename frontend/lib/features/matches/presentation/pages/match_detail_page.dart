@@ -22,100 +22,157 @@ class MatchDetailPage extends StatefulWidget {
 }
 
 class _MatchDetailPageState extends State<MatchDetailPage> {
-  Future<LckMatchDetail>? _matchFuture;
-  bool _isGeneratingAiSummary = false;
+  LckMatchDetail? _match;
+  bool _isLoading = false;
+  String? _error;
+
+  bool _isLoadingAiSummary = false;
+  String? _aiSummary;
+  String? _aiSummaryError;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _matchFuture ??= AppDependenciesScope.of(
-      context,
-    ).matchesRepository.getMatchDetail(widget.matchId);
+    if (_match == null) {
+      _fetchMatchDetail();
+    }
+  }
+
+  Future<void> _fetchMatchDetail() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final repository = AppDependenciesScope.of(context).matchesRepository;
+      final match = await repository.getMatchDetail(widget.matchId);
+      if (mounted) {
+        setState(() {
+          _match = match;
+          _aiSummary = match.aiSummary;
+          _isLoading = false;
+        });
+        _checkAndFetchAiSummary();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = e.toString();
+        });
+      }
+    }
+  }
+
+  void _checkAndFetchAiSummary() {
+    final match = _match;
+    if (match == null) return;
+    if (match.status != 'COMPLETED') return;
+    if (_aiSummary != null && _aiSummary!.trim().isNotEmpty) return;
+    if (_isLoadingAiSummary) return;
+
+    _fetchAiSummary(match.id);
+  }
+
+  Future<void> _fetchAiSummary(String matchId) async {
+    setState(() {
+      _isLoadingAiSummary = true;
+      _aiSummaryError = null;
+    });
+
+    try {
+      final repository = AppDependenciesScope.of(context).matchesRepository;
+      final summary = await repository.requestMatchAiSummary(matchId);
+      if (mounted) {
+        setState(() {
+          _aiSummary = summary;
+          _isLoadingAiSummary = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingAiSummary = false;
+          _aiSummaryError = e.toString();
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final match = _match;
+
     return Scaffold(
       appBar: AppBar(title: const Text('경기 상세')),
-      body: FutureBuilder<LckMatchDetail>(
-        future: _matchFuture,
-        builder: (context, snapshot) {
-          if ((snapshot.connectionState == ConnectionState.waiting ||
-                  snapshot.connectionState == ConnectionState.none) &&
-              !snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (snapshot.hasError || !snapshot.hasData) {
-            final errorMsg = snapshot.error?.toString() ?? '데이터를 불러오는 중 오류가 발생했습니다.';
-            return ListView(
-              padding: const EdgeInsets.only(top: 20, bottom: 32),
-              children: [
-                ResponsivePageContainer(
-                  maxWidth: 1040,
-                  child: AppStatusCard(
-                    title: '경기 정보를 불러오지 못했습니다.',
-                    message: errorMsg,
-                    icon: Icons.error_outline_rounded,
-                    actionLabel: '다시 시도',
-                    onActionTap: () {
-                      setState(() {
-                        _matchFuture = AppDependenciesScope.of(
-                          context,
-                        ).matchesRepository.getMatchDetail(widget.matchId);
-                      });
-                    },
-                  ),
-                ),
-              ],
-            );
-          }
-
-          final match = snapshot.data!;
-          return ListView(
-            padding: const EdgeInsets.only(top: 12, bottom: 32),
-            children: [
-              ResponsivePageContainer(
-                maxWidth: 1080,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null || match == null
+              ? ListView(
+                  padding: const EdgeInsets.only(top: 20, bottom: 32),
                   children: [
-                    _MatchHeader(match: match, onOpenVod: _openVod),
-                    if (match.status == 'COMPLETED') ...[
-                      const SizedBox(height: 24),
-                      _buildAiSummarySection(context, match),
-                    ],
-                    const SizedBox(height: 24),
-                    _ParticipantsSection(match: match),
-                    const SizedBox(height: 24),
-                    const SectionHeader(title: '세트별 데이터'),
-                    const SizedBox(height: 12),
-                    if (match.games.isEmpty)
-                      AppStatusCard(
-                        title: match.status == 'SCHEDULED'
-                            ? '경기 예정 상태입니다.'
-                            : '세트 데이터가 없습니다.',
-                        message: match.status == 'SCHEDULED'
-                            ? '아직 치러지지 않은 경기입니다. 경기가 시작되면 상세 데이터가 수집됩니다.'
-                            : 'GRID Series State에서 세트별 상세 정보가 수집되면 이 영역에 표시됩니다.',
-                        icon: match.status == 'SCHEDULED'
-                            ? Icons.schedule_rounded
-                            : Icons.analytics_outlined,
-                      )
-                    else
-                      ...match.games.map(
-                        (game) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _GameCard(game: game),
-                        ),
+                    ResponsivePageContainer(
+                      maxWidth: 1040,
+                      child: AppStatusCard(
+                        title: '경기 정보를 불러오지 못했습니다.',
+                        message: _error ?? '데이터를 불러오는 중 오류가 발생했습니다.',
+                        icon: Icons.error_outline_rounded,
+                        actionLabel: '다시 시도',
+                        onActionTap: _fetchMatchDetail,
                       ),
+                    ),
+                  ],
+                )
+              : ListView(
+                  padding: const EdgeInsets.only(top: 12, bottom: 32),
+                  children: [
+                    ResponsivePageContainer(
+                      maxWidth: 1080,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _MatchHeader(match: match, onOpenVod: _openVod),
+                          const SizedBox(height: 24),
+                          _ParticipantsSection(match: match),
+                          const SizedBox(height: 24),
+                          const SectionHeader(title: '세트별 데이터'),
+                          const SizedBox(height: 12),
+                          if (match.games.isEmpty)
+                            AppStatusCard(
+                              title: match.status == 'SCHEDULED'
+                                  ? '경기 예정 상태입니다.'
+                                  : '세트 데이터가 없습니다.',
+                              message: match.status == 'SCHEDULED'
+                                  ? '아직 치러지지 않은 경기입니다. 경기가 시작되면 상세 데이터가 수집됩니다.'
+                                  : 'GRID Series State에서 세트별 상세 정보가 수집되면 이 영역에 표시됩니다.',
+                              icon: match.status == 'SCHEDULED'
+                                  ? Icons.schedule_rounded
+                                  : Icons.analytics_outlined,
+                            )
+                          else
+                            ...match.games.map(
+                              (game) => Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _GameCard(
+                                  game: game,
+                                  homeTeam: match.homeTeam,
+                                  awayTeam: match.awayTeam,
+                                ),
+                              ),
+                            ),
+                          if (match.status == 'COMPLETED' &&
+                              ((_aiSummary != null && _aiSummary!.trim().isNotEmpty) ||
+                                  _isLoadingAiSummary ||
+                                  _aiSummaryError != null)) ...[
+                            const SizedBox(height: 24),
+                            _buildAiSummarySection(context, match),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
-          );
-        },
-      ),
     );
   }
 
@@ -146,8 +203,6 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
   }
 
   Widget _buildAiSummarySection(BuildContext context, LckMatchDetail match) {
-    final aiSummary = match.aiSummary;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -184,14 +239,16 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
               ),
             ],
           ),
-          child: _isGeneratingAiSummary
+          child: _isLoadingAiSummary
               ? const Column(
                   children: [
                     SizedBox(height: 24),
-                    CircularProgressIndicator(),
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
+                    ),
                     SizedBox(height: 16),
                     Text(
-                      'Gemini AI가 경기 데이터와 세트별 분석을 바탕으로\n경기 요약 리포트를 작성하고 있습니다...',
+                      'Archive Assistant가 경기 데이터를 기반으로\n경기 분석 요약 리포트를 작성하고 있어요...',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: AppColors.textSecondary,
@@ -202,17 +259,17 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
                     SizedBox(height: 24),
                   ],
                 )
-              : aiSummary == null || aiSummary.trim().isEmpty
+              : _aiSummaryError != null
                   ? Column(
                       children: [
                         const Icon(
-                          Icons.insights_rounded,
-                          color: AppColors.textSecondary,
+                          Icons.warning_amber_rounded,
+                          color: Colors.redAccent,
                           size: 40,
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          '아직 생성된 AI 경기 리포트가 없습니다.\n아래 버튼을 눌러 경기 요약 리포트를 생성해 보세요!',
+                          'AI 분석 리포트를 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.textSecondary,
@@ -228,14 +285,11 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
                               backgroundColor: AppColors.accent,
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
                             ),
-                            onPressed: () => _generateAiSummary(context, match.id),
-                            icon: const Icon(Icons.auto_awesome_rounded, size: 16),
+                            onPressed: _checkAndFetchAiSummary,
+                            icon: const Icon(Icons.refresh_rounded, size: 16),
                             label: const Text(
-                              'AI 분석 요약 리포트 생성',
+                              '다시 시도',
                               style: TextStyle(fontWeight: FontWeight.w800),
                             ),
                           ),
@@ -253,7 +307,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
                             ),
                       ),
                       child: MarkdownBody(
-                        data: aiSummary,
+                        data: _aiSummary ?? '',
                         styleSheet: MarkdownStyleSheet(
                           p: const TextStyle(
                             color: Colors.white,
@@ -276,35 +330,6 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
         ),
       ],
     );
-  }
-
-  Future<void> _generateAiSummary(BuildContext context, String matchId) async {
-    setState(() {
-      _isGeneratingAiSummary = true;
-    });
-
-    try {
-      final repository = AppDependenciesScope.of(context).matchesRepository;
-      await repository.requestMatchAiSummary(matchId);
-      setState(() {
-        _matchFuture = repository.getMatchDetail(matchId);
-      });
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('AI 리포트 생성 중 오류가 발생했습니다: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isGeneratingAiSummary = false;
-        });
-      }
-    }
   }
 }
 
@@ -495,10 +520,12 @@ class _ParticipantsSection extends StatelessWidget {
 
     final homeParticipants = match.participants
         .where((participant) => participant.team.id == match.homeTeam.id)
-        .toList(growable: false);
+        .toList(growable: false)
+      ..sort((a, b) => _positionOrder(a.position).compareTo(_positionOrder(b.position)));
     final awayParticipants = match.participants
         .where((participant) => participant.team.id == match.awayTeam.id)
-        .toList(growable: false);
+        .toList(growable: false)
+      ..sort((a, b) => _positionOrder(a.position).compareTo(_positionOrder(b.position)));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -619,9 +646,15 @@ class _ParticipantTeamList extends StatelessWidget {
 }
 
 class _GameCard extends StatelessWidget {
-  const _GameCard({required this.game});
+  const _GameCard({
+    required this.game,
+    required this.homeTeam,
+    required this.awayTeam,
+  });
 
   final LckMatchGame game;
+  final LckScheduledTeam homeTeam;
+  final LckScheduledTeam awayTeam;
 
   @override
   Widget build(BuildContext context) {
@@ -658,7 +691,11 @@ class _GameCard extends StatelessWidget {
                 ),
           children: [
             if (game.draftActions.isNotEmpty) ...[
-              _DraftActionWrap(actions: game.draftActions),
+              _DraftActionWrap(
+                actions: game.draftActions,
+                homeTeam: homeTeam,
+                awayTeam: awayTeam,
+              ),
               const SizedBox(height: 14),
             ],
             if (game.playerStats.isEmpty)
@@ -678,102 +715,518 @@ class _GameCard extends StatelessWidget {
 }
 
 class _DraftActionWrap extends StatelessWidget {
-  const _DraftActionWrap({required this.actions});
+  const _DraftActionWrap({
+    required this.actions,
+    required this.homeTeam,
+    required this.awayTeam,
+  });
 
   final List<LckMatchDraftAction> actions;
+  final LckScheduledTeam homeTeam;
+  final LckScheduledTeam awayTeam;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('밴픽', style: Theme.of(context).textTheme.labelLarge),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: actions
-              .map((action) {
-                final name = action.draftableName?.trim();
-                final label = [
-                  if (action.sequenceNumber.trim().isNotEmpty)
-                    action.sequenceNumber.trim(),
-                  _draftTypeLabel(action.type),
-                  if (name != null && name.isNotEmpty) name,
-                ].join(' ');
+    final homeBans = actions.where((a) => a.drafterId == homeTeam.id && a.type == 'BAN').toList();
+    final homePicks = actions.where((a) => a.drafterId == homeTeam.id && a.type == 'PICK').toList();
+    final awayBans = actions.where((a) => a.drafterId == awayTeam.id && a.type == 'BAN').toList();
+    final awayPicks = actions.where((a) => a.drafterId == awayTeam.id && a.type == 'PICK').toList();
 
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
+    Widget buildBanSection(List<LckMatchDraftAction> bans) {
+      if (bans.isEmpty) return const SizedBox.shrink();
+      return Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: bans.map((ban) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.block_flipped, size: 10, color: Colors.redAccent),
+                const SizedBox(width: 4),
+                Text(
+                  ban.draftableName ?? 'Unknown',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.lineThrough,
                   ),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceElevated,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: AppColors.divider),
-                  ),
-                  child: Text(
-                    label,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w700,
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      );
+    }
+
+    Widget buildPickSection(List<LckMatchDraftAction> picks, Color accentColor) {
+      if (picks.isEmpty) return const SizedBox.shrink();
+      return Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: picks.map((pick) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: accentColor.withValues(alpha: 0.35), width: 1.2),
+            ),
+            child: Text(
+              pick.draftableName ?? 'Unknown',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.sports_esports_outlined, size: 16, color: AppColors.accent),
+              const SizedBox(width: 6),
+              Text(
+                '세트 밴픽',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      homeTeam.shortName,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.accent,
+                      ),
                     ),
-                  ),
-                );
-              })
-              .toList(growable: false),
-        ),
-      ],
+                    const SizedBox(height: 8),
+                    const Text('BAN', style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    buildBanSection(homeBans),
+                    const SizedBox(height: 10),
+                    const Text('PICK', style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    buildPickSection(homePicks, AppColors.accent),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 16),
+              Container(
+                width: 1,
+                height: 120,
+                color: AppColors.divider,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      awayTeam.shortName,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text('BAN', style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    buildBanSection(awayBans),
+                    const SizedBox(height: 10),
+                    const Text('PICK', style: TextStyle(fontSize: 10, color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    buildPickSection(awayPicks, Colors.white70),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
-  }
-}
+  }}
 
-class _PlayerStatsSection extends StatelessWidget {
+class _PlayerStatsSection extends StatefulWidget {
   const _PlayerStatsSection({required this.stats});
 
   final List<LckMatchGamePlayerStat> stats;
 
   @override
+  State<_PlayerStatsSection> createState() => _PlayerStatsSectionState();
+}
+
+class _PlayerStatsSectionState extends State<_PlayerStatsSection> {
+  int _viewMode = 0; // 0: 목록, 1: 그래프
+  int _metricType = 0; // 0: 딜량, 1: 골드
+
+  String _normalizePos(String? pos) {
+    if (pos == null) return '';
+    final p = pos.toUpperCase();
+    if (p == 'JUNGLE' || p == 'JGL' || p == 'JUG') return 'JUG';
+    if (p == 'SUPPORT' || p == 'SUP') return 'SUP';
+    if (p == 'MIDDLE' || p == 'MID') return 'MID';
+    if (p == 'BOTTOM' || p == 'ADC') return 'ADC';
+    return p;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final grouped = <String, List<LckMatchGamePlayerStat>>{};
-    for (final stat in stats) {
+    for (final stat in widget.stats) {
       grouped
           .putIfAbsent(stat.team.id, () => <LckMatchGamePlayerStat>[])
           .add(stat);
     }
 
     final teamGroups = grouped.values.toList(growable: false);
+    if (teamGroups.isEmpty) return const SizedBox.shrink();
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 720;
-        if (compact) {
-          return Column(
-            children: teamGroups
-                .map(
-                  (group) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _TeamStatsGroup(stats: group),
-                  ),
-                )
-                .toList(growable: false),
-          );
-        }
+    final homeStats = teamGroups[0];
+    final awayStats = teamGroups.length > 1 ? teamGroups[1] : <LckMatchGamePlayerStat>[];
 
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: teamGroups
-              .map(
-                (group) => Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: _TeamStatsGroup(stats: group),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 뷰 모드 전환 토글 (커스텀 네온/다크 스타일 탭바)
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _viewMode = 0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _viewMode == 0 ? AppColors.surfaceElevated : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.list_alt_rounded,
+                          size: 15,
+                          color: _viewMode == 0 ? AppColors.accent : AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '상세 기록 목록',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: _viewMode == 0 ? AppColors.textPrimary : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              )
-              .toList(growable: false),
-        );
-      },
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _viewMode = 1),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: _viewMode == 1 ? AppColors.surfaceElevated : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.bar_chart_rounded,
+                          size: 15,
+                          color: _viewMode == 1 ? AppColors.accent : AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '지표 비교 그래프',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: _viewMode == 1 ? AppColors.textPrimary : AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        if (_viewMode == 0)
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < 720;
+              if (compact) {
+                return Column(
+                  children: teamGroups
+                      .map(
+                        (group) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: _TeamStatsGroup(stats: group),
+                        ),
+                      )
+                      .toList(growable: false),
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: teamGroups
+                    .map(
+                      (group) => Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: _TeamStatsGroup(stats: group),
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
+              );
+            },
+          )
+        else ...[
+          // 지표 전환 탭
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ChoiceChip(
+                label: const Text('가한 피해량 (딜량)'),
+                selected: _metricType == 0,
+                onSelected: (selected) {
+                  if (selected) {
+                    setState(() {
+                      _metricType = 0;
+                    });
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
+              ChoiceChip(
+                label: const Text('획득 골드'),
+                selected: _metricType == 1,
+                onSelected: (selected) {
+                  if (selected) {
+                    setState(() {
+                      _metricType = 1;
+                    });
+                  }
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildGraphList(homeStats, awayStats),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildGraphList(
+    List<LckMatchGamePlayerStat> homeStats,
+    List<LckMatchGamePlayerStat> awayStats,
+  ) {
+    final positions = ['TOP', 'JUG', 'MID', 'ADC', 'SUP'];
+
+    int maxVal = 1;
+    for (final stat in widget.stats) {
+      final val = _metricType == 0 ? (stat.damageDealt ?? 0) : (stat.totalGold ?? 0);
+      if (val > maxVal) {
+        maxVal = val;
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                _metricType == 0
+                    ? Icons.local_fire_department_rounded
+                    : Icons.monetization_on_rounded,
+                size: 16,
+                color: AppColors.accent,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _metricType == 0 ? '포지션별 가한 피해량(딜량)' : '포지션별 획득 골드량',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          ...positions.map((pos) {
+            final homeStat = homeStats.firstWhere(
+              (s) => _normalizePos(s.position) == pos,
+              orElse: () => homeStats.first,
+            );
+            final awayStat = awayStats.firstWhere(
+              (s) => _normalizePos(s.position) == pos,
+              orElse: () => awayStats.isNotEmpty ? awayStats.first : homeStats.first,
+            );
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    pos,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildSingleBar(homeStat, maxVal, isHome: true),
+                  const SizedBox(height: 6),
+                  _buildSingleBar(awayStat, maxVal, isHome: false),
+                  if (pos != 'SUP') const SizedBox(height: 10),
+                  if (pos != 'SUP') const Divider(height: 1, color: AppColors.divider),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSingleBar(LckMatchGamePlayerStat stat, int maxVal, {required bool isHome}) {
+    final value = _metricType == 0 ? (stat.damageDealt ?? 0) : (stat.totalGold ?? 0);
+    final ratio = maxVal > 0 ? (value / maxVal).clamp(0.0, 1.0) : 0.0;
+    final teamColor = isHome ? AppColors.accent : const Color(0xFF607D8B);
+
+    return Row(
+      children: [
+        SizedBox(
+          width: 120,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                stat.playerName,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (stat.championName != null)
+                Text(
+                  stat.championName!,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: AppColors.textSecondary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  Container(
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.easeOutCubic,
+                    width: constraints.maxWidth * ratio,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: teamColor.withValues(alpha: 0.85),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Text(
+                      _formatNumber(value),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black,
+                            offset: Offset(1, 1),
+                            blurRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -820,12 +1273,14 @@ class _TeamStatsGroup extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          ...stats.map(
-            (stat) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _PlayerStatRow(stat: stat),
+          ...(List<LckMatchGamePlayerStat>.from(stats)
+            ..sort((a, b) => _positionOrder(a.position ?? '').compareTo(_positionOrder(b.position ?? ''))))
+            .map(
+              (stat) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _PlayerStatRow(stat: stat),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -837,6 +1292,28 @@ class _PlayerStatRow extends StatelessWidget {
 
   final LckMatchGamePlayerStat stat;
 
+  String _displayPosition(String? position) {
+    if (position == null) return '-';
+    switch (position.toUpperCase()) {
+      case 'JUNGLE':
+      case 'JGL':
+      case 'JUG':
+        return 'JUG';
+      case 'SUPPORT':
+        return 'SUP';
+      case 'MIDDLE':
+      case 'MID':
+        return 'MID';
+      case 'TOP':
+        return 'TOP';
+      case 'ADC':
+      case 'BOTTOM':
+        return 'ADC';
+      default:
+        return position.toUpperCase();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -845,9 +1322,9 @@ class _PlayerStatRow extends StatelessWidget {
         Row(
           children: [
             SizedBox(
-              width: 42,
+              width: 44,
               child: Text(
-                stat.position ?? '-',
+                _displayPosition(stat.position),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: AppColors.textSecondary,
                   fontWeight: FontWeight.w700,
@@ -1000,4 +1477,27 @@ String _formatDuration(String duration) {
     return '$minutes분 $seconds초';
   }
   return '$seconds초';
+}
+
+int _positionOrder(String? position) {
+  if (position == null) return 6;
+  switch (position.toUpperCase()) {
+    case 'TOP':
+      return 1;
+    case 'JUNGLE':
+    case 'JGL':
+    case 'JUG':
+      return 2;
+    case 'MID':
+    case 'MIDDLE':
+      return 3;
+    case 'ADC':
+    case 'BOTTOM':
+      return 4;
+    case 'SUPPORT':
+    case 'SUP':
+      return 5;
+    default:
+      return 6;
+  }
 }

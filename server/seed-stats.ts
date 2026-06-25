@@ -73,13 +73,20 @@ function randomRange(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function distributeValue(total: number, weights: number[]): number[] {
-  const result = new Array(weights.length).fill(0);
+function distributeValue(total: number, weights: number[], noiseFactor = 0.0): number[] {
+  // 각 가중치에 무작위 편차(noise)를 곱해 임시 가중치를 만듭니다.
+  const randomizedWeights = weights.map(w => {
+    if (noiseFactor <= 0) return w;
+    const noise = 1.0 + (Math.random() - 0.5) * noiseFactor;
+    return Math.max(0.1, w * noise);
+  });
+
+  const result = new Array(randomizedWeights.length).fill(0);
   let remaining = total;
   
-  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
-  for (let i = 0; i < weights.length; i++) {
-    const val = Math.floor((weights[i] / totalWeight) * total);
+  const totalWeight = randomizedWeights.reduce((sum, w) => sum + w, 0);
+  for (let i = 0; i < randomizedWeights.length; i++) {
+    const val = Math.floor((randomizedWeights[i] / totalWeight) * total);
     result[i] = val;
     remaining -= val;
   }
@@ -87,8 +94,8 @@ function distributeValue(total: number, weights: number[]): number[] {
   while (remaining > 0) {
     const r = Math.random() * totalWeight;
     let accum = 0;
-    for (let i = 0; i < weights.length; i++) {
-      accum += weights[i];
+    for (let i = 0; i < randomizedWeights.length; i++) {
+      accum += randomizedWeights[i];
       if (r <= accum) {
         result[i]++;
         remaining--;
@@ -98,6 +105,149 @@ function distributeValue(total: number, weights: number[]): number[] {
   }
   
   return result;
+}
+
+interface PlayerBias {
+  killMultiplier?: number;
+  deathMultiplier?: number;
+  assistMultiplier?: number;
+  goldMultiplier?: number;
+  damageMultiplier?: number;
+  tankMultiplier?: number;
+}
+
+const PLAYER_BIASES: Record<string, PlayerBias> = {
+  // T1
+  'Faker': { killMultiplier: 1.05, assistMultiplier: 1.15, goldMultiplier: 1.02, damageMultiplier: 1.12 },
+  'Doran': { tankMultiplier: 1.25, deathMultiplier: 1.15, goldMultiplier: 0.90 },
+  'Oner': { killMultiplier: 1.10, assistMultiplier: 1.05, tankMultiplier: 1.15, goldMultiplier: 1.05 },
+  'Peyz': { killMultiplier: 1.15, goldMultiplier: 1.08, damageMultiplier: 1.15, deathMultiplier: 0.85 },
+  'Keria': { killMultiplier: 1.20, assistMultiplier: 1.15, goldMultiplier: 1.10, damageMultiplier: 1.30 },
+  
+  // Gen.G
+  'Chovy': { goldMultiplier: 1.20, damageMultiplier: 1.22, killMultiplier: 1.12, deathMultiplier: 0.70 },
+  'Kiin': { damageMultiplier: 1.08, tankMultiplier: 1.15, goldMultiplier: 1.05 },
+  'Canyon': { killMultiplier: 1.15, damageMultiplier: 1.12, goldMultiplier: 1.08 },
+  'Ruler': { killMultiplier: 1.18, goldMultiplier: 1.12, damageMultiplier: 1.16, deathMultiplier: 0.75 },
+  'Duro': { assistMultiplier: 1.25, tankMultiplier: 1.15, goldMultiplier: 0.90 },
+
+  // HLE
+  'Zeus': { damageMultiplier: 1.18, killMultiplier: 1.10, tankMultiplier: 0.85, goldMultiplier: 1.08 },
+  'Kanavi': { killMultiplier: 1.18, damageMultiplier: 1.15, goldMultiplier: 1.10 },
+  'Zeka': { killMultiplier: 1.15, damageMultiplier: 1.16, goldMultiplier: 1.06 },
+  'Gumayusi': { killMultiplier: 1.16, goldMultiplier: 1.06, damageMultiplier: 1.14, deathMultiplier: 0.78 },
+  'Delight': { assistMultiplier: 1.35, tankMultiplier: 1.25, goldMultiplier: 0.82 },
+
+  // DK
+  'ShowMaker': { assistMultiplier: 1.12, damageMultiplier: 1.08, killMultiplier: 1.05 },
+  'Lucid': { assistMultiplier: 1.08, tankMultiplier: 1.10 },
+  'Siwoo': { tankMultiplier: 1.15, deathMultiplier: 1.12 },
+  'Smash': { killMultiplier: 1.10, goldMultiplier: 1.05 },
+  'Career': { assistMultiplier: 1.10 },
+
+  // KT
+  'Bdd': { damageMultiplier: 1.10, assistMultiplier: 1.08 },
+  'Aiming': { killMultiplier: 1.18, goldMultiplier: 1.10, damageMultiplier: 1.16 },
+  'Cuzz': { assistMultiplier: 1.10, tankMultiplier: 1.10 },
+  'PerfecT': { tankMultiplier: 1.12 },
+  'Effort': { assistMultiplier: 1.10, deathMultiplier: 1.20 },
+
+  // NS
+  'Scout': { killMultiplier: 1.10, damageMultiplier: 1.12, goldMultiplier: 1.05 },
+  'Lehends': { assistMultiplier: 1.25, killMultiplier: 1.10, deathMultiplier: 1.15 },
+  'Kingen': { tankMultiplier: 1.20, damageMultiplier: 1.05 },
+  'Sponge': { tankMultiplier: 1.08 },
+  'Diable': { killMultiplier: 1.05 },
+
+  // DNS
+  'Clozer': { killMultiplier: 1.12, damageMultiplier: 1.14, goldMultiplier: 1.04 },
+  'Pyosik': { killMultiplier: 1.08, assistMultiplier: 1.08, tankMultiplier: 1.10 },
+  'deokdam': { killMultiplier: 1.12, goldMultiplier: 1.06, damageMultiplier: 1.12 },
+  'Life': { assistMultiplier: 1.15, tankMultiplier: 1.12 },
+  'DuDu': { damageMultiplier: 1.06, tankMultiplier: 1.08 },
+};
+
+function getAdjustedWeights(
+  baseWeights: number[],
+  lineup: Record<PlayerPosition, any>,
+  biasKey: keyof PlayerBias
+): number[] {
+  const positions: PlayerPosition[] = [
+    PlayerPosition.TOP,
+    PlayerPosition.JUNGLE,
+    PlayerPosition.MID,
+    PlayerPosition.ADC,
+    PlayerPosition.SUPPORT
+  ];
+
+  return baseWeights.map((weight, idx) => {
+    const pos = positions[idx];
+    const player = lineup[pos];
+    if (!player) return weight;
+
+    const bias = PLAYER_BIASES[player.name];
+    if (!bias) return weight;
+
+    const multiplier = bias[biasKey] ?? 1.0;
+    return weight * multiplier;
+  });
+}
+
+function generateGameWinners(
+  homeScore: number,
+  awayScore: number,
+  homeTeamId: string,
+  awayTeamId: string,
+): string[] {
+  const gameWinners: string[] = [];
+  const totalGames = homeScore + awayScore;
+
+  if (totalGames === 0) {
+    return [homeTeamId];
+  }
+
+  const isHomeWin = homeScore > awayScore;
+  const winnerId = isHomeWin ? homeTeamId : awayTeamId;
+  const loserId = isHomeWin ? awayTeamId : homeTeamId;
+
+  const targetWins = Math.max(homeScore, awayScore);
+  const loserWins = Math.min(homeScore, awayScore);
+
+  if (targetWins <= 1) {
+    let h = homeScore;
+    let a = awayScore;
+    for (let i = 0; i < totalGames; i++) {
+      if (h > 0) {
+        gameWinners.push(homeTeamId);
+        h--;
+      } else {
+        gameWinners.push(awayTeamId);
+        a--;
+      }
+    }
+    return gameWinners;
+  }
+
+  if (loserWins === 0) {
+    for (let i = 0; i < targetWins; i++) {
+      gameWinners.push(winnerId);
+    }
+    return gameWinners;
+  }
+
+  const pool: string[] = [];
+  for (let i = 0; i < targetWins - 1; i++) {
+    pool.push(winnerId);
+  }
+  for (let i = 0; i < loserWins; i++) {
+    pool.push(loserId);
+  }
+
+  const shuffledPool = shuffleArray(pool);
+  gameWinners.push(...shuffledPool);
+  gameWinners.push(winnerId);
+
+  return gameWinners;
 }
 
 async function main() {
@@ -147,30 +297,12 @@ async function main() {
         const awayScore = match.awayScore;
         const totalGames = homeScore + awayScore === 0 ? 1 : homeScore + awayScore;
 
-        const gameWinners: string[] = [];
-        if (homeScore === 2 && awayScore === 0) {
-          gameWinners.push(match.homeTeamId, match.homeTeamId);
-        } else if (homeScore === 0 && awayScore === 2) {
-          gameWinners.push(match.awayTeamId, match.awayTeamId);
-        } else if (homeScore === 2 && awayScore === 1) {
-          gameWinners.push(match.homeTeamId, match.awayTeamId, match.homeTeamId);
-        } else if (homeScore === 1 && awayScore === 2) {
-          gameWinners.push(match.awayTeamId, match.homeTeamId, match.awayTeamId);
-        } else if (homeScore === 1 && awayScore === 1) {
-          gameWinners.push(match.homeTeamId, match.awayTeamId);
-        } else {
-          let hWins = homeScore;
-          let aWins = awayScore;
-          for (let g = 0; g < totalGames; g++) {
-            if (hWins > 0) {
-              gameWinners.push(match.homeTeamId);
-              hWins--;
-            } else {
-              gameWinners.push(match.awayTeamId);
-              aWins--;
-            }
-          }
-        }
+        const gameWinners = generateGameWinners(
+          homeScore,
+          awayScore,
+          match.homeTeamId,
+          match.awayTeamId,
+        );
 
         const getStarLineup = (players: any[]) => {
           const lineup: Record<PlayerPosition, any> = {} as any;
@@ -257,40 +389,48 @@ async function main() {
           const homeKillsTotal = isHomeWin ? randomRange(13, 26) : randomRange(3, 12);
           const awayKillsTotal = isHomeWin ? randomRange(3, 12) : randomRange(13, 26);
 
-          const killWeights = [20, 15, 30, 30, 5];
-          const deathWeights = [25, 25, 15, 15, 20];
-          const assistWeights = [15, 25, 20, 15, 35];
+          const homeKillWeights = getAdjustedWeights([20, 15, 28, 32, 5], homeLineup, 'killMultiplier');
+          const awayKillWeights = getAdjustedWeights([20, 15, 28, 32, 5], awayLineup, 'killMultiplier');
 
-          const homeKills = distributeValue(homeKillsTotal, killWeights);
-          const awayDeaths = distributeValue(homeKillsTotal, deathWeights);
+          const homeDeathWeights = getAdjustedWeights([22, 24, 18, 16, 20], homeLineup, 'deathMultiplier');
+          const awayDeathWeights = getAdjustedWeights([22, 24, 18, 16, 20], awayLineup, 'deathMultiplier');
 
-          const awayKills = distributeValue(awayKillsTotal, killWeights);
-          const homeDeaths = distributeValue(awayKillsTotal, deathWeights);
+          const homeAssistWeights = getAdjustedWeights([15, 25, 20, 12, 38], homeLineup, 'assistMultiplier');
+          const awayAssistWeights = getAdjustedWeights([15, 25, 20, 12, 38], awayLineup, 'assistMultiplier');
+
+          const homeKills = distributeValue(homeKillsTotal, homeKillWeights, 0.25);
+          const awayDeaths = distributeValue(homeKillsTotal, awayDeathWeights, 0.20);
+
+          const awayKills = distributeValue(awayKillsTotal, awayKillWeights, 0.25);
+          const homeDeaths = distributeValue(awayKillsTotal, homeDeathWeights, 0.20);
 
           const homeAssistsTotal = Math.round(homeKillsTotal * randomRange(17, 24) / 10);
           const awayAssistsTotal = Math.round(awayKillsTotal * randomRange(17, 24) / 10);
 
-          const homeAssists = distributeValue(homeAssistsTotal, assistWeights);
-          const awayAssists = distributeValue(awayAssistsTotal, assistWeights);
+          const homeAssists = distributeValue(homeAssistsTotal, homeAssistWeights, 0.15);
+          const awayAssists = distributeValue(awayAssistsTotal, awayAssistWeights, 0.15);
 
           const baseHomeGold = durationMinutes * 1600;
           const baseAwayGold = durationMinutes * 1600;
           const homeGoldTotal = Math.round(isHomeWin ? baseHomeGold * 1.12 : baseHomeGold * 0.9);
           const awayGoldTotal = Math.round(!isHomeWin ? baseAwayGold * 1.12 : baseAwayGold * 0.9);
 
-          const goldWeights = [21, 18, 23, 24, 14];
-          const homeGold = distributeValue(homeGoldTotal, goldWeights);
-          const awayGold = distributeValue(awayGoldTotal, goldWeights);
+          const homeGoldWeights = getAdjustedWeights([22, 17, 23, 27, 11], homeLineup, 'goldMultiplier');
+          const awayGoldWeights = getAdjustedWeights([22, 17, 23, 27, 11], awayLineup, 'goldMultiplier');
+          const homeGold = distributeValue(homeGoldTotal, homeGoldWeights, 0.10);
+          const awayGold = distributeValue(awayGoldTotal, awayGoldWeights, 0.10);
 
           const damageTotal = durationMinutes * 3200;
-          const damageWeights = [22, 12, 31, 30, 5];
-          const homeDamage = distributeValue(damageTotal, damageWeights);
-          const awayDamage = distributeValue(damageTotal, damageWeights);
+          const homeDamageWeights = getAdjustedWeights([22, 12, 32, 29, 5], homeLineup, 'damageMultiplier');
+          const awayDamageWeights = getAdjustedWeights([22, 12, 32, 29, 5], awayLineup, 'damageMultiplier');
+          const homeDamage = distributeValue(damageTotal, homeDamageWeights, 0.20);
+          const awayDamage = distributeValue(damageTotal, awayDamageWeights, 0.20);
 
           const tankTotal = durationMinutes * 3400;
-          const tankWeights = [28, 28, 14, 14, 16];
-          const homeTank = distributeValue(tankTotal, tankWeights);
-          const awayTank = distributeValue(tankTotal, tankWeights);
+          const homeTankWeights = getAdjustedWeights([32, 28, 14, 12, 14], homeLineup, 'tankMultiplier');
+          const awayTankWeights = getAdjustedWeights([32, 28, 14, 12, 14], awayLineup, 'tankMultiplier');
+          const homeTank = distributeValue(tankTotal, homeTankWeights, 0.15);
+          const awayTank = distributeValue(tankTotal, awayTankWeights, 0.15);
 
           // Home 팀 스탯 생성 및 픽 챔피언 기억
           positions.forEach((pos, idx) => {

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { buildPaginationMeta } from '../../common/utils/pagination.util';
@@ -16,6 +17,8 @@ import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class MatchesService {
+  private readonly logger = new Logger(MatchesService.name);
+
   constructor(
     private readonly matchesRepository: MatchesRepository,
     private readonly aiService: AiService,
@@ -41,7 +44,7 @@ export class MatchesService {
   }
 
   async getMatchById(id: string): Promise<MatchDetailResponseDto> {
-    const match = await this.matchesRepository.findById(id);
+    let match = await this.matchesRepository.findById(id);
 
     if (!match) {
       throw new NotFoundException(`Match not found: ${id}`);

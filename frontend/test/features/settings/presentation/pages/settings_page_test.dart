@@ -33,6 +33,10 @@ void main() {
     await tester.tap(find.text('회원탈퇴'));
     await tester.pumpAndSettle();
 
+    // 경고 다이얼로그에서 '탈퇴' 버튼 클릭
+    await tester.tap(find.text('탈퇴'));
+    await tester.pumpAndSettle();
+
     expect(apiClient.deleteAccountCallCount, 1);
     expect(harness.sessionController.isSignedIn, isFalse);
     expect(harness.sessionController.stage, SessionStage.landing);
@@ -61,6 +65,10 @@ void main() {
     );
 
     await tester.tap(find.text('회원탈퇴'));
+    await tester.pumpAndSettle();
+
+    // 경고 다이얼로그에서 '탈퇴' 버튼 클릭
+    await tester.tap(find.text('탈퇴'));
     await tester.pumpAndSettle();
 
     expect(apiClient.deleteAccountCallCount, 1);
@@ -241,5 +249,5 @@ class _FakeToggleFavoriteTeamUseCase implements ToggleFavoriteTeamUseCase {
   ITeamsRepository get teamsRepository => throw UnimplementedError();
 
   @override
-  Future<void> call(TeamSummary team) async {}
+  Future<void> call(TeamSummary? team) async {}
 }

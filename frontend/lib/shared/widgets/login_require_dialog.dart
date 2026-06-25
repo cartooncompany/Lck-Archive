@@ -124,7 +124,7 @@ class LoginRequireDialog extends StatelessWidget {
                             onPressed: () {
                               Navigator.pop(context);
                               SessionScope.of(context).showLogin();
-                              context.go(AppRoutePaths.login);
+                              context.go(AppRoutePaths.login, extra: 'fromSettings');
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.transparent,

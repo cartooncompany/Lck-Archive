@@ -7,7 +7,9 @@ import '../widgets/auth_shell.dart';
 import '../widgets/login_sections.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({this.fromSettings = false, super.key});
+
+  final bool fromSettings;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -32,6 +34,7 @@ class _LoginPageState extends State<LoginPage> {
 
     return AuthPageScaffold(
       hero: LoginHeroSection(
+        showBackButton: !widget.fromSettings,
         onBack: () {
           session.showLanding();
           context.go(AppRoutePaths.landing);
@@ -90,11 +93,6 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    final errorMessage = session.errorMessage;
-    if (errorMessage != null && errorMessage.isNotEmpty) {
-      ScaffoldMessenger.of(context)
-        ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(content: Text(errorMessage)));
-    }
+
   }
 }

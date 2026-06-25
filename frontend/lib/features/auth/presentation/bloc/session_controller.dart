@@ -181,7 +181,7 @@ class SessionController extends ChangeNotifier {
     if (error is AppFailure && error.message.trim().isNotEmpty) {
       return error.message;
     }
-    return '인증 처리 중 오류가 발생했습니다.';
+    return '인증을 처리하는 과정에서 문제가 발생했습니다. 잠시 후 다시 시도해 주세요.';
   }
 
   void _clearError() {

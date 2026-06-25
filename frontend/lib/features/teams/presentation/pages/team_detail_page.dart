@@ -415,6 +415,28 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
     context.pushNamed(AppRouteNames.matchDetail, extra: matchId);
   }
 
+  int _positionOrder(String position) {
+    switch (position.toUpperCase()) {
+      case 'TOP':
+        return 1;
+      case 'JUNGLE':
+      case 'JGL':
+      case 'JUG':
+        return 2;
+      case 'MID':
+      case 'MIDDLE':
+        return 3;
+      case 'ADC':
+      case 'BOTTOM':
+        return 4;
+      case 'SUPPORT':
+      case 'SUP':
+        return 5;
+      default:
+        return 6;
+    }
+  }
+
   Future<_TeamDetailData> _loadDetail() async {
     final dependencies = AppDependenciesScope.of(context);
     final teamFuture = dependencies.teamsRepository.getTeam(widget.team.id);
@@ -424,7 +446,11 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
 
     final team = await teamFuture;
     final players = await playersFuture;
-    return _TeamDetailData(team: team, players: players);
+
+    final sortedPlayers = List<PlayerProfile>.from(players)
+      ..sort((a, b) => _positionOrder(a.position).compareTo(_positionOrder(b.position)));
+
+    return _TeamDetailData(team: team, players: sortedPlayers);
   }
 
   Color _buildDetailStartColor(TeamSummary team) {
