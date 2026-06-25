@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:frontend/app/app.dart';
 import 'package:frontend/features/auth/presentation/pages/splash_page.dart';
@@ -166,6 +167,7 @@ void main() {
   testWidgets('shows auth entry flow on app launch', (
     WidgetTester tester,
   ) async {
+    FlutterSecureStorage.setMockInitialValues(<String, String>{});
     SharedPreferences.setMockInitialValues(<String, Object>{});
 
     await tester.pumpWidget(const LckArchiveApp());

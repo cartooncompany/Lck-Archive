@@ -3,6 +3,7 @@ import '../core/network/api_client.dart';
 import '../core/network/dio_api_client.dart';
 import '../core/storage/local_storage.dart';
 import '../core/storage/shared_preferences_local_storage.dart';
+import '../core/storage/secure_local_storage.dart';
 import '../core/logging/app_logger.dart';
 import '../features/auth/data/datasource/auth_remote_data_source.dart';
 import '../features/auth/data/repository/auth_repository.dart';
@@ -40,9 +41,10 @@ class AppDependencies {
     );
     final apiClient = DioApiClient(baseUrl: baseUrl);
     final localStorage = await SharedPreferencesLocalStorage.create();
+    final secureStorage = SecureLocalStorage.create();
     final authRepository = AuthRepository(
       remoteDataSource: AuthRemoteDataSource(apiClient),
-      localStorage: localStorage,
+      localStorage: secureStorage,
     );
     final teamsRepository = TeamsRepository(
       remoteDataSource: TeamsRemoteDataSource(apiClient),
