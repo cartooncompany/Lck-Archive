@@ -1,4 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { buildPaginationMeta } from '../../common/utils/pagination.util';
 import { MatchesRepository } from '../matches/matches.repository';
 import { GetMatchesQueryDto } from '../matches/dto/get-matches.query.dto';
@@ -23,21 +25,37 @@ export class TeamsService {
   constructor(
     private readonly teamsRepository: TeamsRepository,
     private readonly matchesRepository: MatchesRepository,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   async getTeams(query: GetTeamsQueryDto): Promise<TeamListResponseDto> {
+    const cacheKey = `teams:list:${JSON.stringify(query)}`;
+    const cached = await this.cacheManager.get<TeamListResponseDto>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const [teams, total] = await Promise.all([
       this.teamsRepository.findMany(query),
       this.teamsRepository.count(query),
     ]);
 
-    return {
+    const result = {
       items: teams.map((team) => this.toTeamSummary(team)),
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
+
+    await this.cacheManager.set(cacheKey, result, 10 * 60 * 1000); // 10분 캐싱 (팀 순위 등은 거의 고정됨)
+    return result;
   }
 
   async getTeamById(id: string): Promise<TeamDetailResponseDto> {
+    const cacheKey = `team:detail:${id}`;
+    const cached = await this.cacheManager.get<TeamDetailResponseDto>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const [team, recentMatches] = await Promise.all([
       this.teamsRepository.findById(id),
       this.matchesRepository.findRecentByTeam(id, 5),
@@ -47,18 +65,27 @@ export class TeamsService {
       throw new NotFoundException(`Team not found: ${id}`);
     }
 
-    return {
+    const result = {
       ...this.toTeamSummary(team),
       recentForm: recentMatches.map((match) =>
         this.getRecentFormResult(match, id),
       ),
     };
+
+    await this.cacheManager.set(cacheKey, result, 15 * 60 * 1000); // 15분 캐싱
+    return result;
   }
 
   async getTeamMatches(
     id: string,
     query: GetMatchesQueryDto,
   ): Promise<MatchListResponseDto> {
+    const cacheKey = `team:matches:${id}:${JSON.stringify(query)}`;
+    const cached = await this.cacheManager.get<MatchListResponseDto>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const team = await this.teamsRepository.findById(id);
 
     if (!team) {
@@ -74,10 +101,13 @@ export class TeamsService {
       this.matchesRepository.count(matchQuery),
     ]);
 
-    return {
+    const result = {
       items: matches.map((match) => this.matchesRepository.toSummaryDto(match)),
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
+
+    await this.cacheManager.set(cacheKey, result, 5 * 60 * 1000); // 5분 캐싱
+    return result;
   }
 
   private toTeamSummary(team: TeamEntity): TeamSummaryResponseDto {
