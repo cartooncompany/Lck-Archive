@@ -1,4 +1,6 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { TeamReferenceResponseDto } from '../../common/responses/team-reference.response';
 import { buildPaginationMeta } from '../../common/utils/pagination.util';
 import { GetPlayersQueryDto } from './dto/get-players.query.dto';
@@ -17,21 +19,39 @@ export class PlayersService {
   constructor(
     private readonly playersRepository: PlayersRepository,
     private readonly aiService: AiService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   async getPlayers(query: GetPlayersQueryDto): Promise<PlayerListResponseDto> {
+    const cacheKey = `players:list:${JSON.stringify(query)}`;
+    const cached = await this.cacheManager.get<PlayerListResponseDto>(cacheKey);
+    if (cached) {
+      this.logger.log(`Cache hit for players list: ${cacheKey}`);
+      return cached;
+    }
+
     const [players, total] = await Promise.all([
       this.playersRepository.findMany(query),
       this.playersRepository.count(query),
     ]);
 
-    return {
+    const result = {
       items: players.map((player) => this.toPlayerSummary(player)),
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
+
+    await this.cacheManager.set(cacheKey, result, 5 * 60 * 1000); // 5분 캐싱
+    return result;
   }
 
   async getPlayerById(id: string): Promise<PlayerDetailResponseDto> {
+    const cacheKey = `player:detail:${id}`;
+    const cached = await this.cacheManager.get<PlayerDetailResponseDto>(cacheKey);
+    if (cached) {
+      this.logger.log(`Cache hit for player detail: ${cacheKey}`);
+      return cached;
+    }
+
     const [player, stats, recentAppearances] = await Promise.all([
       this.playersRepository.findById(id),
       this.playersRepository.getPlayerStats(id),
@@ -42,7 +62,7 @@ export class PlayersService {
       throw new NotFoundException(`Player not found: ${id}`);
     }
 
-    return {
+    const result = {
       ...this.toPlayerSummary(player),
       realName: player.realName,
       nationality: player.nationality,
@@ -51,6 +71,9 @@ export class PlayersService {
       recentAppearances,
       aiSummary: player.aiSummary,
     };
+
+    await this.cacheManager.set(cacheKey, result, 10 * 60 * 1000); // 10분 캐싱
+    return result;
   }
 
   async generatePlayerAiSummary(id: string): Promise<{ summary: string }> {
@@ -77,6 +100,11 @@ export class PlayersService {
       playerDetailForAi,
     );
     await this.playersRepository.updateAiSummary(id, summary);
+
+    // AI 스카우팅 리포트 업데이트 후 캐시 무효화
+    const cacheKey = `player:detail:${id}`;
+    await this.cacheManager.del(cacheKey);
+    this.logger.log(`Cache invalidated for player detail: ${cacheKey}`);
 
     return { summary };
   }
