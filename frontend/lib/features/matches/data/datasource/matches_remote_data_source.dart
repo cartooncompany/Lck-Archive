@@ -49,28 +49,4 @@ class MatchesRemoteDataSource {
   Future<void> requestLckSync() {
     return _apiClient.postVoid('/crawler/lck/sync');
   }
-
-  Future<String> requestMatchAiSummary(String id) {
-    return _apiClient.post(
-      '/matches/$id/ai-summary',
-      decoder: (data) {
-        if (data is Map<String, dynamic>) {
-          return data['aiSummary'] as String? ?? '';
-        }
-        return '';
-      },
-    );
-  }
-
-  Future<Map<String, dynamic>> requestMatchAiPrediction(String id) {
-    return _apiClient.post(
-      '/matches/$id/ai-prediction',
-      decoder: (data) {
-        if (data is Map<String, dynamic>) {
-          return data;
-        }
-        return <String, dynamic>{};
-      },
-    );
-  }
 }

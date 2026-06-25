@@ -28,15 +28,10 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
   bool _isLoading = false;
   String? _error;
 
-  bool _isLoadingAiSummary = false;
-  String? _aiSummary;
-  String? _aiSummaryError;
-
   @override
   void initState() {
     super.initState();
     _player = widget.player;
-    _aiSummary = widget.player.aiSummary;
   }
 
   @override
@@ -44,8 +39,6 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
     super.didChangeDependencies();
     if (_player == null || _shouldFetchPlayerDetail(_player!)) {
       _fetchPlayerDetail();
-    } else {
-      _checkAndFetchAiSummary();
     }
   }
 
@@ -61,50 +54,14 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
       if (mounted) {
         setState(() {
           _player = player;
-          _aiSummary = player.aiSummary;
           _isLoading = false;
         });
-        _checkAndFetchAiSummary();
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
           _error = e.toString();
-        });
-      }
-    }
-  }
-
-  void _checkAndFetchAiSummary() {
-    final player = _player;
-    if (player == null) return;
-    if (_aiSummary != null && _aiSummary!.trim().isNotEmpty) return;
-    if (_isLoadingAiSummary) return;
-
-    _fetchAiSummary(player.id);
-  }
-
-  Future<void> _fetchAiSummary(String playerId) async {
-    setState(() {
-      _isLoadingAiSummary = true;
-      _aiSummaryError = null;
-    });
-
-    try {
-      final repository = AppDependenciesScope.of(context).playersRepository;
-      final summary = await repository.requestPlayerAiSummary(playerId);
-      if (mounted) {
-        setState(() {
-          _aiSummary = summary;
-          _isLoadingAiSummary = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingAiSummary = false;
-          _aiSummaryError = e.toString();
         });
       }
     }
@@ -481,12 +438,6 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                       ),
                     );
                   }),
-                if ((_aiSummary != null && _aiSummary!.trim().isNotEmpty) ||
-                    _isLoadingAiSummary ||
-                    _aiSummaryError != null) ...[
-                  const SizedBox(height: AppSpacing.section),
-                  _buildAiSummarySection(context, player),
-                ],
               ],
             ),
           ),
@@ -562,135 +513,7 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
     context.pushNamed(AppRouteNames.teamDetail, extra: team);
   }
 
-  Widget _buildAiSummarySection(BuildContext context, PlayerProfile player) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.auto_awesome_rounded,
-              color: player.teamColor,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'AI 선수 분석 리포트',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceElevated.withOpacity(0.55),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: player.teamColor.withOpacity(0.3),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: player.teamColor.withOpacity(0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: _isLoadingAiSummary
-              ? Column(
-                  children: [
-                    const SizedBox(height: 24),
-                    CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(player.teamColor),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Archive Assistant가 시즌 성적과 최근 경기 데이터를 바탕으로\n선수 맞춤형 스카우팅 리포트를 작성하고 있어요...',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                )
-              : _aiSummaryError != null
-                  ? Column(
-                      children: [
-                        const Icon(
-                          Icons.warning_amber_rounded,
-                          color: Colors.redAccent,
-                          size: 40,
-                        ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          'AI 스카우팅 리포트를 불러오지 못했습니다.\n잠시 후 다시 시도해 주세요.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: player.teamColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            onPressed: _checkAndFetchAiSummary,
-                            icon: const Icon(Icons.refresh_rounded, size: 16),
-                            label: const Text(
-                              '다시 시도',
-                              style: TextStyle(fontWeight: FontWeight.w800),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : Theme(
-                      data: Theme.of(context).copyWith(
-                        textTheme: Theme.of(context).textTheme.copyWith(
-                              bodyMedium: const TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 14,
-                                height: 1.6,
-                              ),
-                            ),
-                      ),
-                      child: MarkdownBody(
-                        data: _aiSummary ?? '',
-                        styleSheet: MarkdownStyleSheet(
-                          p: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            height: 1.6,
-                          ),
-                          h3: TextStyle(
-                            color: player.teamColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            height: 1.8,
-                          ),
-                          listBullet: const TextStyle(
-                            color: Colors.white,
-                          ),
-                          blockSpacing: 12,
-                        ),
-                      ),
-                    ),
-        ),
-      ],
-    );
-  }
+
 }
 
 class _StatCard extends StatelessWidget {

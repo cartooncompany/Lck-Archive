@@ -29,7 +29,6 @@ class ScheduledMatchTile extends StatefulWidget {
 }
 
 class _ScheduledMatchTileState extends State<ScheduledMatchTile> {
-  bool _isLoadingPrediction = false;
   late LckScheduledMatch _currentMatch;
 
   @override
@@ -44,161 +43,6 @@ class _ScheduledMatchTileState extends State<ScheduledMatchTile> {
     if (oldWidget.match != widget.match) {
       _currentMatch = widget.match;
     }
-  }
-
-  Future<void> _generateAiPrediction() async {
-    setState(() {
-      _isLoadingPrediction = true;
-    });
-
-    try {
-      final repository = AppDependenciesScope.of(context).matchesRepository;
-      await repository.requestMatchAiPrediction(_currentMatch.id);
-      
-      final updatedMatch = await repository.getMatchDetail(_currentMatch.id);
-      if (mounted) {
-        setState(() {
-          _currentMatch = LckScheduledMatch(
-            id: updatedMatch.id,
-            scheduledAt: updatedMatch.scheduledAt,
-            split: updatedMatch.split,
-            stage: updatedMatch.stage,
-            status: updatedMatch.status,
-            homeTeam: updatedMatch.homeTeam,
-            awayTeam: updatedMatch.awayTeam,
-            aiWinnerTeamId: updatedMatch.aiWinnerTeamId,
-            aiPrediction: updatedMatch.aiPrediction,
-          );
-        });
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('AI 예측 분석 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingPrediction = false;
-        });
-      }
-    }
-  }
-
-  Widget _buildAiPredictionSection(BuildContext context) {
-    if (_isLoadingPrediction) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: AppColors.accent.withOpacity(0.04),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.accent.withOpacity(0.2)),
-        ),
-        child: const Column(
-          children: [
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Archive Assistant가 최근 경기 통계 데이터를 기반으로 분석하고 있어요...',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    final aiPrediction = _currentMatch.aiPrediction;
-    if (aiPrediction == null || aiPrediction.trim().isEmpty) {
-      return SizedBox(
-        width: double.infinity,
-        child: TextButton.icon(
-          style: TextButton.styleFrom(
-            backgroundColor: AppColors.surfaceElevated.withOpacity(0.4),
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: AppColors.glassBorderMuted),
-            ),
-          ),
-          onPressed: _generateAiPrediction,
-          icon: const Icon(Icons.auto_awesome_rounded, size: 14, color: AppColors.accent),
-          label: const Text(
-            'AI 승부 예측 리포트 확인하기',
-            style: TextStyle(
-              color: AppColors.accent,
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-            ),
-          ),
-        ),
-      );
-    }
-
-    Map<String, dynamic>? aiPredictionMap;
-    try {
-      aiPredictionMap = jsonDecode(aiPrediction) as Map<String, dynamic>;
-    } catch (_) {}
-
-    if (aiPredictionMap == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.accent.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.accent.withOpacity(0.25),
-          width: 1.0,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.auto_awesome_rounded,
-                size: 14,
-                color: AppColors.accent,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'AI 예측: ${aiPredictionMap['winnerTeamName']} 우세 (${aiPredictionMap['probability']}% 확률)',
-                style: const TextStyle(
-                  color: AppColors.accent,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            aiPredictionMap['reason'] ?? '',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textSecondary,
-              fontSize: 11,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -448,8 +292,6 @@ class _ScheduledMatchTileState extends State<ScheduledMatchTile> {
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
-              _buildAiPredictionSection(context),
               if (widget.onOpenDetail != null) ...[
                 const SizedBox(height: 14),
                 Align(

@@ -40,16 +40,6 @@ class MatchesRepository implements IMatchesRepository {
     return _mapMatchDetail(dto);
   }
 
-  @override
-  Future<String> requestMatchAiSummary(String id) {
-    return _remoteDataSource.requestMatchAiSummary(id);
-  }
-
-  @override
-  Future<Map<String, dynamic>> requestMatchAiPrediction(String id) {
-    return _remoteDataSource.requestMatchAiPrediction(id);
-  }
-
   LckScheduledMatch _mapScheduledMatch(TeamMatchDto dto) {
     return LckScheduledMatch(
       id: dto.id,

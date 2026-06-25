@@ -37,16 +37,4 @@ class PlayersRemoteDataSource {
       decoder: (data) => PlayerDetailDto.fromJson(data as Map<String, dynamic>),
     );
   }
-
-  Future<String> requestPlayerAiSummary(String id) {
-    return _apiClient.post(
-      '/players/$id/ai-summary',
-      decoder: (data) {
-        if (data is Map<String, dynamic>) {
-          return data['summary'] as String? ?? '';
-        }
-        return '';
-      },
-    );
-  }
 }

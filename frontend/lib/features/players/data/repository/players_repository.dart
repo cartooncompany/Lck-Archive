@@ -139,21 +139,6 @@ class PlayersRepository implements IPlayersRepository {
     return null;
   }
 
-  @override
-  Future<String> requestPlayerAiSummary(String id) async {
-    try {
-      final summary = await _remoteDataSource.requestPlayerAiSummary(id);
-      final cachedPlayer = _playerCache[id];
-      if (cachedPlayer != null) {
-        _playerCache[id] = cachedPlayer.copyWith(aiSummary: summary);
-        await _persistCache();
-      }
-      return summary;
-    } catch (_) {
-      throw const AppFailure('AI 분석 보고서를 생성하는 데 실패했습니다.');
-    }
-  }
-
   void _rememberPlayers(List<PlayerProfile> players) {
     for (final player in players) {
       _playerCache[player.id] = player;
