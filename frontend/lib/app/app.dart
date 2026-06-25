@@ -6,6 +6,7 @@ import '../features/auth/presentation/bloc/session_controller.dart';
 import '../features/auth/presentation/pages/splash_page.dart';
 import '../features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
 import '../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
+import '../shared/models/team_summary.dart';
 import 'app_dependencies.dart';
 import 'app_dependencies_scope.dart';
 import 'router/app_router.dart';
@@ -49,11 +50,12 @@ class _LckArchiveAppState extends State<LckArchiveApp> {
                 message: '앱 초기화 중 오류가 발생했습니다.\n${snapshot.error}',
               ),
             ),
+            context,
           );
         }
 
         if (snapshot.connectionState != ConnectionState.done) {
-          return _buildApp(AppRouter.singlePageRouter(const SplashPage()));
+          return _buildApp(AppRouter.singlePageRouter(const SplashPage()), context);
         }
 
         final bootstrapData = snapshot.data!;
@@ -70,7 +72,11 @@ class _LckArchiveAppState extends State<LckArchiveApp> {
             controller: _favoriteTeamController!,
             child: SessionScope(
               controller: _sessionController!,
-              child: _buildApp(_router!),
+              child: Builder(
+                builder: (context) {
+                  return _buildApp(_router!, context);
+                },
+              ),
             ),
           ),
         );
@@ -78,11 +84,18 @@ class _LckArchiveAppState extends State<LckArchiveApp> {
     );
   }
 
-  MaterialApp _buildApp(GoRouter router) {
+  MaterialApp _buildApp(GoRouter router, BuildContext context) {
+    TeamSummary? favTeam;
+    try {
+      favTeam = FavoriteTeamScope.of(context).favoriteTeam;
+    } catch (_) {
+      // FavoriteTeamScope가 컨텍스트 상위에 없는 경우의 대비책
+    }
+
     return MaterialApp.router(
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(),
+      theme: AppTheme.dark(accentColor: favTeam?.color),
       routerConfig: router,
     );
   }

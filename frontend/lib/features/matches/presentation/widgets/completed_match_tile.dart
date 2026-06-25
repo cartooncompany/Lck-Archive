@@ -5,7 +5,9 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/extensions/date_extensions.dart';
 import '../../../../shared/models/lck_match_detail.dart';
 import '../../../../shared/models/lck_scheduled_match.dart';
+import '../../../../shared/models/team_summary.dart';
 import '../../../../shared/widgets/team_logo.dart';
+import '../../../favorite_team/presentation/bloc/favorite_team_controller.dart';
 
 class CompletedMatchTile extends StatelessWidget {
   const CompletedMatchTile({
@@ -27,6 +29,13 @@ class CompletedMatchTile extends StatelessWidget {
     final isHomeWinner = match.winner?.id == match.homeTeam.id;
     final isAwayWinner = match.winner?.id == match.awayTeam.id;
 
+    TeamSummary? favoriteTeam;
+    try {
+      favoriteTeam = FavoriteTeamScope.of(context).favoriteTeam;
+    } catch (_) {}
+    final isMyTeamMatch = favoriteTeam != null && 
+        (match.homeTeam.id == favoriteTeam.id || match.awayTeam.id == favoriteTeam.id);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
       child: BackdropFilter(
@@ -38,16 +47,27 @@ class CompletedMatchTile extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.surface.withValues(alpha: 0.65),
-                AppColors.surfaceMuted.withValues(alpha: 0.45),
+                isMyTeamMatch
+                    ? favoriteTeam.color.withValues(alpha: 0.15)
+                    : AppColors.surface.withValues(alpha: 0.65),
+                isMyTeamMatch
+                    ? favoriteTeam.color.withValues(alpha: 0.05)
+                    : AppColors.surfaceMuted.withValues(alpha: 0.45),
               ],
             ),
             borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: AppColors.glassBorderMuted, width: 1.0),
+            border: Border.all(
+              color: isMyTeamMatch
+                  ? favoriteTeam.color.withValues(alpha: 0.5)
+                  : AppColors.glassBorderMuted,
+              width: isMyTeamMatch ? 1.5 : 1.0,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
-                blurRadius: 16,
+                color: isMyTeamMatch
+                    ? favoriteTeam.color.withValues(alpha: 0.12)
+                    : Colors.black.withValues(alpha: 0.15),
+                blurRadius: isMyTeamMatch ? 20 : 16,
                 offset: const Offset(0, 8),
               ),
             ],
@@ -72,6 +92,32 @@ class CompletedMatchTile extends StatelessWidget {
                           ),
                     ),
                   ),
+                  if (isMyTeamMatch) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: favoriteTeam.color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: favoriteTeam.color.withValues(alpha: 0.4),
+                          width: 1.0,
+                        ),
+                      ),
+                      child: Text(
+                        'MY TEAM',
+                        style: TextStyle(
+                          color: favoriteTeam.color,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,

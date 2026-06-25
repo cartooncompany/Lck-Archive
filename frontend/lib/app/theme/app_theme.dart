@@ -3,10 +3,16 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 final class AppTheme {
-  static ThemeData dark() {
-    const colorScheme = ColorScheme.dark(
-      primary: AppColors.accent,
-      secondary: AppColors.accentStrong,
+  static ThemeData dark({Color? accentColor}) {
+    final primaryColor = accentColor ?? AppColors.accent;
+    // 딥 네온 퍼플리쉬 블루 또는 지정 색상에 투명도나 어두운 조합을 적용한 보조 컬러
+    final secondaryColor = accentColor != null 
+        ? Color.alphaBlend(Colors.black.withOpacity(0.2), accentColor)
+        : AppColors.accentStrong;
+
+    final colorScheme = ColorScheme.dark(
+      primary: primaryColor,
+      secondary: secondaryColor,
       surface: AppColors.surface,
       error: AppColors.danger,
       onPrimary: AppColors.background,
@@ -80,7 +86,7 @@ final class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceElevated,
-        selectedColor: AppColors.accentStrong,
+        selectedColor: secondaryColor,
         disabledColor: AppColors.surface,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         labelStyle: const TextStyle(
@@ -114,7 +120,7 @@ final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+          borderSide: BorderSide(color: primaryColor, width: 1.5),
         ),
       ),
       navigationBarTheme: const NavigationBarThemeData(

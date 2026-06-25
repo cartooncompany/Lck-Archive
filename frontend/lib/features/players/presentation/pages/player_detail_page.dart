@@ -12,6 +12,7 @@ import '../../../../shared/models/team_summary.dart';
 import '../../../../shared/widgets/player_avatar.dart';
 import '../../../../shared/widgets/responsive_page_container.dart';
 import '../../../../shared/widgets/app_status_card.dart';
+import '../widgets/player_radar_chart.dart';
 
 class PlayerDetailPage extends StatefulWidget {
   const PlayerDetailPage({required this.player, super.key});
@@ -332,6 +333,13 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 14),
+                if (player.stats != null && player.stats!.gamesPlayed > 0) ...[
+                  PlayerRadarChart(
+                    stats: player.stats!,
+                    accentColor: player.teamColor,
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 LayoutBuilder(
                   builder: (context, constraints) {
                     final crossAxisCount = constraints.maxWidth >= 900
