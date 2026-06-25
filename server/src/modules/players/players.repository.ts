@@ -100,18 +100,39 @@ export class PlayersRepository {
   async getRecentAppearances(playerId: string, limit = 5) {
     const statsList = await this.prisma.matchGamePlayerStat.findMany({
       where: { playerId },
-      include: {
+      select: {
+        kills: true,
+        deaths: true,
+        assists: true,
+        characterName: true,
+        team: {
+          select: {
+            id: true,
+          },
+        },
         matchGame: {
-          include: {
+          select: {
+            winnerTeamId: true,
             match: {
-              include: {
-                homeTeam: true,
-                awayTeam: true,
+              select: {
+                scheduledAt: true,
+                homeTeamId: true,
+                homeTeam: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+                awayTeam: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
         },
-        team: true,
       },
       orderBy: {
         matchGame: {

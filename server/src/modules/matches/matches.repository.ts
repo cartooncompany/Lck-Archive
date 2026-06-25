@@ -46,7 +46,13 @@ const matchDetailInclude = Prisma.validator<Prisma.MatchInclude>()({
   },
   participations: {
     include: {
-      player: true,
+      player: {
+        select: {
+          id: true,
+          name: true,
+          position: true,
+        },
+      },
       team: {
         select: teamReferenceSelect,
       },
@@ -60,7 +66,12 @@ const matchDetailInclude = Prisma.validator<Prisma.MatchInclude>()({
       },
       playerStats: {
         include: {
-          player: true,
+          player: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           team: {
             select: teamReferenceSelect,
           },
