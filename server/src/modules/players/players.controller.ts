@@ -68,25 +68,5 @@ export class PlayersController {
   getPlayerById(@Param('id') id: string): Promise<PlayerDetailResponseDto> {
     return this.playersService.getPlayerById(id);
   }
-
-  @Post(':id/ai-summary')
-  @ApiOperation({
-    summary: '선수 AI 분석 요약 리포트 생성 및 조회',
-    description:
-      '해당 선수의 시즌 성적 및 최근 경기 지표를 기반으로 AI 리포트를 생성하고 캐싱합니다.',
-  })
-  @ApiParam({
-    name: 'id',
-    description: '선수 id',
-    example: 'clx123player',
-  })
-  @ApiOkResponse({
-    description: 'AI 분석 요약 텍스트',
-  })
-  generatePlayerAiSummary(
-    @Param('id') id: string,
-  ): Promise<{ summary: string }> {
-    return this.playersService.generatePlayerAiSummary(id);
-  }
 }
 

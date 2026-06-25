@@ -10,7 +10,6 @@ import {
   PlayerSummaryResponseDto,
 } from './responses/player-summary.response';
 import { PlayerRecord, PlayersRepository } from './players.repository';
-import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class PlayersService {
@@ -18,7 +17,6 @@ export class PlayersService {
 
   constructor(
     private readonly playersRepository: PlayersRepository,
-    private readonly aiService: AiService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: cacheManager.Cache,
   ) {}
 
@@ -76,38 +74,7 @@ export class PlayersService {
     return result;
   }
 
-  async generatePlayerAiSummary(id: string): Promise<{ summary: string }> {
-    const player = await this.playersRepository.findById(id);
-    if (!player) {
-      throw new NotFoundException(`Player not found: ${id}`);
-    }
 
-    const [stats, recentAppearances] = await Promise.all([
-      this.playersRepository.getPlayerStats(id),
-      this.playersRepository.getRecentAppearances(id),
-    ]);
-
-    const playerDetailForAi = {
-      ...this.toPlayerSummary(player),
-      realName: player.realName,
-      nationality: player.nationality,
-      birthDate: player.birthDate,
-      stats,
-      recentAppearances,
-    };
-
-    const summary = await this.aiService.generatePlayerSummary(
-      playerDetailForAi,
-    );
-    await this.playersRepository.updateAiSummary(id, summary);
-
-    // AI 스카우팅 리포트 업데이트 후 캐시 무효화
-    const cacheKey = `player:detail:${id}`;
-    await this.cacheManager.del(cacheKey);
-    this.logger.log(`Cache invalidated for player detail: ${cacheKey}`);
-
-    return { summary };
-  }
 
   private toPlayerSummary(player: PlayerRecord): PlayerSummaryResponseDto {
     return {
