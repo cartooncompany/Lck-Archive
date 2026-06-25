@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import * as cacheManager from 'cache-manager';
 import { TeamReferenceResponseDto } from '../../common/responses/team-reference.response';
 import { buildPaginationMeta } from '../../common/utils/pagination.util';
 import { GetPlayersQueryDto } from './dto/get-players.query.dto';
@@ -19,7 +19,7 @@ export class PlayersService {
   constructor(
     private readonly playersRepository: PlayersRepository,
     private readonly aiService: AiService,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: cacheManager.Cache,
   ) {}
 
   async getPlayers(query: GetPlayersQueryDto): Promise<PlayerListResponseDto> {

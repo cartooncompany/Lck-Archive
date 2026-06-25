@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
+import * as cacheManager from 'cache-manager';
 import { buildPaginationMeta } from '../../common/utils/pagination.util';
 import { MatchesRepository } from '../matches/matches.repository';
 import { GetMatchesQueryDto } from '../matches/dto/get-matches.query.dto';
@@ -25,7 +25,7 @@ export class TeamsService {
   constructor(
     private readonly teamsRepository: TeamsRepository,
     private readonly matchesRepository: MatchesRepository,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: cacheManager.Cache,
   ) {}
 
   async getTeams(query: GetTeamsQueryDto): Promise<TeamListResponseDto> {
