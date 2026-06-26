@@ -5,7 +5,7 @@ import '../models/news_article.dart';
 
 Future<void> openNewsArticle(BuildContext context, NewsArticle article) async {
   final uri = Uri.tryParse(article.articleUrl);
-  if (uri == null || !uri.hasScheme) {
+  if (uri == null || !{'http', 'https'}.contains(uri.scheme)) {
     _showFailure(context, '유효하지 않은 기사 링크입니다.');
     return;
   }

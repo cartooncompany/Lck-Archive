@@ -4,6 +4,7 @@ import { promisify } from 'util';
 
 const scryptAsync = promisify(scrypt);
 const SALT_LENGTH = 16;
+// Node.js scrypt default: N=16384, r=8, p=1 — sufficient for interactive auth
 const KEY_LENGTH = 64;
 
 @Injectable()

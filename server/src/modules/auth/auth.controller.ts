@@ -1,4 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -28,6 +29,7 @@ import { AuthService } from './auth.service';
   description: '데이터베이스 연결을 사용할 수 없습니다.',
   type: ServiceUnavailableErrorResponseDto,
 })
+@Throttle({ default: { limit: 10, ttl: 60000 } })
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

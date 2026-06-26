@@ -47,7 +47,10 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new HttpExceptionFilter(), new PrismaExceptionFilter());
 
-  const document = SwaggerModule.createDocument(
+  const nodeEnv = process.env.NODE_ENV ?? 'development';
+
+  if (nodeEnv !== 'production') {
+    const document = SwaggerModule.createDocument(
     app,
     new DocumentBuilder()
       .setTitle('LCK Archive API')
@@ -104,6 +107,7 @@ async function bootstrap() {
       tagsSorter: 'alpha',
     },
   });
+  }
 
   await app.listen(process.env.PORT ?? 3000);
 }

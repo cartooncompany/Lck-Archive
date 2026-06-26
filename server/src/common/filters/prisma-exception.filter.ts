@@ -19,12 +19,10 @@ export class PrismaExceptionFilter implements ExceptionFilter {
 
     response.status(HttpStatus.SERVICE_UNAVAILABLE).json({
       statusCode: HttpStatus.SERVICE_UNAVAILABLE,
-      message:
-        'Database is unavailable. Check DATABASE_URL and database status.',
+      message: 'Database is unavailable. Please try again later.',
       error: 'Service Unavailable',
       path: request.url,
       timestamp: new Date().toISOString(),
-      details: exception.message,
     });
   }
 }

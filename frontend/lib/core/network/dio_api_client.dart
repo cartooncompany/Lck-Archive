@@ -157,7 +157,8 @@ class DioApiClient implements ApiClient {
             data: {
               if (options.queryParameters.isNotEmpty)
                 'query': options.queryParameters,
-              if (options.data != null) 'body': options.data,
+              if (options.data != null)
+                'body': _sanitizeBody(options.data),
             },
           );
           handler.next(options);
@@ -226,6 +227,16 @@ class DioApiClient implements ApiClient {
     }
 
     return _translateErrorMessage(rawMessage);
+  }
+
+  static const _sensitiveFields = {'password', 'passwordHash', 'refreshToken', 'accessToken'};
+
+  Object? _sanitizeBody(Object? body) {
+    if (body is! Map<String, dynamic>) return body;
+    return {
+      for (final entry in body.entries)
+        entry.key: _sensitiveFields.contains(entry.key) ? '***' : entry.value,
+    };
   }
 
   String _translateErrorMessage(String rawMessage) {
