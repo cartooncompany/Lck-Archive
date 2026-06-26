@@ -30,7 +30,7 @@ import '../widgets/headline_news_card.dart';
 
 /// 쫀득한 버튼 스케일 바운스 효과
 class _BounceAction extends StatefulWidget {
-  const _BounceAction({required this.child, required this.onTap, super.key});
+  const _BounceAction({required this.child, required this.onTap});
 
   final Widget child;
   final VoidCallback onTap;
@@ -84,13 +84,31 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   Future<_HomePageData>? _homeFuture;
   String? _loadedTeamId;
   bool _isSyncingSchedule = false;
   bool _showAllStandings = false;
   bool _hasLoadedPredictions = false;
   Map<String, String> _matchPredictions = <String, String>{};
+
+  late final AnimationController _skeletonController;
+
+  @override
+  void initState() {
+    super.initState();
+    _skeletonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _skeletonController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -392,10 +410,7 @@ class _HomePageState extends State<HomePage> {
         if (snapshot.connectionState == ConnectionState.waiting &&
             recentResults.isEmpty &&
             recentResultsError == null)
-          const SizedBox(
-            height: 120,
-            child: Center(child: CircularProgressIndicator()),
-          )
+          _SkeletonSection(animation: _skeletonController, itemCount: 3, itemHeight: 72)
         else if (recentResults.isEmpty && recentResultsError != null)
           _EmptySectionMessage(
             message: recentResultsError,
@@ -438,10 +453,7 @@ class _HomePageState extends State<HomePage> {
         if (snapshot.connectionState == ConnectionState.waiting &&
             scheduledMatches.isEmpty &&
             scheduleError == null)
-          const SizedBox(
-            height: 120,
-            child: Center(child: CircularProgressIndicator()),
-          )
+          _SkeletonSection(animation: _skeletonController, itemCount: 4, itemHeight: 80)
         else if (scheduledMatches.isEmpty && scheduleError != null)
           _EmptySectionMessage(
             message: scheduleError,
@@ -490,10 +502,7 @@ class _HomePageState extends State<HomePage> {
         const SizedBox(height: 14),
         if (snapshot.connectionState == ConnectionState.waiting &&
             standings.isEmpty)
-          const SizedBox(
-            height: 120,
-            child: Center(child: CircularProgressIndicator()),
-          )
+          _SkeletonSection(animation: _skeletonController, itemCount: 5, itemHeight: 64)
         else if (standings.isEmpty)
           const _EmptySectionMessage(message: '표시할 팀 순위가 없습니다.')
         else
@@ -539,10 +548,7 @@ class _HomePageState extends State<HomePage> {
         const SizedBox(height: 14),
         if (snapshot.connectionState == ConnectionState.waiting &&
             featuredNews.isEmpty)
-          const SizedBox(
-            height: 120,
-            child: Center(child: CircularProgressIndicator()),
-          )
+          _SkeletonSection(animation: _skeletonController, itemCount: 3, itemHeight: 88)
         else if (featuredNews.isEmpty)
           const _EmptySectionMessage(
             message: '표시할 뉴스가 없습니다. 뉴스 데이터가 비어 있다면 백엔드에서 동기화를 먼저 요청해 주세요.',
@@ -908,6 +914,51 @@ class _FavoriteTeamEmptyCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─── Skeleton ────────────────────────────────────────────────────────────────
+
+class _SkeletonSection extends AnimatedWidget {
+  const _SkeletonSection({
+    required Animation<double> animation,
+    required this.itemCount,
+    required this.itemHeight,
+  }) : super(listenable: animation);
+
+  final int itemCount;
+  final double itemHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = (listenable as Animation<double>).value;
+    final shimmerColor = Color.lerp(
+      AppColors.surfaceElevated,
+      AppColors.surfaceMuted,
+      t,
+    )!;
+
+    return Column(
+      children: List.generate(itemCount, (i) {
+        // 각 카드의 너비를 살짝 다르게 해서 자연스럽게
+        final widthFactor = i % 2 == 0 ? 1.0 : 0.88;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: FractionallySizedBox(
+            widthFactor: widthFactor,
+            alignment: Alignment.centerLeft,
+            child: Container(
+              height: itemHeight,
+              decoration: BoxDecoration(
+                color: shimmerColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.glassBorder),
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 }
