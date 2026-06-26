@@ -5,7 +5,7 @@ import 'auth_shell.dart';
 
 /// 스태거(순차) 진입용 페이드 인 & 슬라이드 업 애니메이션 위젯
 class _FadeInSlideUp extends StatefulWidget {
-  const _FadeInSlideUp({required this.child, required this.delay, super.key});
+  const _FadeInSlideUp({required this.child, required this.delay});
 
   final Widget child;
   final Duration delay;
@@ -71,7 +71,7 @@ class _FadeInSlideUpState extends State<_FadeInSlideUp>
 
 /// 탭 시 쫀득한 스케일 축소/복원 효과를 주는 바운스 액션 위젯
 class _BounceAction extends StatefulWidget {
-  const _BounceAction({required this.child, required this.onTap, super.key});
+  const _BounceAction({required this.child, required this.onTap});
 
   final Widget child;
   final VoidCallback onTap;

@@ -23,8 +23,25 @@ class TeamDetailPage extends StatefulWidget {
   State<TeamDetailPage> createState() => _TeamDetailPageState();
 }
 
-class _TeamDetailPageState extends State<TeamDetailPage> {
+class _TeamDetailPageState extends State<TeamDetailPage>
+    with SingleTickerProviderStateMixin {
   Future<_TeamDetailData>? _detailFuture;
+  late final AnimationController _skeletonController;
+
+  @override
+  void initState() {
+    super.initState();
+    _skeletonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _skeletonController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -63,8 +80,8 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
                                 color: isFavorite
-                                    ? Colors.pinkAccent.withOpacity(0.8)
-                                    : Colors.white.withOpacity(0.3),
+                                    ? Colors.pinkAccent.withValues(alpha: 0.8)
+                                    : Colors.white.withValues(alpha: 0.3),
                                 width: 1.2,
                               ),
                               shape: RoundedRectangleBorder(
@@ -76,8 +93,8 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                               ),
                               foregroundColor: Colors.white,
                               backgroundColor: isFavorite
-                                  ? Colors.pinkAccent.withOpacity(0.12)
-                                  : Colors.white.withOpacity(0.06),
+                                  ? Colors.pinkAccent.withValues(alpha: 0.12)
+                                  : Colors.white.withValues(alpha: 0.06),
                             ),
                             onPressed: () =>
                                 favoriteController.selectTeam(team),
@@ -115,12 +132,12 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                             ),
                             borderRadius: BorderRadius.circular(28),
                             border: Border.all(
-                              color: team.color.withOpacity(0.55),
+                              color: team.color.withValues(alpha: 0.55),
                               width: 1.5,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: team.color.withOpacity(0.18),
+                                color: team.color.withValues(alpha: 0.18),
                                 blurRadius: 28,
                                 spreadRadius: -4,
                               ),
@@ -195,16 +212,10 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                                             vertical: 4,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(
-                                              0.1,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
+                                            color: Colors.white.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(8),
                                             border: Border.all(
-                                              color: Colors.white.withOpacity(
-                                                0.2,
-                                              ),
+                                              color: Colors.white.withValues(alpha: 0.2),
                                             ),
                                           ),
                                           child: Text(
@@ -236,14 +247,12 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                                                     vertical: 4,
                                                   ),
                                               decoration: BoxDecoration(
-                                                color: Colors.white.withOpacity(
-                                                  0.1,
-                                                ),
+                                                color: Colors.white.withValues(alpha: 0.1),
                                                 borderRadius:
                                                     BorderRadius.circular(8),
                                                 border: Border.all(
                                                   color: Colors.white
-                                                      .withOpacity(0.2),
+                                                      .withValues(alpha: 0.2),
                                                 ),
                                               ),
                                               child: Text(
@@ -328,9 +337,7 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                                             .textTheme
                                             .labelLarge
                                             ?.copyWith(
-                                              color: Colors.white.withOpacity(
-                                                0.8,
-                                              ),
+                                              color: Colors.white.withValues(alpha: 0.8),
                                               fontWeight: FontWeight.w800,
                                             ),
                                       ),
@@ -361,7 +368,7 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                     const SizedBox(height: 14),
                     if (snapshot.connectionState == ConnectionState.waiting &&
                         team.recentMatches.isEmpty)
-                      const Center(child: CircularProgressIndicator())
+                      _TeamDetailSkeleton(animation: _skeletonController, itemCount: 5, itemHeight: 76)
                     else if (team.recentMatches.isEmpty)
                       const _DetailMessage(message: '최근 경기 결과가 없습니다.')
                     else
@@ -385,7 +392,7 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
                     const SizedBox(height: 14),
                     if (snapshot.connectionState == ConnectionState.waiting &&
                         players.isEmpty)
-                      const Center(child: CircularProgressIndicator())
+                      _TeamDetailSkeleton(animation: _skeletonController, itemCount: 5, itemHeight: 68)
                     else if (players.isEmpty)
                       const _DetailMessage(message: '소속 선수 정보가 없습니다.')
                     else
@@ -439,13 +446,13 @@ class _TeamDetailPageState extends State<TeamDetailPage> {
 
   Future<_TeamDetailData> _loadDetail() async {
     final dependencies = AppDependenciesScope.of(context);
-    final teamFuture = dependencies.teamsRepository.getTeam(widget.team.id);
-    final playersFuture = dependencies.playersRepository.getPlayers(
-      teamId: widget.team.id,
-    );
+    final results = await Future.wait([
+      dependencies.teamsRepository.getTeam(widget.team.id),
+      dependencies.playersRepository.getPlayers(teamId: widget.team.id),
+    ]);
 
-    final team = await teamFuture;
-    final players = await playersFuture;
+    final team = results[0] as TeamSummary;
+    final players = results[1] as List<PlayerProfile>;
 
     final sortedPlayers = List<PlayerProfile>.from(players)
       ..sort((a, b) => _positionOrder(a.position).compareTo(_positionOrder(b.position)));
@@ -564,20 +571,20 @@ class _PlayerRowState extends State<_PlayerRow> {
           duration: const Duration(milliseconds: 250),
           decoration: BoxDecoration(
             color: _isHovered
-                ? AppColors.surfaceElevated.withOpacity(0.8)
-                : AppColors.surface.withOpacity(0.55),
+                ? AppColors.surfaceElevated.withValues(alpha: 0.8)
+                : AppColors.surface.withValues(alpha: 0.55),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
               color: _isHovered
-                  ? teamColor.withOpacity(0.4)
+                  ? teamColor.withValues(alpha: 0.4)
                   : AppColors.glassBorder,
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
                 color: _isHovered
-                    ? teamColor.withOpacity(0.12)
-                    : Colors.black.withOpacity(0.08),
+                    ? teamColor.withValues(alpha: 0.12)
+                    : Colors.black.withValues(alpha: 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
@@ -634,6 +641,46 @@ class _PlayerRowState extends State<_PlayerRow> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ─── Skeleton ────────────────────────────────────────────────────────────────
+
+class _TeamDetailSkeleton extends AnimatedWidget {
+  const _TeamDetailSkeleton({
+    required Animation<double> animation,
+    required this.itemCount,
+    required this.itemHeight,
+  }) : super(listenable: animation);
+
+  final int itemCount;
+  final double itemHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = (listenable as Animation<double>).value;
+    final shimmer = Color.lerp(AppColors.surfaceElevated, AppColors.surfaceMuted, t)!;
+
+    return Column(
+      children: List.generate(itemCount, (i) {
+        final widthFactor = i % 2 == 0 ? 1.0 : 0.9;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: FractionallySizedBox(
+            widthFactor: widthFactor,
+            alignment: Alignment.centerLeft,
+            child: Container(
+              height: itemHeight,
+              decoration: BoxDecoration(
+                color: shimmer,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: AppColors.glassBorder),
+              ),
+            ),
+          ),
+        );
+      }),
     );
   }
 }

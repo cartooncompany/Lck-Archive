@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/app_colors.dart';
-import 'auth_shared_widgets.dart';
 
 export 'auth_form_widgets.dart';
 export 'auth_shared_widgets.dart';

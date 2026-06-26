@@ -5,7 +5,7 @@ import 'auth_shell.dart';
 
 /// 스무스하게 옆으로 미끄러지듯 나타나는 페이드 & 슬라이드 전환 애니메이션 위젯
 class _FormFadeTransition extends StatefulWidget {
-  const _FormFadeTransition({required this.child, super.key});
+  const _FormFadeTransition({required this.child});
 
   final Widget child;
 
@@ -66,7 +66,7 @@ class _FormFadeTransitionState extends State<_FormFadeTransition>
 
 /// 쫀득한 버튼 스케일 바운스 효과
 class _BounceAction extends StatefulWidget {
-  const _BounceAction({required this.child, required this.onTap, super.key});
+  const _BounceAction({required this.child, required this.onTap});
 
   final Widget child;
   final VoidCallback onTap;

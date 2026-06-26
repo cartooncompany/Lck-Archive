@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import '../../../../app/app_dependencies_scope.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../shared/extensions/date_extensions.dart';
 import '../../../../shared/models/lck_scheduled_match.dart';

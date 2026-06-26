@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
@@ -25,7 +24,6 @@ class PlayerDetailPage extends StatefulWidget {
 
 class _PlayerDetailPageState extends State<PlayerDetailPage> {
   PlayerProfile? _player;
-  bool _isLoading = false;
   String? _error;
 
   @override
@@ -43,26 +41,17 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
   }
 
   Future<void> _fetchPlayerDetail() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    setState(() => _error = null);
 
     try {
       final repository = AppDependenciesScope.of(context).playersRepository;
       final player = await repository.getPlayer(widget.player.id);
       if (mounted) {
-        setState(() {
-          _player = player;
-          _isLoading = false;
-        });
+        setState(() => _player = player);
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _error = e.toString();
-        });
+        setState(() => _error = e.toString());
       }
     }
   }
@@ -103,7 +92,7 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                         child: OutlinedButton.icon(
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(
-                              color: player.teamColor.withOpacity(0.6),
+                              color: player.teamColor.withValues(alpha: 0.6),
                               width: 1.2,
                             ),
                             shape: RoundedRectangleBorder(
@@ -114,9 +103,7 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                               vertical: 12,
                             ),
                             foregroundColor: Colors.white,
-                            backgroundColor: player.teamColor.withOpacity(
-                              0.08,
-                            ),
+                            backgroundColor: player.teamColor.withValues(alpha: 0.08),
                           ),
                           onPressed: () => _openTeam(context, player),
                           icon: Icon(
@@ -139,15 +126,15 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                     return Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceElevated.withOpacity(0.6),
+                        color: AppColors.surfaceElevated.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
-                          color: player.teamColor.withOpacity(0.35),
+                          color: player.teamColor.withValues(alpha: 0.35),
                           width: 1.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: player.teamColor.withOpacity(0.12),
+                            color: player.teamColor.withValues(alpha: 0.12),
                             blurRadius: 24,
                             spreadRadius: -4,
                           ),
@@ -264,10 +251,10 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.05),
+                                color: Colors.white.withValues(alpha: 0.05),
                               ),
                             ),
                             child: Text(
@@ -342,7 +329,7 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                   Container(
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceElevated.withOpacity(0.55),
+                      color: AppColors.surfaceElevated.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(color: AppColors.glassBorder),
                     ),
@@ -364,15 +351,15 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                       child: Container(
                         padding: const EdgeInsets.all(18),
                         decoration: BoxDecoration(
-                          color: AppColors.surface.withOpacity(0.55),
+                          color: AppColors.surface.withValues(alpha: 0.55),
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(
-                            color: neonColor.withOpacity(0.4),
+                            color: neonColor.withValues(alpha: 0.4),
                             width: 1.2,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: neonColor.withOpacity(0.06),
+                              color: neonColor.withValues(alpha: 0.06),
                               blurRadius: 12,
                               offset: const Offset(0, 4),
                             ),
@@ -400,10 +387,10 @@ class _PlayerDetailPageState extends State<PlayerDetailPage> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: neonColor.withOpacity(0.12),
+                                    color: neonColor.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(
-                                      color: neonColor.withOpacity(0.4),
+                                      color: neonColor.withValues(alpha: 0.4),
                                       width: 1,
                                     ),
                                   ),
@@ -550,12 +537,12 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated.withOpacity(0.55),
+        color: AppColors.surfaceElevated.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: AppColors.glassBorder, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.12),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -602,7 +589,7 @@ class _StatCard extends StatelessWidget {
               height: 4,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [accentColor.withOpacity(0.6), Colors.transparent],
+                  colors: [accentColor.withValues(alpha: 0.6), Colors.transparent],
                 ),
                 borderRadius: BorderRadius.circular(2),
               ),

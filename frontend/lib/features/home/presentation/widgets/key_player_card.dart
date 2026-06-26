@@ -42,7 +42,7 @@ class _KeyPlayerCardState extends State<KeyPlayerCard>
 
   @override
   Widget build(BuildContext context) {
-    final teamColor = widget.player.teamColor ?? AppColors.accent;
+    final teamColor = widget.player.teamColor;
     final borderRadius = BorderRadius.circular(22);
 
     return SizedBox(

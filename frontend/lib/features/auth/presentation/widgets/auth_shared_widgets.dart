@@ -289,7 +289,7 @@ class _AuthPrimaryButtonState extends State<AuthPrimaryButton>
     final hasIcon = widget.icon != null;
     final isEnabled = widget.onPressed != null;
 
-    final child = widget.icon == null
+    final child = !hasIcon
         ? Text(widget.label)
         : Row(
             mainAxisAlignment: MainAxisAlignment.center,

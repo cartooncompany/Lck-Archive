@@ -20,14 +20,31 @@ class MatchesSchedulePage extends StatefulWidget {
   State<MatchesSchedulePage> createState() => _MatchesSchedulePageState();
 }
 
-class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
+class _MatchesSchedulePageState extends State<MatchesSchedulePage>
+    with SingleTickerProviderStateMixin {
   int _weekOffset = 0;
   Future<List<LckScheduledMatch>>? _matchesFuture;
   bool _hasLoadedPredictions = false;
   Map<String, String> _matchPredictions = <String, String>{};
+  late final AnimationController _skeletonController;
 
   ({DateTime start, DateTime end}) get _currentWeekRange =>
       _weekRangeForOffset(_weekOffset);
+
+  @override
+  void initState() {
+    super.initState();
+    _skeletonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _skeletonController.dispose();
+    super.dispose();
+  }
 
   @override
   void didChangeDependencies() {
@@ -65,8 +82,11 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
                     onNext: _goToNextWeek,
                     onReset: _weekOffset != 0 ? _goToCurrentWeek : null,
                   ),
-                  const Expanded(
-                    child: Center(child: CircularProgressIndicator()),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                      child: _ScheduleSkeleton(animation: _skeletonController),
+                    ),
                   ),
                 ],
               );
@@ -455,6 +475,73 @@ class _NavButton extends StatelessWidget {
   }
 }
 
+// ─── Skeleton ────────────────────────────────────────────────────────────────
+
+class _ScheduleSkeleton extends AnimatedWidget {
+  const _ScheduleSkeleton({required Animation<double> animation})
+      : super(listenable: animation);
+
+  @override
+  Widget build(BuildContext context) {
+    final t = (listenable as Animation<double>).value;
+    final shimmer = Color.lerp(AppColors.surfaceElevated, AppColors.surfaceMuted, t)!;
+    final headerShimmer = Color.lerp(AppColors.surfaceMuted, AppColors.surfaceElevated, t)!;
+
+    Widget dayHeader() => Padding(
+          padding: const EdgeInsets.only(top: 8, bottom: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 6,
+                height: 24,
+                decoration: BoxDecoration(
+                  color: headerShimmer,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 80,
+                height: 22,
+                decoration: BoxDecoration(
+                  color: headerShimmer,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ],
+          ),
+        );
+
+    Widget matchCard({double widthFactor = 1.0}) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: FractionallySizedBox(
+            widthFactor: widthFactor,
+            alignment: Alignment.centerLeft,
+            child: Container(
+              height: 158,
+              decoration: BoxDecoration(
+                color: shimmer,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: AppColors.glassBorder),
+              ),
+            ),
+          ),
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        dayHeader(),
+        matchCard(),
+        matchCard(widthFactor: 0.95),
+        const SizedBox(height: 12),
+        dayHeader(),
+        matchCard(),
+      ],
+    );
+  }
+}
+
 // ─── 요일 헤더 ────────────────────────────────────────────────────────────────
 
 class _ScheduleDayHeader extends StatelessWidget {
@@ -527,7 +614,7 @@ class _ScheduleDayHeader extends StatelessWidget {
               ),
             ),
             child: Text(
-              '$count Matches',
+              '$count경기',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: dayColor,
                 fontWeight: FontWeight.w900,
