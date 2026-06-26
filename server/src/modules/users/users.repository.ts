@@ -75,6 +75,22 @@ export class UsersRepository {
     });
   }
 
+  async updateProfile(
+    userId: string,
+    data: { nickname?: string; favoriteTeamId?: string },
+  ): Promise<UserEntity | null> {
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data,
+        select: userSelect,
+      });
+      return user as UserEntity;
+    } catch {
+      return null;
+    }
+  }
+
   async deleteAccountData(userId: string): Promise<boolean> {
     const deletedUsersCount = await this.prisma.$transaction(async (tx) => {
       const deletedUsers = await tx.user.deleteMany({

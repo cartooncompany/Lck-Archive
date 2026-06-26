@@ -38,6 +38,7 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
   bool _refreshAfterCurrentLoad = false;
 
   late final AnimationController _pulseController;
+  late final ScrollController _scrollController;
 
   @override
   void initState() {
@@ -46,6 +47,17 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
+    _scrollController = ScrollController()..addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    final pos = _scrollController.position;
+    if (pos.pixels >= pos.maxScrollExtent - 300 && !_isLoadingMore) {
+      final hasMore = _currentPage < _totalPages;
+      if (hasMore) {
+        unawaited(_fetchNews());
+      }
+    }
   }
 
   @override
@@ -62,6 +74,7 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
   void dispose() {
     _searchDebounce?.cancel();
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -71,11 +84,10 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final hasMore = _currentPage < _totalPages;
-
     return RefreshIndicator(
       onRefresh: () => _fetchNews(reset: true, force: true),
       child: ListView(
+        controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.screen,
@@ -107,7 +119,7 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  _buildResults(context, hasMore),
+                  _buildResults(context),
                 ],
               ),
             ),
@@ -583,7 +595,7 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildResults(BuildContext context, bool hasMore) {
+  Widget _buildResults(BuildContext context) {
     if (_isLoading && _articles.isEmpty) {
       return _buildSkeletonList(context);
     }
@@ -648,39 +660,16 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
             ),
           ),
         ],
-        if (hasMore || _isLoadingMore)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.surface.withValues(alpha: 0.65),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.glassBorderMuted),
-              ),
-              child: OutlinedButton.icon(
-                onPressed: _isLoadingMore ? null : () => _fetchNews(),
-                icon: _isLoadingMore
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppColors.accent,
-                          ),
-                        ),
-                      )
-                    : const Icon(Icons.expand_more_rounded),
-                label: Text(_isLoadingMore ? '불러오는 중...' : '기사 더 불러오기'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.accent,
-                  side: const BorderSide(color: AppColors.accent, width: 1.2),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+        if (_isLoadingMore)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.5,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.accent),
                 ),
               ),
             ),

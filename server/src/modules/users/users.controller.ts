@@ -1,12 +1,15 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -23,6 +26,7 @@ import {
 import { AccessTokenGuard } from '../auth/access-token.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AccessTokenPayload } from '../auth/interfaces/token-payload.interface';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserProfileResponseDto } from './responses/user-profile.response';
 import { UsersService } from './users.service';
 
@@ -59,6 +63,36 @@ export class UsersController {
     @CurrentUser() user: AccessTokenPayload,
   ): Promise<UserProfileResponseDto> {
     return this.usersService.getMyProfile(user.sub);
+  }
+
+  @Patch('me')
+  @UseGuards(AccessTokenGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: '내 프로필 수정',
+    description: '닉네임 또는 응원팀을 변경합니다. 두 필드 모두 선택적입니다.',
+  })
+  @ApiOkResponse({
+    type: UserProfileResponseDto,
+    description: '변경된 프로필 정보',
+  })
+  @ApiBadRequestResponse({
+    description: '변경할 필드가 없거나 teamId가 유효하지 않습니다.',
+    type: ErrorResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: '액세스 토큰이 없거나 만료되었거나 형식이 올바르지 않습니다.',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: '토큰의 사용자 id에 해당하는 사용자를 찾을 수 없습니다.',
+    type: ErrorResponseDto,
+  })
+  updateMyProfile(
+    @CurrentUser() user: AccessTokenPayload,
+    @Body() dto: UpdateProfileDto,
+  ): Promise<UserProfileResponseDto> {
+    return this.usersService.updateMyProfile(user.sub, dto);
   }
 
   @Delete('me')
