@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,13 +19,22 @@ class TeamsPage extends StatefulWidget {
 }
 
 class _TeamsPageState extends State<TeamsPage> {
+  static const _kDebounce = Duration(milliseconds: 350);
+
   String _query = '';
   Future<List<TeamSummary>>? _teamsFuture;
+  Timer? _debounce;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _teamsFuture ??= _loadTeams();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 
   @override
@@ -56,9 +67,13 @@ class _TeamsPageState extends State<TeamsPage> {
                   AppSearchField(
                     hintText: '팀명으로 검색',
                     onChanged: (value) {
-                      setState(() {
-                        _query = value.trim();
-                        _teamsFuture = _loadTeams();
+                      _debounce?.cancel();
+                      _debounce = Timer(_kDebounce, () {
+                        if (!mounted) return;
+                        setState(() {
+                          _query = value.trim();
+                          _teamsFuture = _loadTeams();
+                        });
                       });
                     },
                   ),
@@ -68,7 +83,17 @@ class _TeamsPageState extends State<TeamsPage> {
                     const Center(child: CircularProgressIndicator())
                   else if (teams.isEmpty)
                     _TeamsMessage(message: '검색 결과가 없습니다.')
-                  else
+                  else ...[
+                    if (_query.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(
+                          '${teams.length}개 팀',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
                     ...teams.map(
                       (team) => Padding(
                         padding: const EdgeInsets.only(bottom: 12),
@@ -78,6 +103,7 @@ class _TeamsPageState extends State<TeamsPage> {
                         ),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),

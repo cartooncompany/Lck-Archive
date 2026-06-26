@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -26,15 +28,23 @@ class _PlayersPageState extends State<PlayersPage> {
     'ADC',
     'SUP',
   ];
+  static const _kDebounce = Duration(milliseconds: 350);
 
   String _query = '';
   String _selectedPosition = 'ALL';
   Future<List<PlayerProfile>>? _playersFuture;
+  Timer? _debounce;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _playersFuture ??= _loadPlayers();
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
   }
 
   @override
@@ -67,9 +77,13 @@ class _PlayersPageState extends State<PlayersPage> {
                   AppSearchField(
                     hintText: '선수명 또는 팀명 검색',
                     onChanged: (value) {
-                      setState(() {
-                        _query = value.trim();
-                        _playersFuture = _loadPlayers();
+                      _debounce?.cancel();
+                      _debounce = Timer(_kDebounce, () {
+                        if (!mounted) return;
+                        setState(() {
+                          _query = value.trim();
+                          _playersFuture = _loadPlayers();
+                        });
                       });
                     },
                   ),
@@ -92,7 +106,18 @@ class _PlayersPageState extends State<PlayersPage> {
                   if (snapshot.connectionState == ConnectionState.waiting &&
                       players.isEmpty)
                     const Center(child: CircularProgressIndicator())
-                  else if (snapshot.hasError)
+                  else if (players.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        '${players.length}명',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (snapshot.hasError)
                     AppStatusCard(
                       title: '선수 기록을 불러오지 못했습니다.',
                       message: snapshot.error?.toString() ?? '일시적인 네트워크 장애일 수 있습니다.',
