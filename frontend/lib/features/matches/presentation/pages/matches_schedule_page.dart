@@ -21,26 +21,32 @@ class MatchesSchedulePage extends StatefulWidget {
 }
 
 class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
+  int _weekOffset = 0;
   Future<List<LckScheduledMatch>>? _matchesFuture;
   bool _hasLoadedPredictions = false;
   Map<String, String> _matchPredictions = <String, String>{};
+
+  ({DateTime start, DateTime end}) get _currentWeekRange =>
+      _weekRangeForOffset(_weekOffset);
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _matchesFuture ??= _loadSchedule();
 
-    if (_hasLoadedPredictions) {
-      return;
-    }
+    if (_hasLoadedPredictions) return;
     _hasLoadedPredictions = true;
     unawaited(_loadPredictions());
   }
 
   @override
   Widget build(BuildContext context) {
+    final range = _currentWeekRange;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('이번 주 경기 일정')),
+      appBar: AppBar(
+        title: Text(_weekOffset == 0 ? '이번 주 경기 일정' : '경기 일정'),
+      ),
       body: RefreshIndicator(
         onRefresh: _refreshSchedule,
         child: FutureBuilder<List<LckScheduledMatch>>(
@@ -50,23 +56,47 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
 
             if (snapshot.connectionState == ConnectionState.waiting &&
                 matches.isEmpty) {
-              return const Center(child: CircularProgressIndicator());
+              return Column(
+                children: [
+                  _WeekNavigator(
+                    weekOffset: _weekOffset,
+                    range: range,
+                    onPrev: _goToPrevWeek,
+                    onNext: _goToNextWeek,
+                    onReset: _weekOffset != 0 ? _goToCurrentWeek : null,
+                  ),
+                  const Expanded(
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ],
+              );
             }
 
             if (snapshot.hasError && matches.isEmpty) {
-              final errorMsg = snapshot.error?.toString() ?? '일정을 불러오는 중 오류가 발생했습니다.';
+              final errorMsg =
+                  snapshot.error?.toString() ?? '일정을 불러오는 중 오류가 발생했습니다.';
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.only(top: 20, bottom: 32),
+                padding: const EdgeInsets.only(bottom: 32),
                 children: [
+                  _WeekNavigator(
+                    weekOffset: _weekOffset,
+                    range: range,
+                    onPrev: _goToPrevWeek,
+                    onNext: _goToNextWeek,
+                    onReset: _weekOffset != 0 ? _goToCurrentWeek : null,
+                  ),
                   ResponsivePageContainer(
                     maxWidth: 1040,
-                    child: AppStatusCard(
-                      title: '경기 일정을 불러오지 못했습니다.',
-                      message: errorMsg,
-                      icon: Icons.error_outline_rounded,
-                      actionLabel: '새로고침 시도',
-                      onActionTap: _refreshSchedule,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 20),
+                      child: AppStatusCard(
+                        title: '경기 일정을 불러오지 못했습니다.',
+                        message: errorMsg,
+                        icon: Icons.error_outline_rounded,
+                        actionLabel: '새로고침 시도',
+                        onActionTap: _refreshSchedule,
+                      ),
                     ),
                   ),
                 ],
@@ -76,14 +106,24 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
             if (matches.isEmpty) {
               return ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.only(top: 20, bottom: 32),
-                children: const [
-                  ResponsivePageContainer(
+                padding: const EdgeInsets.only(bottom: 32),
+                children: [
+                  _WeekNavigator(
+                    weekOffset: _weekOffset,
+                    range: range,
+                    onPrev: _goToPrevWeek,
+                    onNext: _goToNextWeek,
+                    onReset: _weekOffset != 0 ? _goToCurrentWeek : null,
+                  ),
+                  const ResponsivePageContainer(
                     maxWidth: 1040,
-                    child: AppStatusCard(
-                      title: '이번 주에 예정된 경기가 없습니다.',
-                      message: '새 일정이 등록되면 이 화면에 요일별로 정리됩니다.',
-                      icon: Icons.calendar_today_rounded,
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 20),
+                      child: AppStatusCard(
+                        title: '이 주에 예정된 경기가 없습니다.',
+                        message: '다른 주를 선택하거나 새 일정이 등록될 때까지 기다려 주세요.',
+                        icon: Icons.calendar_today_rounded,
+                      ),
                     ),
                   ),
                 ],
@@ -92,37 +132,42 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
 
             final groupedMatches = _groupMatchesByDay(matches);
             final dayEntries = groupedMatches.entries.toList()
-              ..sort((left, right) => left.key.compareTo(right.key));
+              ..sort((l, r) => l.key.compareTo(r.key));
 
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.only(top: 12, bottom: 32),
+              padding: const EdgeInsets.only(bottom: 32),
               children: [
+                _WeekNavigator(
+                  weekOffset: _weekOffset,
+                  range: range,
+                  onPrev: _goToPrevWeek,
+                  onNext: _goToNextWeek,
+                  onReset: _weekOffset != 0 ? _goToCurrentWeek : null,
+                ),
                 ResponsivePageContainer(
                   maxWidth: 1040,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox(height: 12),
                       const SectionHeader(title: '요일별 경기 일정'),
                       const SizedBox(height: 8),
                       Text(
-                        '이번 주에 열리는 경기를 날짜별로 모아서 볼 수 있습니다.',
+                        '날짜별로 모아서 볼 수 있습니다.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 24),
                       ...dayEntries.expand((entry) {
-                        final sectionChildren = <Widget>[
+                        return [
                           _ScheduleDayHeader(
                             date: entry.key,
                             count: entry.value.length,
                           ),
                           const SizedBox(height: 14),
-                        ];
-
-                        sectionChildren.addAll(
-                          entry.value.map(
+                          ...entry.value.map(
                             (match) => Padding(
                               padding: const EdgeInsets.only(bottom: 12),
                               child: ScheduledMatchTile(
@@ -131,17 +176,16 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
                                     _matchPredictions[match.id],
                                 onPredictWinner: (teamId) =>
                                     _handleMatchPrediction(
-                                      matchId: match.id,
-                                      teamId: teamId,
-                                    ),
+                                  matchId: match.id,
+                                  teamId: teamId,
+                                ),
                                 onOpenDetail: () =>
                                     _openMatchDetail(context, match.id),
                               ),
                             ),
                           ),
-                        );
-                        sectionChildren.add(const SizedBox(height: 12));
-                        return sectionChildren;
+                          const SizedBox(height: 12),
+                        ];
                       }),
                     ],
                   ),
@@ -154,22 +198,33 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
     );
   }
 
-  Future<List<LckScheduledMatch>> _loadSchedule() async {
+  ({DateTime start, DateTime end}) _weekRangeForOffset(int offset) {
     final now = DateTime.now();
-    final startOfWeek = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
-    final endOfWeek = DateTime(now.year, now.month, now.day, 23, 59, 59)
-        .add(Duration(days: 7 - now.weekday));
+    final monday = DateTime(now.year, now.month, now.day)
+        .subtract(Duration(days: now.weekday - 1))
+        .add(Duration(days: offset * 7));
+    final sunday = DateTime(
+      monday.year,
+      monday.month,
+      monday.day,
+      23,
+      59,
+      59,
+    ).add(const Duration(days: 6));
+    return (start: monday, end: sunday);
+  }
 
+  Future<List<LckScheduledMatch>> _loadSchedule() async {
+    final range = _currentWeekRange;
     final dependencies = AppDependenciesScope.of(context);
     final matches = await dependencies.matchesRepository.getScheduledMatches(
-      from: startOfWeek.toUtc(),
-      to: endOfWeek.toUtc(),
+      from: range.start.toUtc(),
+      to: range.end.toUtc(),
     );
 
     return matches.where((match) {
-      final scheduledAt = match.scheduledAt.toLocal();
-      return !scheduledAt.isBefore(startOfWeek) && !scheduledAt.isAfter(endOfWeek);
+      final local = match.scheduledAt.toLocal();
+      return !local.isBefore(range.start) && !local.isAfter(range.end);
     }).toList();
   }
 
@@ -181,12 +236,25 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
     await future;
   }
 
+  void _goToPrevWeek() => setState(() {
+        _weekOffset--;
+        _matchesFuture = _loadSchedule();
+      });
+
+  void _goToNextWeek() => setState(() {
+        _weekOffset++;
+        _matchesFuture = _loadSchedule();
+      });
+
+  void _goToCurrentWeek() => setState(() {
+        _weekOffset = 0;
+        _matchesFuture = _loadSchedule();
+      });
+
   Future<void> _loadPredictions() async {
     final storage = AppDependenciesScope.of(context).localStorage;
     final predictions = await loadMatchPredictions(storage);
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     setState(() {
       _matchPredictions = predictions;
     });
@@ -225,9 +293,7 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
     }
 
     for (final entry in grouped.values) {
-      entry.sort(
-        (left, right) => left.scheduledAt.compareTo(right.scheduledAt),
-      );
+      entry.sort((l, r) => l.scheduledAt.compareTo(r.scheduledAt));
     }
 
     return grouped;
@@ -237,6 +303,159 @@ class _MatchesSchedulePageState extends State<MatchesSchedulePage> {
     context.pushNamed(AppRouteNames.matchDetail, extra: matchId);
   }
 }
+
+// ─── 주간 네비게이터 ──────────────────────────────────────────────────────────
+
+class _WeekNavigator extends StatelessWidget {
+  const _WeekNavigator({
+    required this.weekOffset,
+    required this.range,
+    required this.onPrev,
+    required this.onNext,
+    this.onReset,
+  });
+
+  final int weekOffset;
+  final ({DateTime start, DateTime end}) range;
+  final VoidCallback onPrev;
+  final VoidCallback onNext;
+  final VoidCallback? onReset;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = _rangeLabel(range.start, range.end);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.divider,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          _NavButton(
+            icon: Icons.chevron_left_rounded,
+            onTap: onPrev,
+            tooltip: '이전 주',
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              children: [
+                if (weekOffset == 0)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: AppColors.accent.withValues(alpha: 0.4),
+                      ),
+                    ),
+                    child: Text(
+                      '이번 주',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.accent,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                if (onReset != null) ...[
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onTap: onReset,
+                    child: Text(
+                      '이번 주로 이동',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppColors.accent,
+                        decoration: TextDecoration.underline,
+                        decorationColor: AppColors.accent,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          _NavButton(
+            icon: Icons.chevron_right_rounded,
+            onTap: onNext,
+            tooltip: '다음 주',
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _rangeLabel(DateTime start, DateTime end) {
+    if (start.month == end.month) {
+      return '${start.year}.${_d(start.month)}.${_d(start.day)} – ${_d(end.day)}';
+    }
+    if (start.year == end.year) {
+      return '${start.year}.${_d(start.month)}.${_d(start.day)} – ${_d(end.month)}.${_d(end.day)}';
+    }
+    return '${start.year}.${_d(start.month)}.${_d(start.day)} – ${end.year}.${_d(end.month)}.${_d(end.day)}';
+  }
+
+  String _d(int v) => v.toString().padLeft(2, '0');
+}
+
+class _NavButton extends StatelessWidget {
+  const _NavButton({
+    required this.icon,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceElevated,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.divider),
+          ),
+          child: Icon(
+            icon,
+            size: 20,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── 요일 헤더 ────────────────────────────────────────────────────────────────
 
 class _ScheduleDayHeader extends StatelessWidget {
   const _ScheduleDayHeader({required this.date, required this.count});
