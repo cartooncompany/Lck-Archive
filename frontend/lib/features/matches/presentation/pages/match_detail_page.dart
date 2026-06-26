@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../app/app_dependencies_scope.dart';
@@ -21,17 +20,31 @@ class MatchDetailPage extends StatefulWidget {
   State<MatchDetailPage> createState() => _MatchDetailPageState();
 }
 
-class _MatchDetailPageState extends State<MatchDetailPage> {
+class _MatchDetailPageState extends State<MatchDetailPage>
+    with TickerProviderStateMixin {
   LckMatchDetail? _match;
   bool _isLoading = false;
   String? _error;
 
+  TabController? _tabController;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_match == null) {
+    if (_match == null && !_isLoading) {
       _fetchMatchDetail();
     }
+  }
+
+  @override
+  void dispose() {
+    _tabController?.dispose();
+    super.dispose();
+  }
+
+  void _rebuildTabController(int gameCount) {
+    _tabController?.dispose();
+    _tabController = TabController(length: 1 + gameCount, vsync: this);
   }
 
   Future<void> _fetchMatchDetail() async {
@@ -44,6 +57,7 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
       final repository = AppDependenciesScope.of(context).matchesRepository;
       final match = await repository.getMatchDetail(widget.matchId);
       if (mounted) {
+        _rebuildTabController(match.games.length);
         setState(() {
           _match = match;
           _isLoading = false;
@@ -62,69 +76,64 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
   @override
   Widget build(BuildContext context) {
     final match = _match;
+    final tabController = _tabController;
+
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('경기 상세')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null || match == null || tabController == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('경기 상세')),
+        body: ListView(
+          padding: const EdgeInsets.only(top: 20, bottom: 32),
+          children: [
+            ResponsivePageContainer(
+              maxWidth: 1040,
+              child: AppStatusCard(
+                title: '경기 정보를 불러오지 못했습니다.',
+                message: _error ?? '데이터를 불러오는 중 오류가 발생했습니다.',
+                icon: Icons.error_outline_rounded,
+                actionLabel: '다시 시도',
+                onActionTap: _fetchMatchDetail,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final tabs = <Tab>[
+      const Tab(text: '개요'),
+      ...match.games.map((g) => Tab(text: '${g.sequenceNumber}세트')),
+    ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('경기 상세')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null || match == null
-              ? ListView(
-                  padding: const EdgeInsets.only(top: 20, bottom: 32),
-                  children: [
-                    ResponsivePageContainer(
-                      maxWidth: 1040,
-                      child: AppStatusCard(
-                        title: '경기 정보를 불러오지 못했습니다.',
-                        message: _error ?? '데이터를 불러오는 중 오류가 발생했습니다.',
-                        icon: Icons.error_outline_rounded,
-                        actionLabel: '다시 시도',
-                        onActionTap: _fetchMatchDetail,
-                      ),
-                    ),
-                  ],
-                )
-              : ListView(
-                  padding: const EdgeInsets.only(top: 12, bottom: 32),
-                  children: [
-                    ResponsivePageContainer(
-                      maxWidth: 1080,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _MatchHeader(match: match, onOpenVod: _openVod),
-                          const SizedBox(height: 24),
-                          _ParticipantsSection(match: match),
-                          const SizedBox(height: 24),
-                          const SectionHeader(title: '세트별 데이터'),
-                          const SizedBox(height: 12),
-                          if (match.games.isEmpty)
-                            AppStatusCard(
-                              title: match.status == 'SCHEDULED'
-                                  ? '경기 예정 상태입니다.'
-                                  : '세트 데이터가 없습니다.',
-                              message: match.status == 'SCHEDULED'
-                                  ? '아직 치러지지 않은 경기입니다. 경기가 시작되면 상세 데이터가 수집됩니다.'
-                                  : 'GRID Series State에서 세트별 상세 정보가 수집되면 이 영역에 표시됩니다.',
-                              icon: match.status == 'SCHEDULED'
-                                  ? Icons.schedule_rounded
-                                  : Icons.analytics_outlined,
-                            )
-                          else
-                            ...match.games.map(
-                              (game) => Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: _GameCard(
-                                  game: game,
-                                  homeTeam: match.homeTeam,
-                                  awayTeam: match.awayTeam,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+      appBar: AppBar(
+        title: Text('${match.homeTeam.shortName} vs ${match.awayTeam.shortName}'),
+        bottom: TabBar(
+          controller: tabController,
+          isScrollable: tabs.length > 4,
+          tabAlignment: tabs.length > 4 ? TabAlignment.start : TabAlignment.fill,
+          tabs: tabs,
+        ),
+      ),
+      body: TabBarView(
+        controller: tabController,
+        children: [
+          _OverviewTab(match: match, onOpenVod: _openVod),
+          ...match.games.map(
+            (game) => _GameTab(
+              game: game,
+              homeTeam: match.homeTeam,
+              awayTeam: match.awayTeam,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -149,13 +158,86 @@ class _MatchDetailPageState extends State<MatchDetailPage> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
-
-
 }
+
+// ─── 개요 탭 ─────────────────────────────────────────────────────────────────
+
+class _OverviewTab extends StatelessWidget {
+  const _OverviewTab({required this.match, required this.onOpenVod});
+
+  final LckMatchDetail match;
+  final ValueChanged<String> onOpenVod;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(top: 16, bottom: 32),
+      children: [
+        ResponsivePageContainer(
+          maxWidth: 1080,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _MatchHeader(match: match, onOpenVod: onOpenVod),
+              const SizedBox(height: 24),
+              _ParticipantsSection(match: match),
+              if (match.games.isEmpty) ...[
+                const SizedBox(height: 24),
+                AppStatusCard(
+                  title: match.status == 'SCHEDULED'
+                      ? '경기 예정 상태입니다.'
+                      : '세트 데이터가 없습니다.',
+                  message: match.status == 'SCHEDULED'
+                      ? '아직 치러지지 않은 경기입니다. 경기가 시작되면 상세 데이터가 수집됩니다.'
+                      : 'GRID Series State에서 세트별 상세 정보가 수집되면 이 영역에 표시됩니다.',
+                  icon: match.status == 'SCHEDULED'
+                      ? Icons.schedule_rounded
+                      : Icons.analytics_outlined,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── 세트 탭 ─────────────────────────────────────────────────────────────────
+
+class _GameTab extends StatelessWidget {
+  const _GameTab({
+    required this.game,
+    required this.homeTeam,
+    required this.awayTeam,
+  });
+
+  final LckMatchGame game;
+  final LckScheduledTeam homeTeam;
+  final LckScheduledTeam awayTeam;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.only(top: 16, bottom: 32),
+      children: [
+        ResponsivePageContainer(
+          maxWidth: 1080,
+          child: _GameCard(
+            game: game,
+            homeTeam: homeTeam,
+            awayTeam: awayTeam,
+            initiallyExpanded: true,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── 경기 헤더 ────────────────────────────────────────────────────────────────
 
 class _MatchHeader extends StatelessWidget {
   const _MatchHeader({required this.match, required this.onOpenVod});
@@ -474,11 +556,13 @@ class _GameCard extends StatelessWidget {
     required this.game,
     required this.homeTeam,
     required this.awayTeam,
+    this.initiallyExpanded,
   });
 
   final LckMatchGame game;
   final LckScheduledTeam homeTeam;
   final LckScheduledTeam awayTeam;
+  final bool? initiallyExpanded;
 
   @override
   Widget build(BuildContext context) {
@@ -498,7 +582,7 @@ class _GameCard extends StatelessWidget {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          initiallyExpanded: game.sequenceNumber == 1,
+          initiallyExpanded: initiallyExpanded ?? (game.sequenceNumber == 1),
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           title: Text(
@@ -1256,17 +1340,6 @@ String _statusLabel(String status) {
     default:
       return '예정';
   }
-}
-
-String _draftTypeLabel(String type) {
-  final normalized = type.toLowerCase();
-  if (normalized.contains('ban')) {
-    return 'BAN';
-  }
-  if (normalized.contains('pick')) {
-    return 'PICK';
-  }
-  return type.toUpperCase();
 }
 
 String _formatNumber(int value) {
