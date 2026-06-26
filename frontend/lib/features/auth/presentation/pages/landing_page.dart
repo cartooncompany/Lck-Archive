@@ -21,10 +21,6 @@ class LandingPage extends StatelessWidget {
           session.showLogin();
           context.go(AppRoutePaths.login);
         },
-        onGuest: () {
-          session.continueAsGuest();
-          context.go(AppRoutePaths.home);
-        },
         onSignUp: () {
           session.showSignUp();
           context.go(AppRoutePaths.signup);

@@ -63,7 +63,7 @@ class _SettingsContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
-    final favoriteTeam = session.isGuest ? null : FavoriteTeamScope.of(context).favoriteTeam;
+    final favoriteTeam = session.isSignedIn ? FavoriteTeamScope.of(context).favoriteTeam : null;
 
     return ListView(
       padding: const EdgeInsets.only(top: 24, bottom: 120),

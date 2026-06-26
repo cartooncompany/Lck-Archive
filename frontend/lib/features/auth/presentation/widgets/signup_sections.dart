@@ -117,12 +117,10 @@ class _BounceActionState extends State<_BounceAction>
 class SignupHeroSection extends StatelessWidget {
   const SignupHeroSection({
     required this.onBack,
-    required this.onGuest,
     super.key,
   });
 
   final VoidCallback onBack;
-  final VoidCallback onGuest;
 
   @override
   Widget build(BuildContext context) {
@@ -176,29 +174,6 @@ class SignupHeroSection extends StatelessWidget {
                     color: AppColors.textSecondary,
                     fontSize: 15,
                     height: 1.55,
-                  ),
-                ),
-                const SizedBox(height: 28),
-                // 게스트 버튼 (고급 텍스트 버튼)
-                _BounceAction(
-                  onTap: onGuest,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 10,
-                    ),
-                    child: Text(
-                      '게스트로 먼저 둘러보기',
-                      style: textTheme.bodyLarge?.copyWith(
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        decoration: TextDecoration.underline,
-                        decorationColor: AppColors.textSecondary.withValues(
-                          alpha: 0.4,
-                        ),
-                      ),
-                    ),
                   ),
                 ),
               ],

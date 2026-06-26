@@ -74,10 +74,6 @@ class _SignupPageState extends State<SignupPage> {
           session.showLogin();
           context.go(AppRoutePaths.login);
         },
-        onGuest: () {
-          session.continueAsGuest();
-          context.go(AppRoutePaths.home);
-        },
       ),
       panel: SignupFormPanel(
         formKey: _formKey,

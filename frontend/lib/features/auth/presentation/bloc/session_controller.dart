@@ -14,21 +14,17 @@ class SessionController extends ChangeNotifier {
 
   SessionStage _stage = SessionStage.loading;
   AuthSession? _session;
-  bool _isGuest = false;
   bool _isBusy = false;
   String? _errorMessage;
 
   SessionStage get stage => _stage;
   AuthSession? get session => _session;
   bool get isBusy => _isBusy;
-  bool get isGuest => _isGuest;
   bool get isSignedIn => _session != null;
   bool get isAuthenticated => _stage == SessionStage.authenticated;
   String? get errorMessage => _errorMessage;
-  String? get userEmail =>
-      _session?.user.email ?? (_isGuest ? 'guest@lckarchive.app' : null);
-  String? get userNickname =>
-      _session?.user.nickname ?? (_isGuest ? '게스트 사용자' : null);
+  String? get userEmail => _session?.user.email;
+  String? get userNickname => _session?.user.nickname;
 
   Future<void> initialize() async {
     _stage = SessionStage.loading;
@@ -37,13 +33,11 @@ class SessionController extends ChangeNotifier {
 
     try {
       _session = await _authRepository.restoreSession();
-      _isGuest = false;
       _stage = _session != null
           ? SessionStage.authenticated
           : SessionStage.landing;
     } catch (error) {
       _session = null;
-      _isGuest = false;
       _stage = SessionStage.landing;
       _errorMessage = _messageFromError(error);
     }
@@ -59,27 +53,17 @@ class SessionController extends ChangeNotifier {
 
   void showLanding() {
     _clearError();
-    _isGuest = false;
     _setStage(SessionStage.landing);
   }
 
   void showLogin() {
     _clearError();
-    _isGuest = false;
     _setStage(SessionStage.login);
   }
 
   void showSignUp() {
     _clearError();
-    _isGuest = false;
     _setStage(SessionStage.signUp);
-  }
-
-  void continueAsGuest() {
-    _clearError();
-    _session = null;
-    _isGuest = true;
-    _setStage(SessionStage.authenticated);
   }
 
   Future<bool> signIn({required String email, required String password}) {
@@ -89,7 +73,6 @@ class SessionController extends ChangeNotifier {
         password: password,
       );
       _session = session;
-      _isGuest = false;
       _stage = SessionStage.authenticated;
     });
   }
@@ -108,7 +91,6 @@ class SessionController extends ChangeNotifier {
         favoriteTeamId: favoriteTeamId,
       );
       _session = session;
-      _isGuest = false;
       _stage = SessionStage.authenticated;
     });
   }
@@ -134,7 +116,6 @@ class SessionController extends ChangeNotifier {
     try {
       await _authRepository.signOut();
       _session = null;
-      _isGuest = false;
       _errorMessage = null;
       _stage = SessionStage.landing;
     } finally {
@@ -149,13 +130,11 @@ class SessionController extends ChangeNotifier {
     try {
       await _authRepository.deleteAccount();
       _session = null;
-      _isGuest = false;
       _stage = SessionStage.landing;
       return true;
     } catch (error) {
       if (error is AppFailure && error.isUnauthorized) {
         _session = null;
-        _isGuest = false;
         _stage = SessionStage.landing;
       }
       _errorMessage = _messageFromError(error);

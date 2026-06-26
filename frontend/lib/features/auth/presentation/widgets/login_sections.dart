@@ -114,14 +114,12 @@ class _BounceActionState extends State<_BounceAction>
 class LoginHeroSection extends StatelessWidget {
   const LoginHeroSection({
     required this.onBack,
-    required this.onGuest,
     required this.onSignUp,
     this.showBackButton = true,
     super.key,
   });
 
   final VoidCallback onBack;
-  final VoidCallback onGuest;
   final VoidCallback onSignUp;
   final bool showBackButton;
 
@@ -182,58 +180,27 @@ class LoginHeroSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 28),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    // 회원가입 버튼 (글래스 아웃라인 스타일)
-                    _BounceAction(
-                      onTap: onSignUp,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 22,
-                          vertical: 13,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.glassBorder),
-                        ),
-                        child: Text(
-                          '회원가입',
-                          style: textTheme.titleMedium?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
-                          ),
-                        ),
+                _BounceAction(
+                  onTap: onSignUp,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 13,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.glassBorder),
+                    ),
+                    child: Text(
+                      '회원가입',
+                      style: textTheme.titleMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 15,
                       ),
                     ),
-
-                    // 게스트로 둘러보기 (텍스트 버튼)
-                    _BounceAction(
-                      onTap: onGuest,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 10,
-                        ),
-                        child: Text(
-                          '게스트로 둘러보기',
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            decoration: TextDecoration.underline,
-                            decorationColor: AppColors.textSecondary.withValues(
-                              alpha: 0.4,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
@@ -256,7 +223,6 @@ class LoginFormPanel extends StatelessWidget {
     required this.onTogglePassword,
     required this.onSubmit,
     required this.onShowSignUp,
-    required this.onGuest,
     super.key,
   });
 
@@ -270,7 +236,6 @@ class LoginFormPanel extends StatelessWidget {
   final VoidCallback onTogglePassword;
   final VoidCallback onSubmit;
   final VoidCallback onShowSignUp;
-  final VoidCallback onGuest;
 
   @override
   Widget build(BuildContext context) {
@@ -285,56 +250,25 @@ class LoginFormPanel extends StatelessWidget {
             title: '로그인',
             description: '계정의 이메일과 비밀번호를 입력하세요.',
             errorMessage: errorMessage,
-            footer: Column(
-              children: [
-                Row(
-                  children: [
-                    // 회원가입 아웃라인 버튼
-                    Expanded(
-                      child: _BounceAction(
-                        onTap: isBusy ? () {} : onShowSignUp,
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: AppColors.surface.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: AppColors.glassBorder),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '회원가입',
-                            style: textTheme.titleMedium?.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // 게스트 버튼
-                    Expanded(
-                      child: _BounceAction(
-                        onTap: isBusy ? () {} : onGuest,
-                        child: Container(
-                          height: 48,
-                          color: Colors.transparent,
-                          alignment: Alignment.center,
-                          child: Text(
-                            '게스트',
-                            style: textTheme.bodyLarge?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+            footer: _BounceAction(
+              onTap: isBusy ? () {} : onShowSignUp,
+              child: Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.surface.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.glassBorder),
                 ),
-              ],
+                alignment: Alignment.center,
+                child: Text(
+                  '회원가입',
+                  style: textTheme.titleMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
             ),
             children: [
               // 이메일 필드

@@ -122,8 +122,8 @@ class _HomePageState extends State<HomePage>
 
   @override
   Widget build(BuildContext context) {
-    final isGuest = SessionScope.maybeOf(context)?.isGuest ?? false;
-    final favoriteTeam = isGuest ? null : FavoriteTeamScope.of(context).favoriteTeam;
+    final isSignedIn = SessionScope.maybeOf(context)?.isSignedIn ?? false;
+    final favoriteTeam = isSignedIn ? FavoriteTeamScope.of(context).favoriteTeam : null;
     if (_loadedTeamId != favoriteTeam?.id || _homeFuture == null) {
       _loadedTeamId = favoriteTeam?.id;
       _homeFuture = _loadHomeData(context, favoriteTeam);
@@ -191,7 +191,7 @@ class _HomePageState extends State<HomePage>
                           else
                             _FavoriteTeamEmptyCard(
                               onTap: () {
-                                if (isGuest) {
+                                if (!isSignedIn) {
                                   LoginRequireDialog.show(context);
                                 } else {
                                   _showFavoriteTeamPicker(context);

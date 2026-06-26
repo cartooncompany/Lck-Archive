@@ -55,10 +55,6 @@ class _LoginPageState extends State<LoginPage> {
         showBackButton: !widget.fromSettings,
         onBack: () {
           session.showLanding();
-          context.go(AppRoutePaths.landing);
-        },
-        onGuest: () {
-          session.continueAsGuest();
           context.go(AppRoutePaths.home);
         },
         onSignUp: () {
@@ -83,10 +79,6 @@ class _LoginPageState extends State<LoginPage> {
         onShowSignUp: () {
           session.showSignUp();
           context.go(AppRoutePaths.signup);
-        },
-        onGuest: () {
-          session.continueAsGuest();
-          context.go(AppRoutePaths.home);
         },
       ),
     );

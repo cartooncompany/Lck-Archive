@@ -77,7 +77,7 @@ class LoginRequireDialog extends StatelessWidget {
                   const SizedBox(height: 12),
                   // 안내 메시지
                   Text(
-                    '게스트 세션으로 둘러보는 중에는 로그인이 필요한 기능을 확인할 수 없습니다. 지금 바로 로그인하여 더 풍성한 기능을 체험해 보세요!',
+                    '이 기능은 로그인이 필요합니다. 지금 바로 로그인하여 응원팀 설정과 개인화 기능을 이용해 보세요!',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppColors.textSecondary,

@@ -15,8 +15,8 @@ class MyPagePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
-    final favoriteTeam = session.isGuest ? null : FavoriteTeamScope.of(context).favoriteTeam;
-    final nickname = session.userNickname ?? '게스트 사용자';
+    final favoriteTeam = session.isSignedIn ? FavoriteTeamScope.of(context).favoriteTeam : null;
+    final nickname = session.userNickname ?? '로그인이 필요합니다';
     final email = session.userEmail ?? '로그인하지 않음';
 
     return ListView(
@@ -53,7 +53,7 @@ class MyPagePage extends StatelessWidget {
                     Text(
                       session.isSignedIn
                           ? '서버에서 가져온 내 프로필과 현재 응원팀 기준을 한 화면에서 확인합니다.'
-                          : '게스트 세션으로 둘러보는 중입니다. 로그인하면 내 프로필과 토큰 기반 세션이 저장됩니다.',
+                          : '로그인하면 내 프로필과 응원팀 기준이 저장됩니다.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -78,7 +78,7 @@ class MyPagePage extends StatelessWidget {
                               Text(
                                 session.isSignedIn
                                     ? '서버에서 가져온 내 프로필과 현재 응원팀 기준을 한 화면에서 확인합니다.'
-                                    : '게스트 세션으로 둘러보는 중입니다. 로그인하면 내 프로필과 토큰 기반 세션이 저장됩니다.',
+                                    : '로그인하면 내 프로필과 응원팀 기준이 저장됩니다.',
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(color: AppColors.textSecondary),
                               ),
@@ -154,7 +154,7 @@ class MyPagePage extends StatelessWidget {
                                     ),
                                   ),
                                   child: Text(
-                                    session.isSignedIn ? '로그인됨' : '게스트 사용자',
+                                    session.isSignedIn ? '로그인됨' : '비로그인',
                                     style: Theme.of(context)
                                         .textTheme
                                         .labelLarge

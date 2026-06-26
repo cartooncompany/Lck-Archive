@@ -119,13 +119,11 @@ class _BounceActionState extends State<_BounceAction>
 class LandingHeroSection extends StatelessWidget {
   const LandingHeroSection({
     required this.onStart,
-    required this.onGuest,
     required this.onSignUp,
     super.key,
   });
 
   final VoidCallback onStart;
-  final VoidCallback onGuest;
   final VoidCallback onSignUp;
 
   @override
@@ -181,9 +179,9 @@ class LandingHeroSection extends StatelessWidget {
               runSpacing: 12,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                // 기록 탐색하기 (주요 행동 버튼 - 그라디언트 + 네온 글로우)
+                // 로그인 (주요 행동 버튼 — 그라디언트 + 네온 글로우)
                 _BounceAction(
-                  onTap: onGuest,
+                  onTap: onStart,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
@@ -200,34 +198,10 @@ class LandingHeroSection extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      '기록 탐색하기',
+                      '로그인',
                       style: textTheme.titleMedium?.copyWith(
                         color: AppColors.background,
                         fontWeight: FontWeight.w900,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                ),
-
-                // 로그인 (글래스 아웃라인 버튼)
-                _BounceAction(
-                  onTap: onStart,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 22,
-                      vertical: 13,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surface.withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.glassBorder),
-                    ),
-                    child: Text(
-                      '로그인',
-                      style: textTheme.titleMedium?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w800,
                         fontSize: 15,
                       ),
                     ),

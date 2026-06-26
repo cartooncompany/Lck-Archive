@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/bloc/session_controller.dart';
-import '../../features/auth/presentation/pages/landing_page.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/signup_page.dart';
 import '../../features/matches/presentation/pages/match_detail_page.dart';
@@ -67,30 +66,26 @@ final class AppRouter {
 
   static GoRouter createRouter({required SessionController sessionController}) {
     return GoRouter(
-      initialLocation: AppRoutePaths.landing,
+      initialLocation: AppRoutePaths.home,
       refreshListenable: sessionController,
       redirect: (context, state) {
         final path = state.uri.path;
-        final isPublicRoute = _publicPaths.contains(path);
-        final isAuthenticated = sessionController.isAuthenticated;
+        final isSignedIn = sessionController.isSignedIn;
 
-        if (!isAuthenticated && !isPublicRoute) {
-          return AppRoutePaths.landing;
+        // 로그인한 상태에서 인증 페이지에 접근하면 홈으로
+        if (isSignedIn &&
+            (path == AppRoutePaths.login || path == AppRoutePaths.signup)) {
+          return AppRoutePaths.home;
         }
 
-        if (isAuthenticated &&
-            (path == AppRoutePaths.login || path == AppRoutePaths.signup)) {
+        // / 경로는 홈으로 리디렉트
+        if (path == AppRoutePaths.landing) {
           return AppRoutePaths.home;
         }
 
         return null;
       },
       routes: [
-        GoRoute(
-          path: AppRoutePaths.landing,
-          name: AppRouteNames.landing,
-          builder: (context, state) => const LandingPage(),
-        ),
         GoRoute(
           path: AppRoutePaths.login,
           name: AppRouteNames.login,
@@ -161,11 +156,6 @@ final class AppRouter {
     );
   }
 
-  static const Set<String> _publicPaths = {
-    AppRoutePaths.landing,
-    AppRoutePaths.login,
-    AppRoutePaths.signup,
-  };
 }
 
 class _MissingRouteDataPage extends StatelessWidget {

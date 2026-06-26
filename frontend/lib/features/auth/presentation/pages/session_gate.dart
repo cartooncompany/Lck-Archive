@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../shared/widgets/app_shell.dart';
 import '../bloc/session_controller.dart';
-import 'landing_page.dart';
 import 'login_page.dart';
 import 'splash_page.dart';
 import 'signup_page.dart';
@@ -68,17 +67,14 @@ class _SessionGateState extends State<SessionGate> {
           SessionStage.loading => const SplashPage(
             key: ValueKey(SessionStage.loading),
           ),
-          SessionStage.landing => const LandingPage(
-            key: ValueKey(SessionStage.landing),
+          SessionStage.landing || SessionStage.authenticated => const AppShell(
+            key: ValueKey('app_shell'),
           ),
           SessionStage.login => const LoginPage(
             key: ValueKey(SessionStage.login),
           ),
           SessionStage.signUp => const SignupPage(
             key: ValueKey(SessionStage.signUp),
-          ),
-          SessionStage.authenticated => const AppShell(
-            key: ValueKey(SessionStage.authenticated),
           ),
         },
       ),
