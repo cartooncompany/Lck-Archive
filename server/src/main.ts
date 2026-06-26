@@ -72,6 +72,15 @@ async function bootstrap() {
         },
         'access-token',
       )
+      .addApiKey(
+        {
+          type: 'apiKey',
+          in: 'header',
+          name: 'X-Sync-Secret',
+          description: '크롤러 수동 실행 엔드포인트 전용 내부 시크릿 키',
+        },
+        'sync-secret',
+      )
       .addTag('Health', '헬스 체크 및 서버 상태 확인')
       .addTag('Auth', '회원가입, 로그인, 토큰 재발급')
       .addTag('Users', '인증된 사용자 프로필 조회')

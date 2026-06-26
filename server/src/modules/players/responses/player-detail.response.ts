@@ -76,11 +76,5 @@ export class PlayerDetailResponseDto extends PlayerSummaryResponseDto {
   })
   recentAppearances: PlayerMatchAppearanceResponseDto[];
 
-  @ApiPropertyOptional({
-    example: '### 플레이스타일 분석\n...',
-    nullable: true,
-    description: 'AI 분석 요약 리포트 (Markdown)',
-  })
-  aiSummary: string | null;
 }
 

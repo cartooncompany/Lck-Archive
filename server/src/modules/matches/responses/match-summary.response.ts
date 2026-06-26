@@ -68,17 +68,6 @@ export class MatchSummaryResponseDto {
   })
   winner: TeamReferenceResponseDto | null;
 
-  @ApiPropertyOptional({
-    description: 'AI가 예측한 승리 팀 id. 아직 예측이 없으면 null',
-    nullable: true,
-  })
-  aiWinnerTeamId?: string | null;
-
-  @ApiPropertyOptional({
-    description: 'AI의 승부 예측 내용 (확률 및 이유 등의 JSON 포맷 문자열). 아직 예측이 없으면 null',
-    nullable: true,
-  })
-  aiPrediction?: string | null;
 }
 
 export class MatchListResponseDto {

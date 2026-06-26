@@ -67,7 +67,6 @@ export class PlayersService {
       birthDate: player.birthDate,
       stats,
       recentAppearances,
-      aiSummary: player.aiSummary,
     };
 
     await this.cacheManager.set(cacheKey, result, 10 * 60 * 1000); // 10분 캐싱

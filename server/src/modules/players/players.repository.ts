@@ -167,13 +167,6 @@ export class PlayersRepository {
     });
   }
 
-  async updateAiSummary(id: string, aiSummary: string) {
-    return this.prisma.player.update({
-      where: { id },
-      data: { aiSummary },
-    });
-  }
-
   private buildWhere(query: GetPlayersQueryDto): Prisma.PlayerWhereInput {
     return {
       teamId: query.teamId,
