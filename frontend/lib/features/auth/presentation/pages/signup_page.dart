@@ -27,6 +27,21 @@ class _SignupPageState extends State<SignupPage> {
   TeamSummary? _selectedTeam;
 
   @override
+  void initState() {
+    super.initState();
+    _nicknameController.addListener(_clearErrorOnChange);
+    _emailController.addListener(_clearErrorOnChange);
+    _passwordController.addListener(_clearErrorOnChange);
+  }
+
+  void _clearErrorOnChange() {
+    final session = SessionScope.maybeOf(context);
+    if (session?.errorMessage != null) {
+      session!.clearError();
+    }
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_initialized) {
@@ -40,6 +55,9 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   void dispose() {
+    _nicknameController.removeListener(_clearErrorOnChange);
+    _emailController.removeListener(_clearErrorOnChange);
+    _passwordController.removeListener(_clearErrorOnChange);
     _nicknameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();

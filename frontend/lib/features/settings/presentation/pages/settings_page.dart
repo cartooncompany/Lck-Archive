@@ -282,6 +282,50 @@ class _SettingsContent extends StatelessWidget {
   }
 
   Future<void> _signOut(BuildContext context, SessionController session) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceElevated,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: AppColors.glassBorderMuted),
+        ),
+        title: Text(
+          '로그아웃',
+          style: Theme.of(ctx).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Text(
+          '로그아웃하면 저장된 토큰이 삭제되고 랜딩 화면으로 이동합니다.',
+          style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text(
+              '취소',
+              style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              '로그아웃',
+              style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true || !context.mounted) {
+      return;
+    }
+
     await session.signOut();
     if (!context.mounted) {
       return;
@@ -358,7 +402,7 @@ class _SettingsContent extends StatelessWidget {
       },
     );
 
-    if (confirm != true) {
+    if (confirm != true || !context.mounted) {
       return;
     }
 

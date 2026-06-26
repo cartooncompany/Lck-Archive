@@ -249,6 +249,7 @@ class LoginFormPanel extends StatelessWidget {
     required this.formKey,
     required this.emailController,
     required this.passwordController,
+    required this.passwordFocusNode,
     required this.obscurePassword,
     required this.isBusy,
     required this.errorMessage,
@@ -262,6 +263,7 @@ class LoginFormPanel extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController emailController;
   final TextEditingController passwordController;
+  final FocusNode passwordFocusNode;
   final bool obscurePassword;
   final bool isBusy;
   final String? errorMessage;
@@ -356,11 +358,14 @@ class LoginFormPanel extends StatelessWidget {
                   }
                   return null;
                 },
+                onFieldSubmitted: (_) =>
+                    FocusScope.of(context).requestFocus(passwordFocusNode),
               ),
               const SizedBox(height: 16),
               // 비밀번호 필드
               TextFormField(
                 controller: passwordController,
+                focusNode: passwordFocusNode,
                 obscureText: obscurePassword,
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.password],

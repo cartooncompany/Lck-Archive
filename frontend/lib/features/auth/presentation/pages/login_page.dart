@@ -19,12 +19,30 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordFocusNode = FocusNode();
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    _emailController.addListener(_clearErrorOnChange);
+    _passwordController.addListener(_clearErrorOnChange);
+  }
+
+  void _clearErrorOnChange() {
+    final session = SessionScope.maybeOf(context);
+    if (session?.errorMessage != null) {
+      session!.clearError();
+    }
+  }
+
+  @override
   void dispose() {
+    _emailController.removeListener(_clearErrorOnChange);
+    _passwordController.removeListener(_clearErrorOnChange);
     _emailController.dispose();
     _passwordController.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -52,6 +70,7 @@ class _LoginPageState extends State<LoginPage> {
         formKey: _formKey,
         emailController: _emailController,
         passwordController: _passwordController,
+        passwordFocusNode: _passwordFocusNode,
         obscurePassword: _obscurePassword,
         isBusy: session.isBusy,
         errorMessage: session.errorMessage,

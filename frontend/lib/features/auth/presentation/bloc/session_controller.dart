@@ -51,6 +51,12 @@ class SessionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearError() {
+    if (_errorMessage == null) return;
+    _errorMessage = null;
+    notifyListeners();
+  }
+
   void showLanding() {
     _clearError();
     _isGuest = false;
