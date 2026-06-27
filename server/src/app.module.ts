@@ -6,6 +6,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CacheInvalidatorModule } from './common/cache/cache-invalidator.module';
 import { CrawlerModule } from './crawler/crawler.module';
 import { DatabaseModule } from './database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -34,6 +35,7 @@ import { SyncSchedulerModule } from './scheduler/scheduler.module';
       },
     ]),
     DatabaseModule,
+    CacheInvalidatorModule,
     AuthModule,
     UsersModule,
     TeamsModule,

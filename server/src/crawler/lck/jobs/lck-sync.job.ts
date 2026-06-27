@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { CacheInvalidatorService } from '../../../common/cache/cache-invalidator.service';
+import { CacheNamespace } from '../../../common/cache/cache-namespaces';
 import { PrismaService } from '../../../database/prisma.service';
 import { LckSnapshotService } from '../services/lck-snapshot.service';
 import { LckSyncPersisterService } from '../services/lck-sync-persister.service';
@@ -20,6 +22,7 @@ export class LckSyncJob {
     private readonly lckSnapshotService: LckSnapshotService,
     private readonly lckSyncPersister: LckSyncPersisterService,
     private readonly configService: ConfigService,
+    private readonly cache: CacheInvalidatorService,
   ) {}
 
   async sync(): Promise<{ teams: number; players: number; matches: number }> {
@@ -110,6 +113,13 @@ export class LckSyncJob {
           recordsCount,
         },
       });
+
+      // 동기화로 데이터가 갱신되었으므로 관련 캐시를 무효화한다.
+      await this.cache.invalidate(
+        CacheNamespace.TEAMS,
+        CacheNamespace.PLAYERS,
+        CacheNamespace.MATCHES,
+      );
 
       return {
         teams: parsedSnapshot.teams.length,

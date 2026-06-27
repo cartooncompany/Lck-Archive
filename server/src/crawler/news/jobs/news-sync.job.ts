@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
+import { CacheInvalidatorService } from '../../../common/cache/cache-invalidator.service';
+import { CacheNamespace } from '../../../common/cache/cache-namespaces';
 import { PrismaService } from '../../../database/prisma.service';
 import { NewsScraperClient } from '../client/news-scraper.client';
 import { ScrapedNewsArticle } from '../types/news-source.types';
@@ -16,6 +18,7 @@ export class NewsSyncJob {
     private readonly prisma: PrismaService,
     private readonly newsScraperClient: NewsScraperClient,
     private readonly configService: ConfigService,
+    private readonly cache: CacheInvalidatorService,
   ) {}
 
   async sync(): Promise<{ newsArticles: number }> {
@@ -98,6 +101,8 @@ export class NewsSyncJob {
         this.logger.log(
           `News sync optimized: Saved ${newArticles.length} new articles.`,
         );
+        // 신규 기사가 저장된 경우에만 뉴스 캐시를 무효화한다.
+        await this.cache.invalidate(CacheNamespace.NEWS);
       } else {
         this.logger.log('News sync optimized: No new articles to save.');
       }

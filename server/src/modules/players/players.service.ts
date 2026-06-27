@@ -1,7 +1,8 @@
-import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import * as cacheManager from 'cache-manager';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { CacheInvalidatorService } from '../../common/cache/cache-invalidator.service';
+import { CacheNamespace } from '../../common/cache/cache-namespaces';
 import { TeamReferenceResponseDto } from '../../common/responses/team-reference.response';
+import { buildCacheKey } from '../../common/utils/cache-key.util';
 import { buildPaginationMeta } from '../../common/utils/pagination.util';
 import { GetPlayersQueryDto } from './dto/get-players.query.dto';
 import { PlayerDetailResponseDto } from './responses/player-detail.response';
@@ -17,12 +18,12 @@ export class PlayersService {
 
   constructor(
     private readonly playersRepository: PlayersRepository,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: cacheManager.Cache,
+    private readonly cache: CacheInvalidatorService,
   ) {}
 
   async getPlayers(query: GetPlayersQueryDto): Promise<PlayerListResponseDto> {
-    const cacheKey = `players:list:${JSON.stringify(query)}`;
-    const cached = await this.cacheManager.get<PlayerListResponseDto>(cacheKey);
+    const cacheKey = buildCacheKey(CacheNamespace.PLAYERS, 'list', query);
+    const cached = await this.cache.get<PlayerListResponseDto>(cacheKey);
     if (cached) {
       this.logger.log(`Cache hit for players list: ${cacheKey}`);
       return cached;
@@ -38,13 +39,18 @@ export class PlayersService {
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
 
-    await this.cacheManager.set(cacheKey, result, 5 * 60 * 1000); // 5분 캐싱
+    await this.cache.set(
+      CacheNamespace.PLAYERS,
+      cacheKey,
+      result,
+      5 * 60 * 1000,
+    ); // 5분 캐싱
     return result;
   }
 
   async getPlayerById(id: string): Promise<PlayerDetailResponseDto> {
-    const cacheKey = `player:detail:${id}`;
-    const cached = await this.cacheManager.get<PlayerDetailResponseDto>(cacheKey);
+    const cacheKey = buildCacheKey(CacheNamespace.PLAYERS, 'detail', id);
+    const cached = await this.cache.get<PlayerDetailResponseDto>(cacheKey);
     if (cached) {
       this.logger.log(`Cache hit for player detail: ${cacheKey}`);
       return cached;
@@ -69,11 +75,14 @@ export class PlayersService {
       recentAppearances,
     };
 
-    await this.cacheManager.set(cacheKey, result, 10 * 60 * 1000); // 10분 캐싱
+    await this.cache.set(
+      CacheNamespace.PLAYERS,
+      cacheKey,
+      result,
+      10 * 60 * 1000,
+    ); // 10분 캐싱
     return result;
   }
-
-
 
   private toPlayerSummary(player: PlayerRecord): PlayerSummaryResponseDto {
     return {

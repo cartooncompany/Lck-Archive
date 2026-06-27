@@ -33,17 +33,16 @@ describe('PrismaExceptionFilter', () => {
       error: string;
       path: string;
       timestamp: string;
-      details: string;
     };
 
     expect(responseBody).toMatchObject({
       statusCode: HttpStatus.SERVICE_UNAVAILABLE,
-      message:
-        'Database is unavailable. Check DATABASE_URL and database status.',
+      message: 'Database is unavailable. Please try again later.',
       error: 'Service Unavailable',
       path: '/api/teams',
-      details: 'Database connection failed',
     });
+    // 내부 구현 정보(DB 연결 실패 원인 등)는 응답에 노출되지 않아야 한다.
+    expect(responseBody).not.toHaveProperty('details');
     expect(responseBody.timestamp).toEqual(expect.any(String));
   });
 });
