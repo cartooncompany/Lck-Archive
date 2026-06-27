@@ -1,9 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
-import '../../../../shared/models/team_summary.dart';
-import '../../../../shared/widgets/team_logo.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/shared/widgets/bounce_tap_target.dart';
+import 'package:frontend/shared/widgets/team_logo.dart';
 import 'auth_shell.dart';
 
 /// 스무스하게 옆으로 미끄러지듯 나타나는 페이드 & 슬라이드 전환 애니메이션 위젯
@@ -67,52 +68,6 @@ class _FormFadeTransitionState extends State<_FormFadeTransition>
   }
 }
 
-/// 쫀득한 버튼 스케일 바운스 효과
-class _BounceAction extends StatefulWidget {
-  const _BounceAction({required this.child, required this.onTap});
-
-  final Widget child;
-  final VoidCallback onTap;
-
-  @override
-  State<_BounceAction> createState() => _BounceActionState();
-}
-
-class _BounceActionState extends State<_BounceAction>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scale = Tween<double>(
-      begin: 1.0,
-      end: 0.96,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) => _controller.reverse(),
-      onTapCancel: () => _controller.reverse(),
-      onTap: widget.onTap,
-      child: ScaleTransition(scale: _scale, child: widget.child),
-    );
-  }
-}
 
 class SignupHeroSection extends StatelessWidget {
   const SignupHeroSection({
@@ -264,7 +219,7 @@ class SignupFormPanel extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
-                _BounceAction(
+                BounceTapTarget(
                   onTap: isBusy ? () {} : onShowLogin,
                   child: Text(
                     '로그인',

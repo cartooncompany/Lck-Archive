@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/widgets/bounce_tap_target.dart';
 import 'auth_shell.dart';
 
 /// 스태거(순차) 진입용 페이드 인 & 슬라이드 업 애니메이션 위젯
@@ -69,52 +70,6 @@ class _FadeInSlideUpState extends State<_FadeInSlideUp>
   }
 }
 
-/// 탭 시 쫀득한 스케일 축소/복원 효과를 주는 바운스 액션 위젯
-class _BounceAction extends StatefulWidget {
-  const _BounceAction({required this.child, required this.onTap});
-
-  final Widget child;
-  final VoidCallback onTap;
-
-  @override
-  State<_BounceAction> createState() => _BounceActionState();
-}
-
-class _BounceActionState extends State<_BounceAction>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scale = Tween<double>(
-      begin: 1.0,
-      end: 0.96,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) => _controller.reverse(),
-      onTapCancel: () => _controller.reverse(),
-      onTap: widget.onTap,
-      child: ScaleTransition(scale: _scale, child: widget.child),
-    );
-  }
-}
 
 class LandingHeroSection extends StatelessWidget {
   const LandingHeroSection({
@@ -180,7 +135,7 @@ class LandingHeroSection extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 // 로그인 (주요 행동 버튼 — 그라디언트 + 네온 글로우)
-                _BounceAction(
+                BounceTapTarget(
                   onTap: onStart,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -209,7 +164,7 @@ class LandingHeroSection extends StatelessWidget {
                 ),
 
                 // 회원가입 (텍스트 버튼)
-                _BounceAction(
+                BounceTapTarget(
                   onTap: onSignUp,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
