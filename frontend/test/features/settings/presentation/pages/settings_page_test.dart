@@ -7,6 +7,7 @@ import 'package:frontend/core/error/app_failure.dart';
 import 'package:frontend/core/network/api_client.dart';
 import 'package:frontend/core/storage/local_storage.dart';
 import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
+import 'package:frontend/features/auth/data/datasource/auth_session_store.dart';
 import 'package:frontend/features/auth/data/repository/auth_repository.dart';
 import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
 import 'package:frontend/features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
@@ -87,9 +88,13 @@ Future<_SettingsPageHarness> _pumpSettingsPage(
     toggleFavoriteTeamUseCase: _FakeToggleFavoriteTeamUseCase(),
   );
   final resolvedApiClient = apiClient ?? _FakeApiClient();
+  final resolvedRemoteDataSource = AuthRemoteDataSource(resolvedApiClient);
   final authRepository = AuthRepository(
-    remoteDataSource: AuthRemoteDataSource(resolvedApiClient),
-    localStorage: _MemoryLocalStorage(),
+    remoteDataSource: resolvedRemoteDataSource,
+    sessionStore: AuthSessionStore(
+      remoteDataSource: resolvedRemoteDataSource,
+      localStorage: _MemoryLocalStorage(),
+    ),
   );
   final sessionController = SessionController(authRepository: authRepository);
 
@@ -102,9 +107,8 @@ Future<_SettingsPageHarness> _pumpSettingsPage(
       password: 'password123',
     );
     expect(didSignIn, isTrue);
-  } else {
-    sessionController.continueAsGuest();
   }
+  // 로그인하지 않은 경우 컨트롤러는 비로그인 기본 상태를 유지한다.
 
   final router = GoRouter(
     initialLocation: AppRoutePaths.settings,

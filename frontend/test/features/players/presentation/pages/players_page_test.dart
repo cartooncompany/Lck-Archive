@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/app/app_dependencies_scope.dart';
 import 'package:frontend/app/app_dependencies.dart';
 import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
+import 'package:frontend/features/auth/data/datasource/auth_session_store.dart';
 import 'package:frontend/features/auth/data/repository/auth_repository.dart';
 import 'package:frontend/features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
 import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
@@ -31,7 +32,10 @@ void main() {
         localStorage: localStorage,
         authRepository: AuthRepository(
           remoteDataSource: AuthRemoteDataSource(apiClient),
-          localStorage: localStorage,
+          sessionStore: AuthSessionStore(
+            remoteDataSource: AuthRemoteDataSource(apiClient),
+            localStorage: localStorage,
+          ),
         ),
         teamsRepository: teamsRepository,
         playersRepository: PlayersRepository(

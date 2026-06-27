@@ -1,25 +1,27 @@
-import '../core/network/api_base_url.dart';
-import '../core/network/api_client.dart';
-import '../core/network/dio_api_client.dart';
-import '../core/storage/local_storage.dart';
-import '../core/storage/shared_preferences_local_storage.dart';
-import '../core/storage/secure_local_storage.dart';
-import '../core/logging/app_logger.dart';
-import '../features/auth/data/datasource/auth_remote_data_source.dart';
-import '../features/auth/data/repository/auth_repository.dart';
-import '../features/auth/domain/repository/auth_repository_interface.dart';
-import '../features/matches/data/datasource/matches_remote_data_source.dart';
-import '../features/matches/data/repository/matches_repository.dart';
-import '../features/matches/domain/repository/matches_repository_interface.dart';
-import '../features/news/data/datasource/news_remote_data_source.dart';
-import '../features/news/data/repository/news_repository.dart';
-import '../features/news/domain/repository/news_repository_interface.dart';
-import '../features/players/data/datasource/players_remote_data_source.dart';
-import '../features/players/data/repository/players_repository.dart';
-import '../features/players/domain/repository/players_repository_interface.dart';
-import '../features/teams/data/datasource/teams_remote_data_source.dart';
-import '../features/teams/data/repository/teams_repository.dart';
-import '../features/teams/domain/repository/teams_repository_interface.dart';
+import 'package:frontend/core/network/api_base_url.dart';
+import 'package:frontend/core/network/api_client.dart';
+import 'package:frontend/core/network/auth_interceptor.dart';
+import 'package:frontend/core/network/dio_api_client.dart';
+import 'package:frontend/core/storage/local_storage.dart';
+import 'package:frontend/core/storage/shared_preferences_local_storage.dart';
+import 'package:frontend/core/storage/secure_local_storage.dart';
+import 'package:frontend/core/logging/app_logger.dart';
+import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
+import 'package:frontend/features/auth/data/datasource/auth_session_store.dart';
+import 'package:frontend/features/auth/data/repository/auth_repository.dart';
+import 'package:frontend/features/auth/domain/repository/auth_repository_interface.dart';
+import 'package:frontend/features/matches/data/datasource/matches_remote_data_source.dart';
+import 'package:frontend/features/matches/data/repository/matches_repository.dart';
+import 'package:frontend/features/matches/domain/repository/matches_repository_interface.dart';
+import 'package:frontend/features/news/data/datasource/news_remote_data_source.dart';
+import 'package:frontend/features/news/data/repository/news_repository.dart';
+import 'package:frontend/features/news/domain/repository/news_repository_interface.dart';
+import 'package:frontend/features/players/data/datasource/players_remote_data_source.dart';
+import 'package:frontend/features/players/data/repository/players_repository.dart';
+import 'package:frontend/features/players/domain/repository/players_repository_interface.dart';
+import 'package:frontend/features/teams/data/datasource/teams_remote_data_source.dart';
+import 'package:frontend/features/teams/data/repository/teams_repository.dart';
+import 'package:frontend/features/teams/domain/repository/teams_repository_interface.dart';
 
 class AppDependencies {
   AppDependencies({
@@ -42,9 +44,19 @@ class AppDependencies {
     final apiClient = DioApiClient(baseUrl: baseUrl);
     final localStorage = await SharedPreferencesLocalStorage.create();
     final secureStorage = SecureLocalStorage.create();
-    final authRepository = AuthRepository(
-      remoteDataSource: AuthRemoteDataSource(apiClient),
+
+    final authRemoteDataSource = AuthRemoteDataSource(apiClient);
+    final authSessionStore = AuthSessionStore(
+      remoteDataSource: authRemoteDataSource,
       localStorage: secureStorage,
+    );
+    // 모든 요청에 토큰 자동 주입 + 401 시 자동 갱신/재시도.
+    apiClient.addAuthInterceptor(
+      AuthInterceptor(sessionStore: authSessionStore, dio: apiClient.dio),
+    );
+    final authRepository = AuthRepository(
+      remoteDataSource: authRemoteDataSource,
+      sessionStore: authSessionStore,
     );
     final teamsRepository = TeamsRepository(
       remoteDataSource: TeamsRemoteDataSource(apiClient),

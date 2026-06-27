@@ -4,6 +4,7 @@ import 'package:frontend/app/theme/app_theme.dart';
 import 'package:frontend/core/network/api_client.dart';
 import 'package:frontend/core/storage/local_storage.dart';
 import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
+import 'package:frontend/features/auth/data/datasource/auth_session_store.dart';
 import 'package:frontend/features/auth/data/repository/auth_repository.dart';
 import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
 import 'package:frontend/features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
@@ -24,12 +25,15 @@ void main() {
       initialTeam: sampleFavoriteTeam,
       toggleFavoriteTeamUseCase: _FakeToggleFavoriteTeamUseCase(),
     );
+    final remoteDataSource = AuthRemoteDataSource(_NoopApiClient());
     final authRepository = AuthRepository(
-      remoteDataSource: AuthRemoteDataSource(_NoopApiClient()),
-      localStorage: _MemoryLocalStorage(),
+      remoteDataSource: remoteDataSource,
+      sessionStore: AuthSessionStore(
+        remoteDataSource: remoteDataSource,
+        localStorage: _MemoryLocalStorage(),
+      ),
     );
-    final sessionController = SessionController(authRepository: authRepository)
-      ..continueAsGuest();
+    final sessionController = SessionController(authRepository: authRepository);
 
     addTearDown(favoriteTeamController.dispose);
     addTearDown(sessionController.dispose);

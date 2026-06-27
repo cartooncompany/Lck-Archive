@@ -1,7 +1,7 @@
-import '../../../../core/network/api_client.dart';
-import '../dto/access_token_dto.dart';
-import '../dto/auth_session_dto.dart';
-import '../dto/auth_user_dto.dart';
+import 'package:frontend/core/network/api_client.dart';
+import 'package:frontend/features/auth/data/dto/access_token_dto.dart';
+import 'package:frontend/features/auth/data/dto/auth_session_dto.dart';
+import 'package:frontend/features/auth/data/dto/auth_user_dto.dart';
 
 class AuthRemoteDataSource {
   const AuthRemoteDataSource(this._apiClient);
@@ -45,18 +45,16 @@ class AuthRemoteDataSource {
     );
   }
 
-  Future<AuthUserDto> getMyProfile(String accessToken) {
+  Future<AuthUserDto> getMyProfile() {
+    // 액세스 토큰은 AuthInterceptor가 자동 주입한다.
     return _apiClient.get(
       '/users/me',
-      headers: <String, String>{'Authorization': 'Bearer $accessToken'},
       decoder: (data) => AuthUserDto.fromJson(data as Map<String, dynamic>),
     );
   }
 
-  Future<void> deleteMyAccount(String accessToken) {
-    return _apiClient.deleteVoid(
-      '/users/me',
-      headers: <String, String>{'Authorization': 'Bearer $accessToken'},
-    );
+  Future<void> deleteMyAccount() {
+    // 액세스 토큰은 AuthInterceptor가 자동 주입한다.
+    return _apiClient.deleteVoid('/users/me');
   }
 }

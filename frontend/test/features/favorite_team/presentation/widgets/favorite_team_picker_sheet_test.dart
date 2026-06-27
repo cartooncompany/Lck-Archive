@@ -6,6 +6,7 @@ import 'package:frontend/app/app_dependencies_scope.dart';
 import 'package:frontend/app/router/app_router.dart';
 import 'package:frontend/app/theme/app_theme.dart';
 import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
+import 'package:frontend/features/auth/data/datasource/auth_session_store.dart';
 import 'package:frontend/features/auth/data/repository/auth_repository.dart';
 import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
 import 'package:frontend/features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
@@ -44,10 +45,12 @@ void main() {
     );
     final authRepository = AuthRepository(
       remoteDataSource: AuthRemoteDataSource(apiClient),
-      localStorage: localStorage,
+      sessionStore: AuthSessionStore(
+        remoteDataSource: AuthRemoteDataSource(apiClient),
+        localStorage: localStorage,
+      ),
     );
-    final sessionController = SessionController(authRepository: authRepository)
-      ..continueAsGuest();
+    final sessionController = SessionController(authRepository: authRepository);
     final dependencies = AppDependencies(
       apiClient: apiClient,
       localStorage: localStorage,

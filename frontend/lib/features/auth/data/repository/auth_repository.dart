@@ -1,36 +1,32 @@
-import 'dart:convert';
-
-import '../../../../core/error/app_failure.dart';
-import '../../../../core/storage/local_storage.dart';
-import '../../domain/repository/auth_repository_interface.dart';
-import '../datasource/auth_remote_data_source.dart';
-import '../models/auth_session.dart';
-import '../models/auth_user.dart';
+import 'package:frontend/core/error/app_failure.dart';
+import 'package:frontend/features/auth/domain/repository/auth_repository_interface.dart';
+import 'package:frontend/features/auth/data/datasource/auth_remote_data_source.dart';
+import 'package:frontend/features/auth/data/datasource/auth_session_store.dart';
+import 'package:frontend/features/auth/data/models/auth_session.dart';
+import 'package:frontend/features/auth/data/models/auth_user.dart';
 
 class AuthRepository implements IAuthRepository {
   AuthRepository({
     required AuthRemoteDataSource remoteDataSource,
-    required LocalStorage localStorage,
+    required AuthSessionStore sessionStore,
   }) : _remoteDataSource = remoteDataSource,
-       _localStorage = localStorage;
+       _sessionStore = sessionStore;
 
   final AuthRemoteDataSource _remoteDataSource;
-  final LocalStorage _localStorage;
+  final AuthSessionStore _sessionStore;
 
-  static const String _storageKey = 'auth_repository.session.v1';
-  static const Duration _refreshLeeway = Duration(minutes: 1);
-
+  @override
   Future<AuthSession?> restoreSession() async {
-    final storedSession = await _readSession();
+    final storedSession = await _sessionStore.read();
     if (storedSession == null) {
       return null;
     }
 
     try {
-      final activeSession = await _ensureFreshSession(storedSession);
-      final user = await _fetchProfile(activeSession);
+      final activeSession = await _sessionStore.ensureFresh(storedSession);
+      final user = await _fetchProfile();
       final resolvedSession = activeSession.copyWith(user: user);
-      await _persistSession(resolvedSession);
+      await _sessionStore.persist(resolvedSession);
       return resolvedSession;
     } on AppFailure catch (error) {
       if (error.isUnauthorized) {
@@ -43,6 +39,7 @@ class AuthRepository implements IAuthRepository {
     }
   }
 
+  @override
   Future<AuthSession> login({
     required String email,
     required String password,
@@ -51,10 +48,11 @@ class AuthRepository implements IAuthRepository {
       email: email.trim(),
       password: password,
     )).toModel();
-    await _persistSession(session);
+    await _sessionStore.persist(session);
     return session;
   }
 
+  @override
   Future<AuthSession> signUp({
     required String nickname,
     required String email,
@@ -67,51 +65,35 @@ class AuthRepository implements IAuthRepository {
       password: password,
       favoriteTeamId: favoriteTeamId,
     )).toModel();
-    await _persistSession(session);
+    await _sessionStore.persist(session);
     return session;
   }
 
+  @override
   Future<AuthUser> getMyProfile() async {
-    final session = await _readSession();
+    final session = await _sessionStore.read();
     if (session == null) {
       throw const AppFailure('로그인이 필요합니다.', statusCode: 401);
     }
 
-    try {
-      final activeSession = await _ensureFreshSession(session);
-      final user = await _fetchProfile(activeSession);
-      final updatedSession = activeSession.copyWith(user: user);
-      await _persistSession(updatedSession);
-      return user;
-    } on AppFailure catch (error) {
-      if (error.isUnauthorized) {
-        final refreshedSession = await _refreshSession(session);
-        final user = await _fetchProfile(refreshedSession);
-        final updatedSession = refreshedSession.copyWith(user: user);
-        await _persistSession(updatedSession);
-        return user;
-      }
-      rethrow;
-    }
+    // 토큰 주입/401 재시도는 AuthInterceptor가 처리하므로 단순 호출한다.
+    final user = await _fetchProfile();
+    final updatedSession = session.copyWith(user: user);
+    await _sessionStore.persist(updatedSession);
+    return user;
   }
 
+  @override
   Future<void> deleteAccount() async {
-    final session = await _readSession();
+    final session = await _sessionStore.read();
     if (session == null) {
       throw const AppFailure('로그인이 필요합니다.', statusCode: 401);
     }
 
-    final activeSession = await _ensureFreshSession(session);
     try {
-      await _remoteDataSource.deleteMyAccount(activeSession.accessToken);
+      await _remoteDataSource.deleteMyAccount();
       await signOut();
     } on AppFailure catch (error) {
-      if (error.isUnauthorized) {
-        final refreshedSession = await _refreshSession(activeSession);
-        await _remoteDataSource.deleteMyAccount(refreshedSession.accessToken);
-        await signOut();
-        return;
-      }
       if (error.statusCode == 404) {
         await signOut();
         return;
@@ -120,70 +102,12 @@ class AuthRepository implements IAuthRepository {
     }
   }
 
+  @override
   Future<void> signOut() async {
-    await _localStorage.delete(_storageKey);
+    await _sessionStore.clear();
   }
 
-  Future<AuthSession?> _readSession() async {
-    try {
-      final rawValue = await _localStorage.readString(_storageKey);
-      if (rawValue == null || rawValue.isEmpty) {
-        return null;
-      }
-
-      final decoded = jsonDecode(rawValue);
-      if (decoded is! Map<String, dynamic>) {
-        return null;
-      }
-
-      return AuthSession.fromJson(decoded);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> _persistSession(AuthSession session) async {
-    await _localStorage.writeString(_storageKey, jsonEncode(session.toJson()));
-  }
-
-  Future<AuthSession> _ensureFreshSession(AuthSession session) {
-    final refreshThreshold = DateTime.now().toUtc().add(_refreshLeeway);
-    if (session.accessTokenExpiresAt.isAfter(refreshThreshold)) {
-      return Future<AuthSession>.value(session);
-    }
-
-    return _refreshSession(session);
-  }
-
-  Future<AuthSession> _refreshSession(AuthSession session) async {
-    final now = DateTime.now().toUtc();
-    if (!session.refreshTokenExpiresAt.isAfter(now)) {
-      await signOut();
-      throw const AppFailure('세션이 만료되었습니다. 다시 로그인해 주세요.', statusCode: 401);
-    }
-
-    try {
-      final refreshedToken = await _remoteDataSource.refreshAccessToken(
-        session.refreshToken,
-      );
-      final refreshedSession = session.copyWith(
-        accessToken: refreshedToken.accessToken,
-        accessTokenExpiresAt: refreshedToken.accessTokenExpiresAt,
-      );
-      await _persistSession(refreshedSession);
-      return refreshedSession;
-    } on AppFailure catch (error) {
-      if (error.isUnauthorized) {
-        await signOut();
-        throw const AppFailure('세션이 만료되었습니다. 다시 로그인해 주세요.', statusCode: 401);
-      }
-      rethrow;
-    }
-  }
-
-  Future<AuthUser> _fetchProfile(AuthSession session) async {
-    return (await _remoteDataSource.getMyProfile(
-      session.accessToken,
-    )).toModel();
+  Future<AuthUser> _fetchProfile() async {
+    return (await _remoteDataSource.getMyProfile()).toModel();
   }
 }

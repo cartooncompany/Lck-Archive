@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 
-import '../error/app_failure.dart';
-import '../logging/app_logger.dart';
+import 'package:frontend/core/error/app_failure.dart';
+import 'package:frontend/core/logging/app_logger.dart';
 import 'api_client.dart';
 
 class DioApiClient implements ApiClient {
@@ -19,6 +19,15 @@ class DioApiClient implements ApiClient {
 
   final Dio _dio;
   static const String _requestStartedAtKey = 'requestStartedAt';
+
+  /// 내부 Dio 인스턴스. 인증 등 추가 인터셉터를 외부에서 등록할 때 사용한다.
+  Dio get dio => _dio;
+
+  /// 인증 인터셉터를 로깅 인터셉터보다 앞에 등록한다.
+  /// (토큰 주입/갱신이 로깅·요청 처리보다 먼저 일어나야 한다)
+  void addAuthInterceptor(Interceptor interceptor) {
+    _dio.interceptors.insert(0, interceptor);
+  }
 
   @override
   Future<T> get<T>(
