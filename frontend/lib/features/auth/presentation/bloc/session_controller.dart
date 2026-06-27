@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 
-import '../../../../core/error/app_failure.dart';
-import '../../data/models/auth_session.dart';
-import '../../domain/repository/auth_repository_interface.dart';
+import 'package:frontend/core/error/app_failure.dart';
+import 'package:frontend/features/auth/data/models/auth_session.dart';
+import 'package:frontend/features/auth/domain/repository/auth_repository_interface.dart';
 
 enum SessionStage { loading, landing, login, signUp, authenticated }
 

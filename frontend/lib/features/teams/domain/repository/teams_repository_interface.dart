@@ -1,4 +1,4 @@
-import '../../../../shared/models/team_summary.dart';
+import 'package:frontend/shared/models/team_summary.dart';
 
 abstract class ITeamsRepository {
   Future<List<TeamSummary>> getTeams({String? keyword, int limit = 100});

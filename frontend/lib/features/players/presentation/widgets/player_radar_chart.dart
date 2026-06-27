@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../shared/models/player_profile.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/models/player_profile.dart';
 
 class PlayerRadarChart extends StatelessWidget {
   const PlayerRadarChart({

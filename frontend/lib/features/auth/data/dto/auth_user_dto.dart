@@ -1,4 +1,4 @@
-import '../models/auth_user.dart';
+import 'package:frontend/features/auth/data/models/auth_user.dart';
 
 class AuthUserDto {
   const AuthUserDto({required this.nickname, required this.email});

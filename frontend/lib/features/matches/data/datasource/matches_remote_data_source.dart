@@ -1,7 +1,7 @@
-import '../../../../core/network/api_client.dart';
-import '../../../../core/network/paged_response.dart';
-import '../../../teams/data/dto/team_match_dto.dart';
-import '../dto/match_detail_dto.dart';
+import 'package:frontend/core/network/api_client.dart';
+import 'package:frontend/core/network/paged_response.dart';
+import 'package:frontend/features/teams/data/dto/team_match_dto.dart';
+import 'package:frontend/features/matches/data/dto/match_detail_dto.dart';
 
 class MatchesRemoteDataSource {
   const MatchesRemoteDataSource(this._apiClient);

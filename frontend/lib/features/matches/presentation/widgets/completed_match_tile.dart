@@ -1,13 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
-import '../../../../shared/extensions/date_extensions.dart';
-import '../../../../shared/models/lck_match_detail.dart';
-import '../../../../shared/models/lck_scheduled_match.dart';
-import '../../../../shared/models/team_summary.dart';
-import '../../../../shared/widgets/team_logo.dart';
-import '../../../favorite_team/presentation/bloc/favorite_team_controller.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/extensions/date_extensions.dart';
+import 'package:frontend/shared/models/lck_match_detail.dart';
+import 'package:frontend/shared/models/lck_scheduled_match.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/shared/widgets/team_logo.dart';
+import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 
 class CompletedMatchTile extends StatelessWidget {
   const CompletedMatchTile({

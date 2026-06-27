@@ -1,5 +1,5 @@
-import '../../data/models/auth_session.dart';
-import '../repository/auth_repository_interface.dart';
+import 'package:frontend/features/auth/data/models/auth_session.dart';
+import 'package:frontend/features/auth/domain/repository/auth_repository_interface.dart';
 
 class RestoreSessionUseCase {
   const RestoreSessionUseCase(this._repository);

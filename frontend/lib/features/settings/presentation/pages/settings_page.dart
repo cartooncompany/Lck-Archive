@@ -2,13 +2,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/router/app_router.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../features/auth/presentation/bloc/session_controller.dart';
-import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
-import '../../../../features/favorite_team/presentation/widgets/favorite_team_picker_sheet.dart';
-import '../../../../shared/widgets/responsive_page_container.dart';
-import '../../../../shared/widgets/team_logo.dart';
+import 'package:frontend/app/router/app_router.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
+import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
+import 'package:frontend/features/favorite_team/presentation/widgets/favorite_team_picker_sheet.dart';
+import 'package:frontend/shared/widgets/responsive_page_container.dart';
+import 'package:frontend/shared/widgets/team_logo.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});

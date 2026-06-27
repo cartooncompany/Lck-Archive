@@ -1,4 +1,4 @@
-import '../../../../shared/models/player_profile.dart';
+import 'package:frontend/shared/models/player_profile.dart';
 
 abstract class IPlayersRepository {
   Future<List<PlayerProfile>> getPlayers({

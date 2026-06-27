@@ -2,15 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../../app/app_dependencies_scope.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/error/app_failure.dart';
-import '../../../../shared/models/news_article.dart';
-import '../../../../shared/utils/news_article_launcher.dart';
-import '../../../../shared/widgets/app_search_field.dart';
-import '../../../../shared/widgets/app_status_card.dart';
-import '../widgets/news_article_card.dart';
+import 'package:frontend/app/app_dependencies_scope.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/core/constants/app_spacing.dart';
+import 'package:frontend/core/error/app_failure.dart';
+import 'package:frontend/shared/models/news_article.dart';
+import 'package:frontend/shared/utils/news_article_launcher.dart';
+import 'package:frontend/shared/widgets/app_search_field.dart';
+import 'package:frontend/shared/widgets/app_status_card.dart';
+import 'package:frontend/features/news/presentation/widgets/news_article_card.dart';
 
 class NewsPage extends StatefulWidget {
   const NewsPage({super.key});

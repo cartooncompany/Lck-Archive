@@ -1,16 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../app/theme/app_colors.dart';
-import '../../core/enums/app_tab.dart';
-import '../../core/constants/app_strings.dart';
-import '../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
-import '../../features/home/presentation/pages/home_page.dart';
-import '../../features/my_page/presentation/pages/my_page_page.dart';
-import '../../features/news/presentation/pages/news_page.dart';
-import '../../features/players/presentation/pages/players_page.dart';
-import '../../features/teams/presentation/pages/teams_page.dart';
-import '../models/team_summary.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/core/enums/app_tab.dart';
+import 'package:frontend/core/constants/app_strings.dart';
+import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
+import 'package:frontend/features/home/presentation/pages/home_page.dart';
+import 'package:frontend/features/my_page/presentation/pages/my_page_page.dart';
+import 'package:frontend/features/news/presentation/pages/news_page.dart';
+import 'package:frontend/features/players/presentation/pages/players_page.dart';
+import 'package:frontend/features/teams/presentation/pages/teams_page.dart';
+import 'package:frontend/shared/models/team_summary.dart';
 import 'app_bottom_nav_bar.dart';
 import 'responsive_page_container.dart';
 import 'team_logo.dart';

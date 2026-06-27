@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/app_dependencies_scope.dart';
-import '../../../../app/router/app_router.dart';
-import '../../../../shared/models/team_summary.dart';
-import '../../../favorite_team/presentation/bloc/favorite_team_controller.dart';
-import '../bloc/session_controller.dart';
-import '../widgets/auth_shell.dart';
-import '../widgets/signup_sections.dart';
+import 'package:frontend/app/app_dependencies_scope.dart';
+import 'package:frontend/app/router/app_router.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
+import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
+import 'package:frontend/features/auth/presentation/widgets/auth_shell.dart';
+import 'package:frontend/features/auth/presentation/widgets/signup_sections.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});

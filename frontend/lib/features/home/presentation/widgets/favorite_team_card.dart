@@ -1,10 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
-import '../../../../core/network/media_url_resolver.dart';
-import '../../../../shared/models/team_summary.dart';
-import '../../../matches/presentation/widgets/form_strip.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/core/network/media_url_resolver.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/features/matches/presentation/widgets/form_strip.dart';
 
 class FavoriteTeamCard extends StatelessWidget {
   const FavoriteTeamCard({required this.team, required this.onTap, super.key});

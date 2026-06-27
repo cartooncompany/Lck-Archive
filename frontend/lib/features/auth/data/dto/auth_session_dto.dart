@@ -1,4 +1,4 @@
-import '../models/auth_session.dart';
+import 'package:frontend/features/auth/data/models/auth_session.dart';
 import 'auth_user_dto.dart';
 
 class AuthSessionDto {

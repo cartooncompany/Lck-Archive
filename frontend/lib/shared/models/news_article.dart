@@ -1,4 +1,4 @@
-import '../extensions/date_extensions.dart';
+import 'package:frontend/shared/extensions/date_extensions.dart';
 
 class NewsArticle {
   const NewsArticle({

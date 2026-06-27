@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/network/media_url_resolver.dart';
+import 'package:frontend/core/network/media_url_resolver.dart';
 
 class PlayerAvatar extends StatelessWidget {
   const PlayerAvatar({

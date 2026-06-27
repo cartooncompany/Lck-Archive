@@ -2,9 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../app/router/app_router.dart';
-import '../../app/theme/app_colors.dart';
-import '../../features/auth/presentation/bloc/session_controller.dart';
+import 'package:frontend/app/router/app_router.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
 
 class LoginRequireDialog extends StatelessWidget {
   const LoginRequireDialog({super.key});

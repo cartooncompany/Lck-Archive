@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/app_dependencies_scope.dart';
-import '../../../../app/router/app_router.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/network/media_url_resolver.dart';
-import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
-import '../../../../shared/models/player_profile.dart';
-import '../../../../shared/models/team_summary.dart';
-import '../../../../shared/widgets/player_avatar.dart';
-import '../../../../shared/widgets/responsive_page_container.dart';
-import '../../../matches/presentation/widgets/form_strip.dart';
-import '../../../matches/presentation/widgets/match_result_tile.dart';
+import 'package:frontend/app/app_dependencies_scope.dart';
+import 'package:frontend/app/router/app_router.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/core/constants/app_spacing.dart';
+import 'package:frontend/core/network/media_url_resolver.dart';
+import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
+import 'package:frontend/shared/models/player_profile.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/shared/widgets/player_avatar.dart';
+import 'package:frontend/shared/widgets/responsive_page_container.dart';
+import 'package:frontend/features/matches/presentation/widgets/form_strip.dart';
+import 'package:frontend/features/matches/presentation/widgets/match_result_tile.dart';
 
 class TeamDetailPage extends StatefulWidget {
   const TeamDetailPage({required this.team, super.key});

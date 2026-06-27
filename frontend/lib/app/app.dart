@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/constants/app_strings.dart';
-import '../features/auth/presentation/bloc/session_controller.dart';
-import '../features/auth/presentation/pages/splash_page.dart';
-import '../features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
-import '../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
-import '../shared/models/team_summary.dart';
+import 'package:frontend/core/constants/app_strings.dart';
+import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
+import 'package:frontend/features/auth/presentation/pages/splash_page.dart';
+import 'package:frontend/features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
+import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
+import 'package:frontend/shared/models/team_summary.dart';
 import 'app_dependencies.dart';
 import 'app_dependencies_scope.dart';
 import 'router/app_router.dart';

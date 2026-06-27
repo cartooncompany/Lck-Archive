@@ -3,15 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/app_dependencies_scope.dart';
-import '../../../../app/router/app_router.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../shared/models/lck_scheduled_match.dart';
-import '../../../../shared/widgets/responsive_page_container.dart';
-import '../../../../shared/widgets/section_header.dart';
-import '../../../../shared/widgets/app_status_card.dart';
-import '../utils/match_prediction_storage.dart';
-import '../widgets/scheduled_match_tile.dart';
+import 'package:frontend/app/app_dependencies_scope.dart';
+import 'package:frontend/app/router/app_router.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/models/lck_scheduled_match.dart';
+import 'package:frontend/shared/widgets/responsive_page_container.dart';
+import 'package:frontend/shared/widgets/section_header.dart';
+import 'package:frontend/shared/widgets/app_status_card.dart';
+import 'package:frontend/features/matches/presentation/utils/match_prediction_storage.dart';
+import 'package:frontend/features/matches/presentation/widgets/scheduled_match_tile.dart';
 
 class MatchesSchedulePage extends StatefulWidget {
   const MatchesSchedulePage({super.key});

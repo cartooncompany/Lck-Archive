@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
+import 'package:frontend/app/theme/app_colors.dart';
 
 final class AuthUiColors {
   static const Color canvas = AppColors.background;

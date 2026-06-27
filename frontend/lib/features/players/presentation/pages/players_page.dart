@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/app_dependencies_scope.dart';
-import '../../../../app/router/app_router.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../shared/models/player_profile.dart';
-import '../../../../shared/widgets/app_search_field.dart';
-import '../../../../shared/widgets/app_status_card.dart';
-import '../../../../shared/widgets/responsive_page_container.dart';
-import '../widgets/player_list_tile.dart';
+import 'package:frontend/app/app_dependencies_scope.dart';
+import 'package:frontend/app/router/app_router.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/models/player_profile.dart';
+import 'package:frontend/shared/widgets/app_search_field.dart';
+import 'package:frontend/shared/widgets/app_status_card.dart';
+import 'package:frontend/shared/widgets/responsive_page_container.dart';
+import 'package:frontend/features/players/presentation/widgets/player_list_tile.dart';
 
 class PlayersPage extends StatefulWidget {
   const PlayersPage({super.key});

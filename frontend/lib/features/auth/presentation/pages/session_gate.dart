@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../shared/widgets/app_shell.dart';
-import '../bloc/session_controller.dart';
+import 'package:frontend/shared/widgets/app_shell.dart';
+import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
 import 'login_page.dart';
 import 'splash_page.dart';
 import 'signup_page.dart';

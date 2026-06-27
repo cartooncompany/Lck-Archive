@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/app_dependencies_scope.dart';
-import '../../../../app/router/app_router.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
-import '../../../../shared/extensions/date_extensions.dart';
-import '../../../../shared/models/player_profile.dart';
-import '../../../../shared/models/team_summary.dart';
-import '../../../../shared/widgets/player_avatar.dart';
-import '../../../../shared/widgets/responsive_page_container.dart';
-import '../../../../shared/widgets/app_status_card.dart';
-import '../widgets/player_radar_chart.dart';
+import 'package:frontend/app/app_dependencies_scope.dart';
+import 'package:frontend/app/router/app_router.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/core/constants/app_spacing.dart';
+import 'package:frontend/shared/extensions/date_extensions.dart';
+import 'package:frontend/shared/models/player_profile.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/shared/widgets/player_avatar.dart';
+import 'package:frontend/shared/widgets/responsive_page_container.dart';
+import 'package:frontend/shared/widgets/app_status_card.dart';
+import 'package:frontend/features/players/presentation/widgets/player_radar_chart.dart';
 
 class PlayerDetailPage extends StatefulWidget {
   const PlayerDetailPage({required this.player, super.key});

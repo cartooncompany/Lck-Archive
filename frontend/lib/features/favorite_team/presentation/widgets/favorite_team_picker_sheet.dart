@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/app_dependencies_scope.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../shared/models/team_summary.dart';
-import '../../../../shared/widgets/team_logo.dart';
-import '../bloc/favorite_team_controller.dart';
+import 'package:frontend/app/app_dependencies_scope.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/shared/widgets/team_logo.dart';
+import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
 
 class FavoriteTeamPickerSheet extends StatelessWidget {
   const FavoriteTeamPickerSheet({super.key});

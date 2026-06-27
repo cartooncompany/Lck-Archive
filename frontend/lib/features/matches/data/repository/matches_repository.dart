@@ -1,9 +1,9 @@
-import '../../../../shared/models/lck_match_detail.dart';
-import '../../../../shared/models/lck_scheduled_match.dart';
-import '../../../teams/data/dto/team_match_dto.dart';
-import '../../domain/repository/matches_repository_interface.dart';
-import '../datasource/matches_remote_data_source.dart';
-import '../dto/match_detail_dto.dart';
+import 'package:frontend/shared/models/lck_match_detail.dart';
+import 'package:frontend/shared/models/lck_scheduled_match.dart';
+import 'package:frontend/features/teams/data/dto/team_match_dto.dart';
+import 'package:frontend/features/matches/domain/repository/matches_repository_interface.dart';
+import 'package:frontend/features/matches/data/datasource/matches_remote_data_source.dart';
+import 'package:frontend/features/matches/data/dto/match_detail_dto.dart';
 
 class MatchesRepository implements IMatchesRepository {
   MatchesRepository({required MatchesRemoteDataSource remoteDataSource})

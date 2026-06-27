@@ -1,5 +1,5 @@
-import '../../../../core/network/paged_response.dart';
-import '../../../../shared/models/news_article.dart';
+import 'package:frontend/core/network/paged_response.dart';
+import 'package:frontend/shared/models/news_article.dart';
 
 abstract class INewsRepository {
   Future<PagedResponse<NewsArticle>> getNews({

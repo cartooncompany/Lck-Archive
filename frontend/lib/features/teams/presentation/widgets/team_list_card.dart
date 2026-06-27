@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
-import '../../../../shared/models/team_summary.dart';
-import '../../../../shared/widgets/team_logo.dart';
-import '../../../matches/presentation/widgets/form_strip.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/shared/widgets/team_logo.dart';
+import 'package:frontend/features/matches/presentation/widgets/form_strip.dart';
 
 /// LCK Archive의 팀 목록 및 홈 화면 순위표에서 각 팀의 정보를 렌더링하는 고급 순위 카드 위젯입니다.
 /// 상위 순위(1~3위)에 대한 눈부신 네온 메달리온 장식과 1위 팀의 왕관 광원 필터 효과,

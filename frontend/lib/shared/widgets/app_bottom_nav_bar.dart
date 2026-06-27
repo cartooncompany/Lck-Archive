@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import '../../app/theme/app_colors.dart';
-import '../../core/enums/app_tab.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/core/enums/app_tab.dart';
 
 class AppBottomNavBar extends StatelessWidget {
   const AppBottomNavBar({

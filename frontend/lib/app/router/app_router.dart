@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/auth/presentation/bloc/session_controller.dart';
-import '../../features/auth/presentation/pages/login_page.dart';
-import '../../features/auth/presentation/pages/signup_page.dart';
-import '../../features/matches/presentation/pages/match_detail_page.dart';
-import '../../features/matches/presentation/pages/matches_schedule_page.dart';
-import '../../features/players/presentation/pages/player_detail_page.dart';
-import '../../features/settings/presentation/pages/settings_page.dart';
-import '../../features/teams/presentation/pages/team_detail_page.dart';
-import '../../shared/models/player_profile.dart';
-import '../../shared/models/team_summary.dart';
-import '../../shared/widgets/app_shell.dart';
+import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
+import 'package:frontend/features/auth/presentation/pages/login_page.dart';
+import 'package:frontend/features/auth/presentation/pages/signup_page.dart';
+import 'package:frontend/features/matches/presentation/pages/match_detail_page.dart';
+import 'package:frontend/features/matches/presentation/pages/matches_schedule_page.dart';
+import 'package:frontend/features/players/presentation/pages/player_detail_page.dart';
+import 'package:frontend/features/settings/presentation/pages/settings_page.dart';
+import 'package:frontend/features/teams/presentation/pages/team_detail_page.dart';
+import 'package:frontend/shared/models/player_profile.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/shared/widgets/app_shell.dart';
 
 final class AppRoutePaths {
   const AppRoutePaths._();

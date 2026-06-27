@@ -2,15 +2,15 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/error/app_failure.dart';
-import '../../../../core/storage/local_storage.dart';
-import '../../../../shared/models/player_profile.dart';
-import '../../../../shared/models/team_summary.dart';
-import '../../../teams/domain/repository/teams_repository_interface.dart';
-import '../../domain/repository/players_repository_interface.dart';
-import '../datasource/players_remote_data_source.dart';
-import '../dto/player_detail_dto.dart';
-import '../dto/player_summary_dto.dart';
+import 'package:frontend/core/error/app_failure.dart';
+import 'package:frontend/core/storage/local_storage.dart';
+import 'package:frontend/shared/models/player_profile.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/features/teams/domain/repository/teams_repository_interface.dart';
+import 'package:frontend/features/players/domain/repository/players_repository_interface.dart';
+import 'package:frontend/features/players/data/datasource/players_remote_data_source.dart';
+import 'package:frontend/features/players/data/dto/player_detail_dto.dart';
+import 'package:frontend/features/players/data/dto/player_summary_dto.dart';
 
 class PlayersRepository implements IPlayersRepository {
   PlayersRepository({

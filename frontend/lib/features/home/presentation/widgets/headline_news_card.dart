@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../shared/models/news_article.dart';
-import '../../../news/presentation/widgets/news_article_card.dart';
+import 'package:frontend/shared/models/news_article.dart';
+import 'package:frontend/features/news/presentation/widgets/news_article_card.dart';
 
 class HeadlineNewsCard extends StatelessWidget {
   const HeadlineNewsCard({

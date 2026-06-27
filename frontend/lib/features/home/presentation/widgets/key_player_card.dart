@@ -1,9 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
-import '../../../../shared/models/player_profile.dart';
-import '../../../../shared/widgets/player_avatar.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/models/player_profile.dart';
+import 'package:frontend/shared/widgets/player_avatar.dart';
 
 class KeyPlayerCard extends StatefulWidget {
   const KeyPlayerCard({required this.player, required this.onTap, super.key});

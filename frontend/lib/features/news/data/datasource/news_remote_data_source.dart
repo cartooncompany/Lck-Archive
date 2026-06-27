@@ -1,6 +1,6 @@
-import '../../../../core/network/api_client.dart';
-import '../../../../core/network/paged_response.dart';
-import '../dto/news_item_dto.dart';
+import 'package:frontend/core/network/api_client.dart';
+import 'package:frontend/core/network/paged_response.dart';
+import 'package:frontend/features/news/data/dto/news_item_dto.dart';
 
 class NewsRemoteDataSource {
   const NewsRemoteDataSource(this._apiClient);

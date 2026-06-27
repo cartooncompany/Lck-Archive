@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import '../../../../shared/models/team_summary.dart';
-import '../../domain/usecases/toggle_favorite_team_usecase.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/features/favorite_team/domain/usecases/toggle_favorite_team_usecase.dart';
 
 class FavoriteTeamController extends ChangeNotifier {
   FavoriteTeamController({

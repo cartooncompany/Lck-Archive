@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
+import 'package:frontend/app/theme/app_colors.dart';
 
 class FormStrip extends StatelessWidget {
   const FormStrip({required this.form, super.key});

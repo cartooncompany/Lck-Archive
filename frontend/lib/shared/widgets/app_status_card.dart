@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../app/theme/app_colors.dart';
+import 'package:frontend/app/theme/app_colors.dart';
 
 /// LCK Archive의 모든 페이지에서 예외 또는 빈 상태를 사용자 친화적으로 렌더링하는 공통 상태 카드 위젯입니다.
 /// 날것의 기계어 에러를 감지하여 따뜻한 언어로 자동 변환하고,

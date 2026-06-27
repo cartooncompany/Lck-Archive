@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../app/theme/app_colors.dart';
-import '../../core/network/media_url_resolver.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/core/network/media_url_resolver.dart';
 
 class TeamLogo extends StatelessWidget {
   static const Color defaultBackgroundColor = AppColors.surface;

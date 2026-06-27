@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 
-import '../../../../core/network/paged_response.dart';
-import '../../../../core/network/pagination_meta.dart';
-import '../../../../shared/models/news_article.dart';
-import '../../domain/repository/news_repository_interface.dart';
-import '../datasource/news_remote_data_source.dart';
-import '../dto/news_item_dto.dart';
+import 'package:frontend/core/network/paged_response.dart';
+import 'package:frontend/core/network/pagination_meta.dart';
+import 'package:frontend/shared/models/news_article.dart';
+import 'package:frontend/features/news/domain/repository/news_repository_interface.dart';
+import 'package:frontend/features/news/data/datasource/news_remote_data_source.dart';
+import 'package:frontend/features/news/data/dto/news_item_dto.dart';
 
 class NewsRepository implements INewsRepository {
   static const int _remotePageLimit = 100;

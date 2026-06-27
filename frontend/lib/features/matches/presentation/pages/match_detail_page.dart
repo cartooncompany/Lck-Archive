@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../app/app_dependencies_scope.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../shared/extensions/date_extensions.dart';
-import '../../../../shared/models/lck_match_detail.dart';
-import '../../../../shared/models/lck_scheduled_match.dart';
-import '../../../../shared/widgets/responsive_page_container.dart';
-import '../../../../shared/widgets/section_header.dart';
-import '../../../../shared/widgets/team_logo.dart';
-import '../../../../shared/widgets/app_status_card.dart';
+import 'package:frontend/app/app_dependencies_scope.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/extensions/date_extensions.dart';
+import 'package:frontend/shared/models/lck_match_detail.dart';
+import 'package:frontend/shared/models/lck_scheduled_match.dart';
+import 'package:frontend/shared/widgets/responsive_page_container.dart';
+import 'package:frontend/shared/widgets/section_header.dart';
+import 'package:frontend/shared/widgets/team_logo.dart';
+import 'package:frontend/shared/widgets/app_status_card.dart';
 
 class MatchDetailPage extends StatefulWidget {
   const MatchDetailPage({required this.matchId, super.key});

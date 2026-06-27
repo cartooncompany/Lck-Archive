@@ -1,9 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
-import '../../../../shared/extensions/date_extensions.dart';
-import '../../../../shared/models/lck_match_result.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/extensions/date_extensions.dart';
+import 'package:frontend/shared/models/lck_match_result.dart';
 
 class MatchResultTile extends StatelessWidget {
   const MatchResultTile({

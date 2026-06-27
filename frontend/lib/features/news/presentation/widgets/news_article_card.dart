@@ -1,9 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/app_colors.dart';
-import '../../../../core/network/media_url_resolver.dart';
-import '../../../../shared/models/news_article.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/core/network/media_url_resolver.dart';
+import 'package:frontend/shared/models/news_article.dart';
 
 class NewsArticleCard extends StatelessWidget {
   const NewsArticleCard({

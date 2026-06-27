@@ -1,5 +1,5 @@
-import '../../data/models/auth_session.dart';
-import '../../data/models/auth_user.dart';
+import 'package:frontend/features/auth/data/models/auth_session.dart';
+import 'package:frontend/features/auth/data/models/auth_user.dart';
 
 abstract class IAuthRepository {
   Future<AuthSession?> restoreSession();

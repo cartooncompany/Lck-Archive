@@ -1,7 +1,7 @@
-import '../../../../core/network/api_client.dart';
-import '../../../../core/network/paged_response.dart';
-import '../dto/player_detail_dto.dart';
-import '../dto/player_summary_dto.dart';
+import 'package:frontend/core/network/api_client.dart';
+import 'package:frontend/core/network/paged_response.dart';
+import 'package:frontend/features/players/data/dto/player_detail_dto.dart';
+import 'package:frontend/features/players/data/dto/player_summary_dto.dart';
 
 class PlayersRemoteDataSource {
   const PlayersRemoteDataSource(this._apiClient);

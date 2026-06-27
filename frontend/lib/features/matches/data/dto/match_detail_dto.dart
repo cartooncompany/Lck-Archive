@@ -1,4 +1,4 @@
-import '../../../teams/data/dto/team_match_dto.dart';
+import 'package:frontend/features/teams/data/dto/team_match_dto.dart';
 
 class MatchParticipantDto {
   const MatchParticipantDto({

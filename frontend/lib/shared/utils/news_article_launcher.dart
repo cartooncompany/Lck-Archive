@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../models/news_article.dart';
+import 'package:frontend/shared/models/news_article.dart';
 
 Future<void> openNewsArticle(BuildContext context, NewsArticle article) async {
   final uri = Uri.tryParse(article.articleUrl);

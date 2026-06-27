@@ -3,13 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/app_dependencies_scope.dart';
-import '../../../../app/router/app_router.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../shared/models/team_summary.dart';
-import '../../../../shared/widgets/app_search_field.dart';
-import '../../../../shared/widgets/responsive_page_container.dart';
-import '../widgets/team_list_card.dart';
+import 'package:frontend/app/app_dependencies_scope.dart';
+import 'package:frontend/app/router/app_router.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/shared/widgets/app_search_field.dart';
+import 'package:frontend/shared/widgets/responsive_page_container.dart';
+import 'package:frontend/features/teams/presentation/widgets/team_list_card.dart';
 
 class TeamsPage extends StatefulWidget {
   const TeamsPage({super.key});

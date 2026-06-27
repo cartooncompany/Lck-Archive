@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import '../../../../core/storage/local_storage.dart';
+import 'package:frontend/core/storage/local_storage.dart';
 
 const String matchPredictionStorageKey = 'home_page.match_predictions.v1';
 
