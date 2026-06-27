@@ -4,78 +4,29 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../app/app_dependencies_scope.dart';
-import '../../../../app/router/app_router.dart';
-import '../../../../app/theme/app_colors.dart';
-import '../../../../core/constants/app_spacing.dart';
-import '../../../../core/constants/app_strings.dart';
-import '../../../../core/error/app_failure.dart';
-import '../../../../features/auth/presentation/bloc/session_controller.dart';
-import '../../../../features/favorite_team/presentation/bloc/favorite_team_controller.dart';
-import '../../../../features/favorite_team/presentation/widgets/favorite_team_picker_sheet.dart';
-import '../../../../shared/models/lck_match_detail.dart';
-import '../../../../shared/models/lck_scheduled_match.dart';
-import '../../../../shared/models/news_article.dart';
-import '../../../matches/presentation/widgets/completed_match_tile.dart';
-import '../../../../shared/models/team_summary.dart';
-import '../../../../shared/utils/news_article_launcher.dart';
-import '../../../../shared/widgets/responsive_page_container.dart';
-import '../../../../shared/widgets/section_header.dart';
-import '../../../matches/presentation/utils/match_prediction_storage.dart';
-import '../../../matches/presentation/widgets/scheduled_match_tile.dart';
-import '../../../../shared/widgets/login_require_dialog.dart';
-import '../../../teams/presentation/widgets/team_list_card.dart';
-import '../widgets/favorite_team_card.dart';
-import '../widgets/headline_news_card.dart';
-
-/// 쫀득한 버튼 스케일 바운스 효과
-class _BounceAction extends StatefulWidget {
-  const _BounceAction({required this.child, required this.onTap});
-
-  final Widget child;
-  final VoidCallback onTap;
-
-  @override
-  State<_BounceAction> createState() => _BounceActionState();
-}
-
-class _BounceActionState extends State<_BounceAction>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scale = Tween<double>(
-      begin: 1.0,
-      end: 0.96,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _controller.reverse(),
-      child: ScaleTransition(scale: _scale, child: widget.child),
-    );
-  }
-}
+import 'package:frontend/app/app_dependencies_scope.dart';
+import 'package:frontend/app/router/app_router.dart';
+import 'package:frontend/app/theme/app_colors.dart';
+import 'package:frontend/core/constants/app_spacing.dart';
+import 'package:frontend/core/constants/app_strings.dart';
+import 'package:frontend/features/auth/presentation/bloc/session_controller.dart';
+import 'package:frontend/features/favorite_team/presentation/bloc/favorite_team_controller.dart';
+import 'package:frontend/features/favorite_team/presentation/widgets/favorite_team_picker_sheet.dart';
+import 'package:frontend/shared/models/lck_match_detail.dart';
+import 'package:frontend/shared/models/lck_scheduled_match.dart';
+import 'package:frontend/shared/models/news_article.dart';
+import 'package:frontend/features/matches/presentation/widgets/completed_match_tile.dart';
+import 'package:frontend/shared/models/team_summary.dart';
+import 'package:frontend/shared/utils/news_article_launcher.dart';
+import 'package:frontend/shared/widgets/bounce_tap_target.dart';
+import 'package:frontend/shared/widgets/responsive_page_container.dart';
+import 'package:frontend/shared/widgets/section_header.dart';
+import 'package:frontend/features/matches/presentation/widgets/scheduled_match_tile.dart';
+import 'package:frontend/features/home/presentation/bloc/home_view_model.dart';
+import 'package:frontend/shared/widgets/login_require_dialog.dart';
+import 'package:frontend/features/teams/presentation/widgets/team_list_card.dart';
+import 'package:frontend/features/home/presentation/widgets/favorite_team_card.dart';
+import 'package:frontend/features/home/presentation/widgets/headline_news_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -86,12 +37,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
-  Future<_HomePageData>? _homeFuture;
-  String? _loadedTeamId;
-  bool _isSyncingSchedule = false;
+  HomeViewModel? _viewModel;
   bool _showAllStandings = false;
-  bool _hasLoadedPredictions = false;
-  Map<String, String> _matchPredictions = <String, String>{};
+  bool _hasInitialized = false;
 
   late final AnimationController _skeletonController;
 
@@ -107,184 +55,192 @@ class _HomePageState extends State<HomePage>
   @override
   void dispose() {
     _skeletonController.dispose();
+    _viewModel?.removeListener(_onViewModelChanged);
+    _viewModel?.dispose();
     super.dispose();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_hasLoadedPredictions) {
+    if (_hasInitialized) {
       return;
     }
-    _hasLoadedPredictions = true;
-    unawaited(_loadMatchPredictions(context));
+    _hasInitialized = true;
+
+    final dependencies = AppDependenciesScope.of(context);
+    _viewModel = HomeViewModel(
+      dependencies: dependencies,
+      localStorage: dependencies.localStorage,
+    )..addListener(_onViewModelChanged);
+    unawaited(_viewModel!.refreshPredictions());
+  }
+
+  void _onViewModelChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isSignedIn = SessionScope.maybeOf(context)?.isSignedIn ?? false;
-    final favoriteTeam = isSignedIn ? FavoriteTeamScope.of(context).favoriteTeam : null;
-    if (_loadedTeamId != favoriteTeam?.id || _homeFuture == null) {
-      _loadedTeamId = favoriteTeam?.id;
-      _homeFuture = _loadHomeData(context, favoriteTeam);
+    final viewModel = _viewModel;
+    if (viewModel == null) {
+      return const SizedBox.shrink();
     }
 
-    return FutureBuilder<_HomePageData>(
-      future: _homeFuture,
-      builder: (context, snapshot) {
-        final data = snapshot.data;
-        final team = data?.team ?? favoriteTeam;
-        final standings = data?.standings ?? const <TeamSummary>[];
-        final visibleStandings = _showAllStandings
-            ? standings
-            : standings.take(5).toList();
-        final featuredNews = data?.featuredNews ?? const <NewsArticle>[];
-        final scheduledMatches =
-            data?.scheduledMatches ?? const <LckScheduledMatch>[];
-        final scheduleError = data?.scheduleError;
+    final isSignedIn = SessionScope.maybeOf(context)?.isSignedIn ?? false;
+    final favoriteTeam = isSignedIn
+        ? FavoriteTeamScope.of(context).favoriteTeam
+        : null;
+    viewModel.loadIfNeeded(favoriteTeam);
 
-        return Stack(
-          children: [
-            // 응원팀 시그니처 색상을 반영한 은은한 구단 컬러 오라(Glow) 백그라운드
-            if (team != null)
-              Positioned(
-                top: -100,
-                right: -100,
-                child: IgnorePointer(
-                  child: Container(
-                    width: 420,
-                    height: 420,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          team.color.withValues(alpha: 0.16),
-                          team.color.withValues(alpha: 0.04),
-                          Colors.transparent,
-                        ],
-                        stops: const [0.0, 0.5, 1.0],
-                      ),
-                    ),
+    final isLoading = viewModel.isLoading;
+    final data = viewModel.state;
+    final team = data.team ?? favoriteTeam;
+    final standings = data.standings;
+    final visibleStandings = _showAllStandings
+        ? standings
+        : standings.take(5).toList();
+    final featuredNews = data.featuredNews;
+    final scheduledMatches = data.scheduledMatches;
+    final scheduleError = data.scheduleError;
+
+    return Stack(
+      children: [
+        // 응원팀 시그니처 색상을 반영한 은은한 구단 컬러 오라(Glow) 백그라운드
+        if (team != null)
+          Positioned(
+            top: -100,
+            right: -100,
+            child: IgnorePointer(
+              child: Container(
+                width: 420,
+                height: 420,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      team.color.withValues(alpha: 0.16),
+                      team.color.withValues(alpha: 0.04),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
                   ),
                 ),
               ),
+            ),
+          ),
 
-            ListView(
-              padding: const EdgeInsets.only(top: 12, bottom: 120),
-              children: [
-                ResponsivePageContainer(
-                  maxWidth: 1220,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final useSplitLayout = constraints.maxWidth >= 1080;
+        ListView(
+          padding: const EdgeInsets.only(top: 12, bottom: 120),
+          children: [
+            ResponsivePageContainer(
+              maxWidth: 1220,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final useSplitLayout = constraints.maxWidth >= 1080;
 
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildHeader(context, team),
-                          const SizedBox(height: 22),
-                          if (team != null)
-                            FavoriteTeamCard(
-                              team: team,
-                              onTap: () => _openTeamDetail(context, team),
-                            )
-                          else
-                            _FavoriteTeamEmptyCard(
-                              onTap: () {
-                                if (!isSignedIn) {
-                                  LoginRequireDialog.show(context);
-                                } else {
-                                  _showFavoriteTeamPicker(context);
-                                }
-                              },
-                            ),
-                          const SizedBox(height: AppSpacing.section),
-                          if (useSplitLayout)
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 13,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      _buildRecentResultsSection(
-                                        context: context,
-                                        snapshot: snapshot,
-                                        recentResults: data?.recentResults ?? const [],
-                                        recentResultsError: data?.recentResultsError,
-                                      ),
-                                      const SizedBox(
-                                        height: AppSpacing.section,
-                                      ),
-                                      _buildScheduleSection(
-                                        context: context,
-                                        snapshot: snapshot,
-                                        scheduledMatches: scheduledMatches,
-                                        scheduleError: scheduleError,
-                                      ),
-                                      const SizedBox(
-                                        height: AppSpacing.section,
-                                      ),
-                                      _buildStandingsSection(
-                                        context: context,
-                                        snapshot: snapshot,
-                                        standings: standings,
-                                        visibleStandings: visibleStandings,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 24),
-                                Expanded(
-                                  flex: 10,
-                                  child: _buildNewsSection(
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(context, team),
+                      const SizedBox(height: 22),
+                      if (team != null)
+                        FavoriteTeamCard(
+                          team: team,
+                          onTap: () => _openTeamDetail(context, team),
+                        )
+                      else
+                        _FavoriteTeamEmptyCard(
+                          onTap: () {
+                            if (!isSignedIn) {
+                              LoginRequireDialog.show(context);
+                            } else {
+                              _showFavoriteTeamPicker(context);
+                            }
+                          },
+                        ),
+                      const SizedBox(height: AppSpacing.section),
+                      if (useSplitLayout)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              flex: 13,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildRecentResultsSection(
                                     context: context,
-                                    snapshot: snapshot,
-                                    featuredNews: featuredNews,
+                                    isLoading: isLoading,
+                                    recentResults: data.recentResults,
+                                    recentResultsError: data.recentResultsError,
                                   ),
-                                ),
-                              ],
-                            )
-                          else ...[
-                            _buildRecentResultsSection(
-                              context: context,
-                              snapshot: snapshot,
-                              recentResults: data?.recentResults ?? const [],
-                              recentResultsError: data?.recentResultsError,
+                                  const SizedBox(height: AppSpacing.section),
+                                  _buildScheduleSection(
+                                    context: context,
+                                    isLoading: isLoading,
+                                    scheduledMatches: scheduledMatches,
+                                    scheduleError: scheduleError,
+                                  ),
+                                  const SizedBox(height: AppSpacing.section),
+                                  _buildStandingsSection(
+                                    context: context,
+                                    isLoading: isLoading,
+                                    standings: standings,
+                                    visibleStandings: visibleStandings,
+                                  ),
+                                ],
+                              ),
                             ),
-                            const SizedBox(height: AppSpacing.section),
-                            _buildScheduleSection(
-                              context: context,
-                              snapshot: snapshot,
-                              scheduledMatches: scheduledMatches,
-                              scheduleError: scheduleError,
-                            ),
-                            const SizedBox(height: AppSpacing.section),
-                            _buildStandingsSection(
-                              context: context,
-                              snapshot: snapshot,
-                              standings: standings,
-                              visibleStandings: visibleStandings,
-                            ),
-                            const SizedBox(height: AppSpacing.section),
-                            _buildNewsSection(
-                              context: context,
-                              snapshot: snapshot,
-                              featuredNews: featuredNews,
+                            const SizedBox(width: 24),
+                            Expanded(
+                              flex: 10,
+                              child: _buildNewsSection(
+                                context: context,
+                                isLoading: isLoading,
+                                featuredNews: featuredNews,
+                              ),
                             ),
                           ],
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
+                        )
+                      else ...[
+                        _buildRecentResultsSection(
+                          context: context,
+                          isLoading: isLoading,
+                          recentResults: data.recentResults,
+                          recentResultsError: data.recentResultsError,
+                        ),
+                        const SizedBox(height: AppSpacing.section),
+                        _buildScheduleSection(
+                          context: context,
+                          isLoading: isLoading,
+                          scheduledMatches: scheduledMatches,
+                          scheduleError: scheduleError,
+                        ),
+                        const SizedBox(height: AppSpacing.section),
+                        _buildStandingsSection(
+                          context: context,
+                          isLoading: isLoading,
+                          standings: standings,
+                          visibleStandings: visibleStandings,
+                        ),
+                        const SizedBox(height: AppSpacing.section),
+                        _buildNewsSection(
+                          context: context,
+                          isLoading: isLoading,
+                          featuredNews: featuredNews,
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
             ),
           ],
-        );
-      },
+        ),
+      ],
     );
   }
 
@@ -396,7 +352,7 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildRecentResultsSection({
     required BuildContext context,
-    required AsyncSnapshot<_HomePageData> snapshot,
+    required bool isLoading,
     required List<LckMatchDetail> recentResults,
     required String? recentResultsError,
   }) {
@@ -407,15 +363,13 @@ class _HomePageState extends State<HomePage>
           title: '최근 경기 결과',
         ),
         const SizedBox(height: 14),
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            recentResults.isEmpty &&
-            recentResultsError == null)
+        if (isLoading && recentResults.isEmpty && recentResultsError == null)
           _SkeletonSection(animation: _skeletonController, itemCount: 3, itemHeight: 72)
         else if (recentResults.isEmpty && recentResultsError != null)
           _EmptySectionMessage(
             message: recentResultsError,
             actionLabel: '다시 시도',
-            onActionTap: () => _refreshHomeData(context),
+            onActionTap: _refreshHomeData,
           )
         else if (recentResults.isEmpty)
           const _EmptySectionMessage(
@@ -437,10 +391,11 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildScheduleSection({
     required BuildContext context,
-    required AsyncSnapshot<_HomePageData> snapshot,
+    required bool isLoading,
     required List<LckScheduledMatch> scheduledMatches,
     required String? scheduleError,
   }) {
+    final isSyncingSchedule = _viewModel?.isSyncingSchedule ?? false;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -450,21 +405,19 @@ class _HomePageState extends State<HomePage>
           onActionTap: () => _openSchedulePage(context),
         ),
         const SizedBox(height: 14),
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            scheduledMatches.isEmpty &&
-            scheduleError == null)
+        if (isLoading && scheduledMatches.isEmpty && scheduleError == null)
           _SkeletonSection(animation: _skeletonController, itemCount: 4, itemHeight: 80)
         else if (scheduledMatches.isEmpty && scheduleError != null)
           _EmptySectionMessage(
             message: scheduleError,
             actionLabel: '다시 시도',
-            onActionTap: () => _refreshHomeData(context),
+            onActionTap: _refreshHomeData,
           )
         else if (scheduledMatches.isEmpty)
           _EmptySectionMessage(
             message: '표시할 경기 일정이 없습니다. 일정 데이터가 비어 있다면 동기화를 먼저 요청해 주세요.',
-            actionLabel: _isSyncingSchedule ? '동기화 요청 중...' : '동기화 요청',
-            onActionTap: _isSyncingSchedule
+            actionLabel: isSyncingSchedule ? '동기화 요청 중...' : '동기화 요청',
+            onActionTap: isSyncingSchedule
                 ? null
                 : () => _requestScheduleSync(context),
           )
@@ -476,7 +429,8 @@ class _HomePageState extends State<HomePage>
                   padding: const EdgeInsets.only(bottom: 12),
                   child: ScheduledMatchTile(
                     match: match,
-                    predictedWinnerTeamId: _matchPredictions[match.id],
+                    predictedWinnerTeamId:
+                        _viewModel?.matchPredictions[match.id],
                     onPredictWinner: (teamId) => _handleMatchPrediction(
                       matchId: match.id,
                       teamId: teamId,
@@ -491,7 +445,7 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildStandingsSection({
     required BuildContext context,
-    required AsyncSnapshot<_HomePageData> snapshot,
+    required bool isLoading,
     required List<TeamSummary> standings,
     required List<TeamSummary> visibleStandings,
   }) {
@@ -500,8 +454,7 @@ class _HomePageState extends State<HomePage>
       children: [
         const SectionHeader(title: '팀 순위'),
         const SizedBox(height: 14),
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            standings.isEmpty)
+        if (isLoading && standings.isEmpty)
           _SkeletonSection(animation: _skeletonController, itemCount: 5, itemHeight: 64)
         else if (standings.isEmpty)
           const _EmptySectionMessage(message: '표시할 팀 순위가 없습니다.')
@@ -538,7 +491,7 @@ class _HomePageState extends State<HomePage>
 
   Widget _buildNewsSection({
     required BuildContext context,
-    required AsyncSnapshot<_HomePageData> snapshot,
+    required bool isLoading,
     required List<NewsArticle> featuredNews,
   }) {
     return Column(
@@ -546,8 +499,7 @@ class _HomePageState extends State<HomePage>
       children: [
         const SectionHeader(title: '이번 주 주요 뉴스'),
         const SizedBox(height: 14),
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            featuredNews.isEmpty)
+        if (isLoading && featuredNews.isEmpty)
           _SkeletonSection(animation: _skeletonController, itemCount: 3, itemHeight: 88)
         else if (featuredNews.isEmpty)
           const _EmptySectionMessage(
@@ -567,103 +519,13 @@ class _HomePageState extends State<HomePage>
     );
   }
 
-  Future<_HomePageData> _loadHomeData(
-    BuildContext context,
-    TeamSummary? favoriteTeam,
-  ) async {
-    final dependencies = AppDependenciesScope.of(context);
-    final standingsFuture = dependencies.teamsRepository.getTeams();
-    final featuredNewsFuture = favoriteTeam == null
-        ? dependencies.newsRepository
-              .getNews(limit: 3)
-              .then((response) => response.items)
-        : dependencies.newsRepository.getFeaturedNewsForTeam(
-            teamName: favoriteTeam.name,
-            shortName: favoriteTeam.initials,
-            limit: 3,
-          );
-
-    final now = DateTime.now();
-    final startOfWeek = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
-    final endOfWeek = DateTime(now.year, now.month, now.day, 23, 59, 59)
-        .add(Duration(days: 7 - now.weekday));
-
-    final scheduledMatchesFuture = dependencies.matchesRepository
-        .getScheduledMatches(
-          from: startOfWeek.toUtc(),
-          to: endOfWeek.toUtc(),
-        );
-
-    final recentResultsFuture = dependencies.matchesRepository.getRecentResults(limit: 3);
-
-    TeamSummary? team = favoriteTeam;
-    if (favoriteTeam != null) {
-      try {
-        team = await dependencies.teamsRepository.getTeam(favoriteTeam.id);
-      } catch (_) {
-        team = favoriteTeam;
-      }
-    }
-
-    final standings = await standingsFuture
-      ..sort((left, right) {
-        if (left.rank == 0 && right.rank == 0) {
-          return left.name.compareTo(right.name);
-        }
-        if (left.rank == 0) {
-          return 1;
-        }
-        if (right.rank == 0) {
-          return -1;
-        }
-        return left.rank.compareTo(right.rank);
-      });
-    List<NewsArticle> featuredNews = const [];
-    try {
-      featuredNews = await featuredNewsFuture;
-    } catch (_) {
-      featuredNews = const <NewsArticle>[];
-    }
-    List<LckScheduledMatch> scheduledMatches = const [];
-    String? scheduleError;
-
-    try {
-      scheduledMatches = await scheduledMatchesFuture;
-    } on AppFailure catch (error) {
-      scheduleError = error.message;
-    } catch (_) {
-      scheduleError = '경기 일정을 불러오지 못했습니다.';
-    }
-
-    List<LckMatchDetail> recentResults = const [];
-    String? recentResultsError;
-
-    try {
-      recentResults = await recentResultsFuture;
-    } on AppFailure catch (error) {
-      recentResultsError = error.message;
-    } catch (_) {
-      recentResultsError = '최근 경기 결과를 불러오지 못했습니다.';
-    }
-
-    return _HomePageData(
-      team: team,
-      standings: standings,
-      featuredNews: featuredNews,
-      scheduledMatches: scheduledMatches,
-      scheduleError: scheduleError,
-      recentResults: recentResults,
-      recentResultsError: recentResultsError,
-    );
+  TeamSummary? get _currentFavoriteTeam {
+    final isSignedIn = SessionScope.maybeOf(context)?.isSignedIn ?? false;
+    return isSignedIn ? FavoriteTeamScope.of(context).favoriteTeam : null;
   }
 
-  void _refreshHomeData(BuildContext context) {
-    final favoriteTeam = FavoriteTeamScope.of(context).favoriteTeam;
-    setState(() {
-      _loadedTeamId = favoriteTeam?.id;
-      _homeFuture = _loadHomeData(context, favoriteTeam);
-    });
+  void _refreshHomeData() {
+    unawaited(_viewModel?.load(_currentFavoriteTeam) ?? Future<void>.value());
   }
 
   void _openTeamDetail(BuildContext context, TeamSummary team) {
@@ -685,78 +547,25 @@ class _HomePageState extends State<HomePage>
   }
 
   Future<void> _requestScheduleSync(BuildContext context) async {
-    if (_isSyncingSchedule) {
+    final viewModel = _viewModel;
+    if (viewModel == null || viewModel.isSyncingSchedule) {
       return;
     }
 
-    setState(() {
-      _isSyncingSchedule = true;
-    });
-
-    final dependencies = AppDependenciesScope.of(context);
-
-    try {
-      await dependencies.matchesRepository.requestLckSync();
-      if (!context.mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('LCK 일정 동기화를 요청했습니다. 잠시 후 새로고침해 주세요.')),
-      );
-      _refreshHomeData(context);
-    } on AppFailure catch (error) {
-      if (!context.mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
-    } catch (_) {
-      if (!context.mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('동기화 요청 중 오류가 발생했습니다.')));
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSyncingSchedule = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _loadMatchPredictions(BuildContext context) async {
-    final storage = AppDependenciesScope.of(context).localStorage;
-    final predictions = await loadMatchPredictions(storage);
-    if (!mounted) {
+    final message = await viewModel.requestScheduleSync(_currentFavoriteTeam);
+    if (!context.mounted) {
       return;
     }
-    setState(() {
-      _matchPredictions = predictions;
-    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _handleMatchPrediction({
     required String matchId,
     required String teamId,
   }) async {
-    final currentTeamId = _matchPredictions[matchId];
-    final nextPredictions = <String, String>{..._matchPredictions};
-
-    if (currentTeamId == teamId) {
-      nextPredictions.remove(matchId);
-    } else {
-      nextPredictions[matchId] = teamId;
-    }
-
-    setState(() {
-      _matchPredictions = nextPredictions;
-    });
-
-    final storage = AppDependenciesScope.of(context).localStorage;
-    await saveMatchPredictions(storage, nextPredictions);
+    await _viewModel?.toggleMatchPrediction(matchId: matchId, teamId: teamId);
   }
 
   void _openSchedulePage(BuildContext context) {
@@ -768,25 +577,6 @@ class _HomePageState extends State<HomePage>
   }
 }
 
-class _HomePageData {
-  const _HomePageData({
-    required this.team,
-    required this.standings,
-    required this.featuredNews,
-    required this.scheduledMatches,
-    required this.scheduleError,
-    required this.recentResults,
-    required this.recentResultsError,
-  });
-
-  final TeamSummary? team;
-  final List<TeamSummary> standings;
-  final List<NewsArticle> featuredNews;
-  final List<LckScheduledMatch> scheduledMatches;
-  final String? scheduleError;
-  final List<LckMatchDetail> recentResults;
-  final String? recentResultsError;
-}
 
 class _FavoriteTeamEmptyCard extends StatelessWidget {
   const _FavoriteTeamEmptyCard({required this.onTap});
@@ -871,7 +661,7 @@ class _FavoriteTeamEmptyCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              _BounceAction(
+              BounceTapTarget(
                 onTap: onTap,
                 child: Container(
                   height: 48,
@@ -1002,7 +792,7 @@ class _EmptySectionMessage extends StatelessWidget {
               ),
               if (actionLabel != null && onActionTap != null) ...[
                 const SizedBox(height: 14),
-                _BounceAction(
+                BounceTapTarget(
                   onTap: onActionTap!,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
