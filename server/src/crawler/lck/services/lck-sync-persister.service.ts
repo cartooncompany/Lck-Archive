@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../database/prisma.service';
 import { LckMapper } from '../mapper/lck.mapper';
 import {
@@ -6,6 +7,8 @@ import {
   RawLckPlayerPayload,
   RawLckMatchPayload,
 } from '../types/lck-source.types';
+
+const EXTERNAL_SOURCE = 'LCK';
 
 @Injectable()
 export class LckSyncPersisterService {
@@ -20,12 +23,66 @@ export class LckSyncPersisterService {
     const teamIdMap = new Map<string, string>();
     const startTime = Date.now();
 
+    if (teams.length === 0) {
+      return teamIdMap;
+    }
+
     await this.prisma.$transaction(async (tx) => {
+      // 1. 기존 레코드를 한 번에 조회 (외부 ID -> 현재 저장된 데이터)
+      const externalIds = teams.map((team) => team.externalId);
+      const existing = await tx.team.findMany({
+        where: {
+          externalSource: EXTERNAL_SOURCE,
+          externalId: { in: externalIds },
+        },
+      });
+      const existingByExternalId = new Map(
+        existing.map((row) => [row.externalId, row]),
+      );
+
+      // 2. 신규 / 변경 분리
+      const toCreate: Prisma.TeamCreateManyInput[] = [];
+      const toUpdate: Array<{ id: string; data: Prisma.TeamCreateManyInput }> =
+        [];
+
       for (const team of teams) {
-        const savedTeam = await tx.team.upsert(
-          this.lckMapper.toTeamUpsertArgs(team),
-        );
-        teamIdMap.set(team.externalId, savedTeam.id);
+        const data = this.lckMapper.toTeamData(team);
+        const current = existingByExternalId.get(team.externalId);
+
+        if (!current) {
+          toCreate.push(data);
+        } else {
+          teamIdMap.set(team.externalId, current.id);
+          if (this.isDirty(current, data)) {
+            toUpdate.push({ id: current.id, data });
+          }
+        }
+      }
+
+      // 3. 신규는 일괄 삽입
+      if (toCreate.length > 0) {
+        await tx.team.createMany({ data: toCreate });
+      }
+
+      // 4. 변경된 기존 레코드만 업데이트
+      await Promise.all(
+        toUpdate.map((item) =>
+          tx.team.update({ where: { id: item.id }, data: item.data }),
+        ),
+      );
+
+      // 5. 신규 삽입분의 id를 매핑에 채운다.
+      if (toCreate.length > 0) {
+        const created = await tx.team.findMany({
+          where: {
+            externalSource: EXTERNAL_SOURCE,
+            externalId: { in: toCreate.map((c) => c.externalId) },
+          },
+          select: { id: true, externalId: true },
+        });
+        for (const row of created) {
+          teamIdMap.set(row.externalId, row.id);
+        }
       }
     });
 
@@ -43,17 +100,68 @@ export class LckSyncPersisterService {
     const playerIdMap = new Map<string, string>();
     const startTime = Date.now();
 
+    if (players.length === 0) {
+      return playerIdMap;
+    }
+
     await this.prisma.$transaction(async (tx) => {
+      const externalIds = players.map((player) => player.externalId);
+      const existing = await tx.player.findMany({
+        where: {
+          externalSource: EXTERNAL_SOURCE,
+          externalId: { in: externalIds },
+        },
+      });
+      const existingByExternalId = new Map(
+        existing.map((row) => [row.externalId, row]),
+      );
+
+      const toCreate: Prisma.PlayerCreateManyInput[] = [];
+      const toUpdate: Array<{
+        id: string;
+        data: Prisma.PlayerCreateManyInput;
+      }> = [];
+
       for (const player of players) {
-        const savedPlayer = await tx.player.upsert(
-          this.lckMapper.toPlayerUpsertArgs(
-            player,
-            player.teamExternalId
-              ? teamIdMap.get(player.teamExternalId)
-              : undefined,
-          ),
+        const data = this.lckMapper.toPlayerData(
+          player,
+          player.teamExternalId
+            ? teamIdMap.get(player.teamExternalId)
+            : undefined,
         );
-        playerIdMap.set(player.externalId, savedPlayer.id);
+        const current = existingByExternalId.get(player.externalId);
+
+        if (!current) {
+          toCreate.push(data);
+        } else {
+          playerIdMap.set(player.externalId, current.id);
+          if (this.isDirty(current, data)) {
+            toUpdate.push({ id: current.id, data });
+          }
+        }
+      }
+
+      if (toCreate.length > 0) {
+        await tx.player.createMany({ data: toCreate });
+      }
+
+      await Promise.all(
+        toUpdate.map((item) =>
+          tx.player.update({ where: { id: item.id }, data: item.data }),
+        ),
+      );
+
+      if (toCreate.length > 0) {
+        const created = await tx.player.findMany({
+          where: {
+            externalSource: EXTERNAL_SOURCE,
+            externalId: { in: toCreate.map((c) => c.externalId) },
+          },
+          select: { id: true, externalId: true },
+        });
+        for (const row of created) {
+          playerIdMap.set(row.externalId, row.id);
+        }
       }
     });
 
@@ -62,6 +170,36 @@ export class LckSyncPersisterService {
       `Players persistence completed. Count=${players.length}, Time=${elapsed}ms`,
     );
     return playerIdMap;
+  }
+
+  /**
+   * 새로 매핑한 데이터(`next`)가 기존 레코드(`current`)와 다른 필드가
+   * 하나라도 있으면 true를 반환한다. 변경이 없으면 불필요한 UPDATE를 생략한다.
+   * Date는 시각 비교, 그 외는 일치 비교한다.
+   */
+  private isDirty(
+    current: Record<string, unknown>,
+    next: Record<string, unknown>,
+  ): boolean {
+    for (const [key, nextValue] of Object.entries(next)) {
+      const currentValue = current[key];
+
+      if (nextValue instanceof Date || currentValue instanceof Date) {
+        const nextTime =
+          nextValue instanceof Date ? nextValue.getTime() : nextValue;
+        const currentTime =
+          currentValue instanceof Date ? currentValue.getTime() : currentValue;
+        if (nextTime !== currentTime) {
+          return true;
+        }
+        continue;
+      }
+
+      if (currentValue !== nextValue) {
+        return true;
+      }
+    }
+    return false;
   }
 
   async persistMatches(
@@ -83,7 +221,10 @@ export class LckSyncPersisterService {
         },
       },
     });
-    const existingMatchMap = new Map<string, { status: string; gameCount: number }>();
+    const existingMatchMap = new Map<
+      string,
+      { status: string; gameCount: number }
+    >();
     for (const m of existingMatches) {
       existingMatchMap.set(m.externalId, {
         status: m.status,

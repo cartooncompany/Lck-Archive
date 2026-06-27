@@ -10,8 +10,8 @@ const EXTERNAL_SOURCE = 'LCK';
 
 @Injectable()
 export class LckMapper {
-  toTeamUpsertArgs(team: RawLckTeamPayload): Prisma.TeamUpsertArgs {
-    const data = {
+  toTeamData(team: RawLckTeamPayload): Prisma.TeamCreateManyInput {
+    return {
       name: team.name,
       shortName: team.shortName,
       slug: this.toSlug(team.shortName),
@@ -25,6 +25,10 @@ export class LckMapper {
       externalSource: EXTERNAL_SOURCE,
       externalId: team.externalId,
     };
+  }
+
+  toTeamUpsertArgs(team: RawLckTeamPayload): Prisma.TeamUpsertArgs {
+    const data = this.toTeamData(team);
 
     return {
       where: {
@@ -38,11 +42,11 @@ export class LckMapper {
     };
   }
 
-  toPlayerUpsertArgs(
+  toPlayerData(
     player: RawLckPlayerPayload,
     teamId?: string,
-  ): Prisma.PlayerUpsertArgs {
-    const data = {
+  ): Prisma.PlayerCreateManyInput {
+    return {
       teamId: teamId ?? null,
       name: player.name,
       slug: this.toSlug(`${player.name}-${player.externalId}`),
@@ -55,6 +59,13 @@ export class LckMapper {
       externalSource: EXTERNAL_SOURCE,
       externalId: player.externalId,
     };
+  }
+
+  toPlayerUpsertArgs(
+    player: RawLckPlayerPayload,
+    teamId?: string,
+  ): Prisma.PlayerUpsertArgs {
+    const data = this.toPlayerData(player, teamId);
 
     return {
       where: {
