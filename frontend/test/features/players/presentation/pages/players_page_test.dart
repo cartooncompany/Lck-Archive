@@ -74,6 +74,8 @@ void main() {
       await pumpPlayersPage(tester);
 
       await tester.enterText(find.byType(TextField), 'f');
+      // 검색 입력은 350ms 디바운스 후 반영되므로 타이머를 경과시킨다.
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
 
       expect(find.text('Faker'), findsOneWidget);
@@ -89,6 +91,8 @@ void main() {
       await pumpPlayersPage(tester);
 
       await tester.enterText(find.byType(TextField), 'hle');
+      // 검색 입력은 350ms 디바운스 후 반영되므로 타이머를 경과시킨다.
+      await tester.pump(const Duration(milliseconds: 400));
       await tester.pumpAndSettle();
 
       expect(find.text('Zeka'), findsOneWidget);

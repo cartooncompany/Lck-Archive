@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:frontend/app/app.dart';
 import 'package:frontend/features/auth/presentation/pages/splash_page.dart';
-import 'package:frontend/features/auth/presentation/widgets/auth_shared_widgets.dart';
+import 'package:frontend/shared/widgets/app_shell.dart';
+import 'package:frontend/shared/widgets/app_bottom_nav_bar.dart';
 
 class MockHttpOverrides extends HttpOverrides {
   @override
@@ -100,7 +102,7 @@ class _MockHttpClientResponse extends Stream<List<int>>
       HttpClientResponseCompressionState.notCompressed;
 
   @override
-  int get contentLength => 0;
+  int get contentLength => -1;
 
   @override
   HttpHeaders get headers => _MockHttpHeaders();
@@ -164,7 +166,7 @@ void main() {
     HttpOverrides.global = MockHttpOverrides();
   });
 
-  testWidgets('shows auth entry flow on app launch', (
+  testWidgets('launches into the home shell without requiring login', (
     WidgetTester tester,
   ) async {
     FlutterSecureStorage.setMockInitialValues(<String, String>{});
@@ -172,21 +174,23 @@ void main() {
 
     await tester.pumpWidget(const LckArchiveApp());
 
+    // 부트스트랩이 완료되기 전에는 스플래시가 먼저 표시된다.
     expect(find.byType(SplashPage), findsOneWidget);
 
+    // 부트스트랩 완료 후, 게스트 모드 없이 곧바로 홈 셸로 진입한다.
     await tester.pump(const Duration(seconds: 2));
-
-    expect(find.text('LCK 경기 기록을\n빠르게 확인하세요.'), findsOneWidget);
-    expect(find.text('기록 탐색하기'), findsOneWidget);
-    expect(find.text('회원가입'), findsOneWidget);
-
-    await tester.tap(find.text('로그인'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.text('로그인'), findsWidgets);
-    expect(find.text('이메일'), findsOneWidget);
-    expect(find.widgetWithText(AuthPrimaryButton, '로그인'), findsOneWidget);
+    expect(find.byType(AppShell), findsOneWidget);
+    expect(find.byType(AppBottomNavBar), findsOneWidget);
+
+    // 하단 네비게이션의 주요 탭이 노출된다.
+    expect(find.text('홈'), findsWidgets);
+    expect(find.text('팀'), findsWidgets);
+    expect(find.text('마이페이지'), findsWidgets);
+
+    // 반복 애니메이션/백그라운드 로딩 타이머를 정리하기 위해 트리를 비운다.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
   });
 }
