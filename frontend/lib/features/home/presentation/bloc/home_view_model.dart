@@ -90,68 +90,65 @@ class HomeViewModel extends ChangeNotifier {
     _isLoading = true;
     _safeNotify();
 
-    final standingsFuture = _dependencies.teamsRepository.getTeams();
-    final featuredNewsFuture = favoriteTeam == null
-        ? _dependencies.newsRepository
-              .getNews(limit: 3)
-              .then((response) => response.items)
-        : _dependencies.newsRepository.getFeaturedNewsForTeam(
-            teamName: favoriteTeam.name,
-            shortName: favoriteTeam.initials,
-            limit: 3,
-          );
-
     final now = DateTime.now();
     final startOfWeek = DateTime(now.year, now.month, now.day)
         .subtract(Duration(days: now.weekday - 1));
     final endOfWeek = DateTime(now.year, now.month, now.day, 23, 59, 59)
         .add(Duration(days: 7 - now.weekday));
 
-    final scheduledMatchesFuture = _dependencies.matchesRepository
-        .getScheduledMatches(from: startOfWeek.toUtc(), to: endOfWeek.toUtc());
-
-    final recentResultsFuture = _dependencies.matchesRepository.getRecentResults(
-      limit: 3,
+    // 독립적인 요청들을 병렬로 시작하되, 각각을 생성 즉시 에러 흡수 래퍼로
+    // 감싸 어떤 요청이 먼저 실패해도 unhandled future 예외가 되지 않게 한다.
+    final teamFuture = _guard<TeamSummary?>(
+      favoriteTeam == null
+          ? Future<TeamSummary?>.value(null)
+          : _dependencies.teamsRepository.getTeam(favoriteTeam.id),
+    );
+    final standingsFuture = _guard<List<TeamSummary>>(
+      _dependencies.teamsRepository.getTeams(),
+    );
+    final featuredNewsFuture = _guard<List<NewsArticle>>(
+      favoriteTeam == null
+          ? _dependencies.newsRepository
+                .getNews(limit: 3)
+                .then((response) => response.items)
+          : _dependencies.newsRepository.getFeaturedNewsForTeam(
+              teamName: favoriteTeam.name,
+              shortName: favoriteTeam.initials,
+              limit: 3,
+            ),
+    );
+    final scheduledMatchesFuture = _guard<List<LckScheduledMatch>>(
+      _dependencies.matchesRepository.getScheduledMatches(
+        from: startOfWeek.toUtc(),
+        to: endOfWeek.toUtc(),
+      ),
+    );
+    final recentResultsFuture = _guard<List<LckMatchDetail>>(
+      _dependencies.matchesRepository.getRecentResults(limit: 3),
     );
 
-    TeamSummary? team = favoriteTeam;
-    if (favoriteTeam != null) {
-      try {
-        team = await _dependencies.teamsRepository.getTeam(favoriteTeam.id);
-      } catch (_) {
-        team = favoriteTeam;
-      }
-    }
+    final teamResult = await teamFuture;
+    final TeamSummary? team = teamResult.value ?? favoriteTeam;
 
-    final standings = await standingsFuture
+    final standingsResult = await standingsFuture;
+    final standings = (standingsResult.value ?? const <TeamSummary>[])
       ..sort(_compareStandings);
 
-    List<NewsArticle> featuredNews = const [];
-    try {
-      featuredNews = await featuredNewsFuture;
-    } catch (_) {
-      featuredNews = const <NewsArticle>[];
-    }
+    final featuredNewsResult = await featuredNewsFuture;
+    final featuredNews = featuredNewsResult.value ?? const <NewsArticle>[];
 
-    List<LckScheduledMatch> scheduledMatches = const [];
-    String? scheduleError;
-    try {
-      scheduledMatches = await scheduledMatchesFuture;
-    } on AppFailure catch (error) {
-      scheduleError = error.message;
-    } catch (_) {
-      scheduleError = '경기 일정을 불러오지 못했습니다.';
-    }
+    final scheduledResult = await scheduledMatchesFuture;
+    final scheduledMatches =
+        scheduledResult.value ?? const <LckScheduledMatch>[];
+    final scheduleError = scheduledResult.value != null
+        ? null
+        : (scheduledResult.failureMessage ?? '경기 일정을 불러오지 못했습니다.');
 
-    List<LckMatchDetail> recentResults = const [];
-    String? recentResultsError;
-    try {
-      recentResults = await recentResultsFuture;
-    } on AppFailure catch (error) {
-      recentResultsError = error.message;
-    } catch (_) {
-      recentResultsError = '최근 경기 결과를 불러오지 못했습니다.';
-    }
+    final recentResult = await recentResultsFuture;
+    final recentResults = recentResult.value ?? const <LckMatchDetail>[];
+    final recentResultsError = recentResult.value != null
+        ? null
+        : (recentResult.failureMessage ?? '최근 경기 결과를 불러오지 못했습니다.');
 
     _state = HomeState(
       team: team,
@@ -164,6 +161,17 @@ class HomeViewModel extends ChangeNotifier {
     );
     _isLoading = false;
     _safeNotify();
+  }
+
+  /// future를 즉시 감싸 에러를 흡수한다. 성공 시 값을, 실패 시 메시지를 담아
+  /// 반환하므로 호출부에서 unhandled future 예외가 발생하지 않는다.
+  Future<_Result<T>> _guard<T>(Future<T> future) {
+    return future.then((value) => _Result<T>(value: value)).catchError(
+      (Object error) {
+        final message = error is AppFailure ? error.message : null;
+        return _Result<T>(failureMessage: message);
+      },
+    );
   }
 
   /// LCK 일정 동기화를 서버에 요청하고 성공 시 홈 데이터를 새로고침한다.
@@ -226,4 +234,14 @@ class HomeViewModel extends ChangeNotifier {
     }
     return left.rank.compareTo(right.rank);
   }
+}
+
+/// 비동기 요청의 결과를 안전하게 담는 래퍼. 성공 시 [value],
+/// 실패 시 [failureMessage]가 설정된다. (둘 중 하나만 의미를 가짐)
+@immutable
+class _Result<T> {
+  const _Result({this.value, this.failureMessage});
+
+  final T? value;
+  final String? failureMessage;
 }

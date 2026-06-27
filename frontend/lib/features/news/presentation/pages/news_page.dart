@@ -73,6 +73,7 @@ class _NewsPageState extends State<NewsPage> with TickerProviderStateMixin {
   @override
   void dispose() {
     _searchDebounce?.cancel();
+    _pulseController.dispose();
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
