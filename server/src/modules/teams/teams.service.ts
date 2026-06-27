@@ -1,13 +1,12 @@
-import { Injectable, NotFoundException, Inject } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import * as cacheManager from 'cache-manager';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { CacheInvalidatorService } from '../../common/cache/cache-invalidator.service';
+import { CacheNamespace } from '../../common/cache/cache-namespaces';
+import { buildCacheKey } from '../../common/utils/cache-key.util';
 import { buildPaginationMeta } from '../../common/utils/pagination.util';
 import { MatchesRepository } from '../matches/matches.repository';
+import { MatchMapper, MatchSummaryRecord } from '../matches/matches.mapper';
 import { GetMatchesQueryDto } from '../matches/dto/get-matches.query.dto';
-import {
-  MatchListResponseDto,
-  MatchSummaryResponseDto,
-} from '../matches/responses/match-summary.response';
+import { MatchListResponseDto } from '../matches/responses/match-summary.response';
 import { GetTeamsQueryDto } from './dto/get-teams.query.dto';
 import { TeamEntity } from './entities/team.entity';
 import {
@@ -25,12 +24,13 @@ export class TeamsService {
   constructor(
     private readonly teamsRepository: TeamsRepository,
     private readonly matchesRepository: MatchesRepository,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: cacheManager.Cache,
+    private readonly matchMapper: MatchMapper,
+    private readonly cache: CacheInvalidatorService,
   ) {}
 
   async getTeams(query: GetTeamsQueryDto): Promise<TeamListResponseDto> {
-    const cacheKey = `teams:list:${JSON.stringify(query)}`;
-    const cached = await this.cacheManager.get<TeamListResponseDto>(cacheKey);
+    const cacheKey = buildCacheKey(CacheNamespace.TEAMS, 'list', query);
+    const cached = await this.cache.get<TeamListResponseDto>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -45,13 +45,18 @@ export class TeamsService {
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
 
-    await this.cacheManager.set(cacheKey, result, 10 * 60 * 1000); // 10분 캐싱 (팀 순위 등은 거의 고정됨)
+    await this.cache.set(
+      CacheNamespace.TEAMS,
+      cacheKey,
+      result,
+      10 * 60 * 1000,
+    ); // 10분 캐싱 (팀 순위 등은 거의 고정됨)
     return result;
   }
 
   async getTeamById(id: string): Promise<TeamDetailResponseDto> {
-    const cacheKey = `team:detail:${id}`;
-    const cached = await this.cacheManager.get<TeamDetailResponseDto>(cacheKey);
+    const cacheKey = buildCacheKey(CacheNamespace.TEAMS, 'detail', id);
+    const cached = await this.cache.get<TeamDetailResponseDto>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -72,7 +77,12 @@ export class TeamsService {
       ),
     };
 
-    await this.cacheManager.set(cacheKey, result, 15 * 60 * 1000); // 15분 캐싱
+    await this.cache.set(
+      CacheNamespace.TEAMS,
+      cacheKey,
+      result,
+      15 * 60 * 1000,
+    ); // 15분 캐싱
     return result;
   }
 
@@ -80,8 +90,12 @@ export class TeamsService {
     id: string,
     query: GetMatchesQueryDto,
   ): Promise<MatchListResponseDto> {
-    const cacheKey = `team:matches:${id}:${JSON.stringify(query)}`;
-    const cached = await this.cacheManager.get<MatchListResponseDto>(cacheKey);
+    const cacheKey = buildCacheKey(
+      CacheNamespace.TEAMS,
+      `matches:${id}`,
+      query,
+    );
+    const cached = await this.cache.get<MatchListResponseDto>(cacheKey);
     if (cached) {
       return cached;
     }
@@ -102,11 +116,11 @@ export class TeamsService {
     ]);
 
     const result = {
-      items: matches.map((match) => this.matchesRepository.toSummaryDto(match)),
+      items: matches.map((match) => this.matchMapper.toSummaryDto(match)),
       meta: buildPaginationMeta(query.page, query.limit, total),
     };
 
-    await this.cacheManager.set(cacheKey, result, 5 * 60 * 1000); // 5분 캐싱
+    await this.cache.set(CacheNamespace.TEAMS, cacheKey, result, 5 * 60 * 1000); // 5분 캐싱
     return result;
   }
 
@@ -126,10 +140,10 @@ export class TeamsService {
   }
 
   private getRecentFormResult(
-    match: MatchSummaryResponseDto,
+    match: MatchSummaryRecord,
     teamId: string,
   ): RecentFormResult {
-    return match.winner?.id === teamId
+    return match.winnerTeamId === teamId
       ? RecentFormResult.WIN
       : RecentFormResult.LOSS;
   }
