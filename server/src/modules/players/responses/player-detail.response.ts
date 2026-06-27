@@ -28,7 +28,10 @@ export class PlayerStatsResponseDto {
 }
 
 export class PlayerMatchAppearanceResponseDto {
-  @ApiProperty({ example: '2026-06-23T00:00:00.000Z', description: '경기 일시' })
+  @ApiProperty({
+    example: '2026-06-23T00:00:00.000Z',
+    description: '경기 일시',
+  })
   playedAt: Date;
 
   @ApiProperty({ example: 'Gen.G Esports', description: '상대 팀명' })
@@ -75,6 +78,4 @@ export class PlayerDetailResponseDto extends PlayerSummaryResponseDto {
     description: '선수 최근 경기 출전 기록',
   })
   recentAppearances: PlayerMatchAppearanceResponseDto[];
-
 }
-

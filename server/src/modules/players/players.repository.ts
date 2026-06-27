@@ -149,9 +149,9 @@ export class PlayersRepository {
       const myTeam = stat.team;
       const isHome = match.homeTeamId === myTeam.id;
       const opponent = isHome ? match.awayTeam : match.homeTeam;
-      
+
       const isWin = stat.matchGame.winnerTeamId === myTeam.id;
-      
+
       const kills = stat.kills ?? 0;
       const deaths = stat.deaths ?? 0;
       const assists = stat.assists ?? 0;

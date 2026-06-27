@@ -67,7 +67,6 @@ export class MatchSummaryResponseDto {
     description: '승자 팀 정보. 경기 미종료 시 null',
   })
   winner: TeamReferenceResponseDto | null;
-
 }
 
 export class MatchListResponseDto {

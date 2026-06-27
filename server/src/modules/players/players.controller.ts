@@ -69,4 +69,3 @@ export class PlayersController {
     return this.playersService.getPlayerById(id);
   }
 }
-

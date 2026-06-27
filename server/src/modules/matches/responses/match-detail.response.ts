@@ -215,5 +215,4 @@ export class MatchDetailResponseDto extends MatchSummaryResponseDto {
     description: '세트별 상세 정보',
   })
   games: MatchGameResponseDto[];
-
 }

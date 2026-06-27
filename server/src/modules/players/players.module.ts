@@ -9,4 +9,3 @@ import { PlayersService } from './players.service';
   providers: [PlayersService, PlayersRepository],
 })
 export class PlayersModule {}
-

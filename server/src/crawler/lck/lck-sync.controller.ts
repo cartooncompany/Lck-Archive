@@ -7,7 +7,10 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ErrorResponseDto, ServiceUnavailableErrorResponseDto } from '../../common/responses/error-response.dto';
+import {
+  ErrorResponseDto,
+  ServiceUnavailableErrorResponseDto,
+} from '../../common/responses/error-response.dto';
 import { SyncSecretGuard } from '../guards/sync-secret.guard';
 import { LckSyncJob } from './jobs/lck-sync.job';
 import { LckSyncResponseDto } from './responses/lck-sync.response';
